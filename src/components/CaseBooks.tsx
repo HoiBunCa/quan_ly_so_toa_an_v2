@@ -41,15 +41,16 @@ export default function CaseBooks({ onSelectBook, books, setBooks, setShowCreate
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
+        let data = await response.json();
+        data = data.results;
         // Map API response to CaseBook interface
         const fetchedBooks: CaseBook[] = data.map((item: any) => ({
           id: item.id,
-          caseTypeId: item.case_type_id,
-          caseTypeName: item.case_type_name,
+          caseTypeId: item.code,
+          caseTypeName: item.name,
           year: item.year,
-          createdDate: item.created_date,
-          caseCount: item.case_count
+          createdDate: item.created_time,
+          caseCount: item.count_case
         }));
         setBooks(fetchedBooks);
       } catch (e: any) {

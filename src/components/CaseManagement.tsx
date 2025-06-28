@@ -197,7 +197,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       indicators: true
     },
     licenseKey: 'non-commercial-and-evaluation',
-    height: 'auto',
+    height: '100%', // Changed from 'auto' to '100%'
     maxRows: 1000,
     stretchH: 'all',
     autoWrapRow: true,
@@ -224,9 +224,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   };
 
   return (
-    <div className="p-6 max-w-full">
+    <div className="p-6 flex flex-col h-full"> {/* Added flex flex-col h-full */}
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8 flex-shrink-0"> {/* Added flex-shrink-0 */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
             <button
@@ -368,8 +368,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col"> {/* Added flex-1 flex flex-col */}
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex-shrink-0"> {/* Added flex-shrink-0 */}
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Cases Table</h3>
             <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -379,8 +379,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           </div>
         </div>
         
-        <div className="p-4">
-          <div className="handsontable-container">
+        <div className="p-4 flex-1 overflow-hidden"> {/* Added flex-1 overflow-hidden */}
+          <div className="handsontable-container h-full"> {/* Added h-full */}
             <HotTable
               ref={hotTableRef}
               settings={hotSettings}
@@ -390,7 +390,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       </div>
 
       {/* Instructions */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex-shrink-0"> {/* Added flex-shrink-0 */}
         <h4 className="text-sm font-semibold text-blue-900 mb-2">Table Features:</h4>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Click any cell to edit inline (except Case Number)</li>

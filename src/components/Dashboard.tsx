@@ -4,20 +4,18 @@ import Header from './Header';
 import CaseBooks from './CaseBooks';
 import CaseManagement from './CaseManagement';
 import UserManagement from './UserManagement';
-import CreateBookModal from './CreateBookModal'; // Import CreateBookModal
-import UserFormModal from './UserFormModal'; // Import UserFormModal
-import { CaseBook, Case } from '../types/caseTypes';
-import { mockCaseBooks, mockCases } from '../data/mockCaseData'; // Import mockCaseBooks
-import { mockUsers } from '../data/mockData'; // Import mockUsers
-import { caseTypes } from '../data/caseTypesData'; // Import caseTypes
+import CreateBookModal from './CreateBookModal';
+import UserFormModal from './UserFormModal';
+import { CaseBook } from '../types/caseTypes';
+import { mockUsers } from '../data/mockData';
 
 export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedBook, setSelectedBook] = useState<CaseBook | null>(null);
 
-  // State for Case Books
-  const [books, setBooks] = useState<CaseBook[]>(mockCaseBooks);
+  // State for Case Books refresh
+  const [caseBooksRefreshKey, setCaseBooksRefreshKey] = useState(0); // New state to trigger refresh
   const [showCreateBookModal, setShowCreateBookModal] = useState(false);
 
   // State for User Management
@@ -25,21 +23,9 @@ export default function Dashboard() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState<typeof mockUsers[0] | null>(null);
 
-  const handleCreateBook = (caseTypeId: string, year: number) => {
-    const caseType = caseTypes.find(type => type.id === caseTypeId);
-    if (!caseType) return;
-
-    const newBook: CaseBook = {
-      id: `${caseTypeId}-${year}`,
-      caseTypeId,
-      caseTypeName: caseType.name,
-      year,
-      createdDate: new Date().toISOString().split('T')[0],
-      caseCount: 0
-    };
-
-    setBooks([...books, newBook]);
-    setShowCreateBookModal(false);
+  const handleBookCreated = () => { // Renamed from handleCreateBook
+    setCaseBooksRefreshKey(prev => prev + 1); // Increment to trigger refresh in CaseBooks
+    setShowCreateBookModal(false); // Close modal
   };
 
   const handleSaveUser = (user: typeof mockUsers[0]) => {
@@ -73,10 +59,9 @@ export default function Dashboard() {
       case 'case-books':
         return (
           <CaseBooks 
-            books={books} 
-            setBooks={setBooks} 
             onSelectBook={setSelectedBook} 
-            setShowCreateModal={setShowCreateBookModal} // Pass down the setter
+            setShowCreateModal={setShowCreateBookModal} 
+            refreshTrigger={caseBooksRefreshKey} // Pass the refresh key
           />
         );
       case 'user-management':
@@ -106,10 +91,9 @@ export default function Dashboard() {
       default:
         return (
           <CaseBooks 
-            books={books} 
-            setBooks={setBooks} 
             onSelectBook={setSelectedBook} 
             setShowCreateModal={setShowCreateBookModal} 
+            refreshTrigger={caseBooksRefreshKey} 
           />
         );
     }
@@ -149,8 +133,7 @@ export default function Dashboard() {
       {showCreateBookModal && (
         <CreateBookModal
           onClose={() => setShowCreateBookModal(false)}
-          onCreateBook={handleCreateBook}
-          existingBooks={books}
+          onBookCreated={handleBookCreated} // Pass the new handler
         />
       )}
 

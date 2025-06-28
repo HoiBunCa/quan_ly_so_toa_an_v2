@@ -2,8 +2,8 @@ import { CaseType } from '../types/caseTypes';
 
 export const caseTypes: CaseType[] = [
   {
-    id: 'civil',
-    name: 'Civil Cases',
+    id: 'HON_NHAN',
+    name: 'Sổ thụ lý đơn khởi kiện',
     code: 'CIV',
     attributes: [
       { id: 'caseNumber', name: 'Case Number', type: 'text', required: true, width: 120 },

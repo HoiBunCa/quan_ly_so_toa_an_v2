@@ -9,26 +9,25 @@ import {
   MoreHorizontal,
   Trash2,
   Edit3,
-  Loader2, // Import Loader2 icon for loading state
-  AlertCircle // Import AlertCircle for error state
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { CaseBook } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
-// import CreateBookModal from './CreateBookModal'; // Keep import for type reference, but modal is rendered in Dashboard
 
 interface CaseBooksProps {
   onSelectBook: (book: CaseBook) => void;
-  books: CaseBook[]; // Now received as prop
-  setBooks: React.Dispatch<React.SetStateAction<CaseBook[]>>; // Now received as prop
-  setShowCreateModal: React.Dispatch<React.SetStateAction<boolean>>; // Now received as prop
+  setShowCreateModal: React.Dispatch<React.SetStateAction<boolean>>;
+  refreshTrigger: number; // New prop to trigger data refresh
 }
 
-export default function CaseBooks({ onSelectBook, books, setBooks, setShowCreateModal }: CaseBooksProps) {
+export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTrigger }: CaseBooksProps) {
+  const [books, setBooks] = useState<CaseBook[]>([]); // Internal state for books
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
-  const [error, setError] = useState<string | null>(null); // Add error state
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const years = Array.from(new Set(books.map(book => book.year))).sort((a, b) => b - a);
 
@@ -43,10 +42,9 @@ export default function CaseBooks({ onSelectBook, books, setBooks, setShowCreate
         }
         let data = await response.json();
         data = data.results;
-        // Map API response to CaseBook interface
         const fetchedBooks: CaseBook[] = data.map((item: any) => ({
           id: item.id,
-          caseTypeId: item.code,
+          caseTypeId: item.code, // Map 'code' from API to 'caseTypeId'
           caseTypeName: item.name,
           year: item.year,
           createdDate: item.created_time,
@@ -62,7 +60,7 @@ export default function CaseBooks({ onSelectBook, books, setBooks, setShowCreate
     };
 
     fetchCaseBooks();
-  }, [setBooks]); // Re-run effect if setBooks changes (though it's stable)
+  }, [refreshTrigger]); // Re-run effect when refreshTrigger changes
 
   const filteredBooks = books.filter(book => {
     const matchesSearch = book.caseTypeName.toLowerCase().includes(searchTerm.toLowerCase()) ||

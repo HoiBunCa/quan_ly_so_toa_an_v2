@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
-import { X, BookOpen, Calendar, AlertCircle } from 'lucide-react';
+import { X, BookOpen, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { caseTypes } from '../data/caseTypesData';
-import { CaseBook } from '../types/caseTypes';
+import toast from 'react-hot-toast'; // Import toast
 
 interface CreateBookModalProps {
   onClose: () => void;
-  onCreateBook: (caseTypeId: string, year: number) => void;
-  existingBooks: CaseBook[];
+  onBookCreated: () => void; // Changed prop name
 }
 
-export default function CreateBookModal({ onClose, onCreateBook, existingBooks }: CreateBookModalProps) {
+export default function CreateBookModal({ onClose, onBookCreated }: CreateBookModalProps) {
   const [selectedCaseType, setSelectedCaseType] = useState('');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // New state for loading
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear + i - 5);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -26,17 +26,43 @@ export default function CreateBookModal({ onClose, onCreateBook, existingBooks }
       return;
     }
 
-    // Check if book already exists
-    const bookExists = existingBooks.some(
-      book => book.caseTypeId === selectedCaseType && book.year === selectedYear
-    );
+    setIsSubmitting(true);
+    try {
+        const caseType = caseTypes.find(type => type.id === selectedCaseType);
+        if (!caseType) {
+            setError('Invalid case type selected.');
+            setIsSubmitting(false);
+            return;
+        }
 
-    if (bookExists) {
-      setError('A book for this case type and year already exists');
-      return;
+        const response = await fetch('http://localhost:8003/home/api/v1/danh-sach-so/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                code: selectedCaseType, // Use selectedCaseType (e.g., 'HON_NHAN') as the 'code' for the API
+                name: caseType.name, // Use the name from the found caseType
+                year: selectedYear,
+                created_by: 1 // As requested
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+
+        toast.success('Case book created successfully!');
+        onBookCreated(); // Signal success to parent
+        onClose(); // Close modal
+    } catch (e: any) {
+        console.error("Failed to create case book:", e);
+        setError(`Failed to create book: ${e.message}`);
+        toast.error(`Failed to create book: ${e.message}`);
+    } finally {
+        setIsSubmitting(false);
     }
-
-    onCreateBook(selectedCaseType, selectedYear);
   };
 
   const selectedType = caseTypes.find(type => type.id === selectedCaseType);
@@ -76,6 +102,7 @@ export default function CreateBookModal({ onClose, onCreateBook, existingBooks }
                 onChange={(e) => setSelectedCaseType(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
+                disabled={isSubmitting}
               >
                 <option value="">Select a case type</option>
                 {caseTypes.map(type => (
@@ -96,6 +123,7 @@ export default function CreateBookModal({ onClose, onCreateBook, existingBooks }
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
+                disabled={isSubmitting}
               >
                 {years.map(year => (
                   <option key={year} value={year}>{year}</option>
@@ -124,14 +152,22 @@ export default function CreateBookModal({ onClose, onCreateBook, existingBooks }
               type="button"
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
             >
-              Create Book
+              {isSubmitting ? (
+                <span className="flex items-center">
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" /> Creating...
+                </span>
+              ) : (
+                'Create Book'
+              )}
             </button>
           </div>
         </form>

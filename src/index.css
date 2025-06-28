@@ -5,8 +5,8 @@
 /* Handsontable custom styles */
 .handsontable-container {
   font-family: inherit;
-  /* Removed max-height as it's now managed by flexbox and h-full */
-  overflow-y: auto; /* Keep this for internal table scrolling */
+  max-height: calc(100vh - 25rem); /* Adjust this value as needed based on header/footer height */
+  overflow-y: auto;
 }
 
 .handsontable .htCore {

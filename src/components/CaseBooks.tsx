@@ -50,7 +50,7 @@ export default function CaseBooks({ onSelectBook, books, setBooks, setShowCreate
   const totalCases = books.reduce((sum, book) => sum + book.caseCount, 0);
 
   return (
-    <div className="p-6 max-w-full">
+    <div className="p-6 flex flex-col h-full"> {/* Added flex flex-col h-full */}
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -166,7 +166,7 @@ export default function CaseBooks({ onSelectBook, books, setBooks, setShowCreate
       </div>
 
       {/* Books Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 flex-1 overflow-y-auto"> {/* Added flex-1 overflow-y-auto */}
         {filteredBooks.map((book) => (
           <div
             key={book.id}

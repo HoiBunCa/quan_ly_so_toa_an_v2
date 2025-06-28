@@ -5,6 +5,8 @@
 /* Handsontable custom styles */
 .handsontable-container {
   font-family: inherit;
+  max-height: calc(100vh - 25rem); /* Adjust this value as needed based on header/footer height */
+  overflow-y: auto;
 }
 
 .handsontable .htCore {

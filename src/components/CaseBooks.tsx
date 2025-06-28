@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { CaseBook } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
+import toast from 'react-hot-toast'; // Import toast
 
 interface CaseBooksProps {
   onSelectBook: (book: CaseBook) => void;
@@ -71,11 +72,28 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
     return matchesSearch && matchesYear && matchesType;
   });
 
-  const handleDeleteBook = (bookId: string) => {
+  const handleDeleteBook = async (bookId: string) => {
     if (confirm('Are you sure you want to delete this case book? This action cannot be undone.')) {
-      // In a real application, you would call an API to delete the book here.
-      // For now, we'll just update the local state.
-      setBooks(books.filter(book => book.id !== bookId));
+      try {
+        const response = await fetch(`http://localhost:8003/home/api/v1/danh-sach-so/${bookId}/`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          // If the response is not OK, try to parse error message from body
+          const errorData = await response.json();
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+
+        toast.success('Case book deleted successfully!');
+        // Trigger a refresh of the case books list
+        // This is handled by the parent component (Dashboard) incrementing refreshTrigger
+        // For now, we'll just update the local state for immediate feedback
+        setBooks(books.filter(book => book.id !== bookId));
+      } catch (e: any) {
+        console.error("Failed to delete case book:", e);
+        toast.error(`Failed to delete book: ${e.message}`);
+      }
     }
   };
 

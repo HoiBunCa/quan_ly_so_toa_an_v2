@@ -44,7 +44,7 @@ export default function UserManagement({ users, setUsers, setShowModal, setEditi
   // handleSaveUser is now managed in Dashboard and passed to UserFormModal
 
   return (
-    <div className="p-6 max-w-full">
+    <div className="p-6 flex flex-col h-full"> {/* Added flex flex-col h-full */}
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -124,7 +124,7 @@ export default function UserManagement({ users, setUsers, setShowModal, setEditi
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 overflow-y-auto"> {/* Added flex-1 overflow-y-auto */}
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <h3 className="text-lg font-semibold text-gray-900">User List</h3>
         </div>

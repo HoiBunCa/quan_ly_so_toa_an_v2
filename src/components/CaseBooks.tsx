@@ -11,20 +11,21 @@ import {
   Edit3
 } from 'lucide-react';
 import { CaseBook } from '../types/caseTypes';
-import { mockCaseBooks } from '../data/mockCaseData';
 import { caseTypes } from '../data/caseTypesData';
-import CreateBookModal from './CreateBookModal';
+import CreateBookModal from './CreateBookModal'; // Keep import for type reference, but modal is rendered in Dashboard
 
 interface CaseBooksProps {
   onSelectBook: (book: CaseBook) => void;
+  books: CaseBook[]; // Now received as prop
+  setBooks: React.Dispatch<React.SetStateAction<CaseBook[]>>; // Now received as prop
+  setShowCreateModal: React.Dispatch<React.SetStateAction<boolean>>; // Now received as prop
 }
 
-export default function CaseBooks({ onSelectBook }: CaseBooksProps) {
-  const [books, setBooks] = useState<CaseBook[]>(mockCaseBooks);
+export default function CaseBooks({ onSelectBook, books, setBooks, setShowCreateModal }: CaseBooksProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  // showCreateModal state is now managed in Dashboard
 
   const years = Array.from(new Set(books.map(book => book.year))).sort((a, b) => b - a);
 
@@ -37,22 +38,8 @@ export default function CaseBooks({ onSelectBook }: CaseBooksProps) {
     return matchesSearch && matchesYear && matchesType;
   });
 
-  const handleCreateBook = (caseTypeId: string, year: number) => {
-    const caseType = caseTypes.find(type => type.id === caseTypeId);
-    if (!caseType) return;
-
-    const newBook: CaseBook = {
-      id: `${caseTypeId}-${year}`,
-      caseTypeId,
-      caseTypeName: caseType.name,
-      year,
-      createdDate: new Date().toISOString().split('T')[0],
-      caseCount: 0
-    };
-
-    setBooks([...books, newBook]);
-    setShowCreateModal(false);
-  };
+  // handleCreateBook is now managed in Dashboard and passed to CreateBookModal
+  // No longer needed here: const handleCreateBook = (caseTypeId: string, year: number) => { ... };
 
   const handleDeleteBook = (bookId: string) => {
     if (confirm('Are you sure you want to delete this case book? This action cannot be undone.')) {
@@ -76,7 +63,7 @@ export default function CaseBooks({ onSelectBook }: CaseBooksProps) {
           </div>
           
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => setShowCreateModal(true)} {/* Use passed setShowCreateModal */}
             className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -248,7 +235,7 @@ export default function CaseBooks({ onSelectBook }: CaseBooksProps) {
           </p>
           {(!searchTerm && selectedYear === 'all' && selectedType === 'all') && (
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => setShowCreateModal(true)} {/* Use passed setShowCreateModal */}
               className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -258,14 +245,7 @@ export default function CaseBooks({ onSelectBook }: CaseBooksProps) {
         </div>
       )}
 
-      {/* Create Book Modal */}
-      {showCreateModal && (
-        <CreateBookModal
-          onClose={() => setShowCreateModal(false)}
-          onCreateBook={handleCreateBook}
-          existingBooks={books}
-        />
-      )}
+      {/* Create Book Modal is now rendered in Dashboard */}
     </div>
   );
 }

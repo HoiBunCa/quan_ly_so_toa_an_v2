@@ -12,7 +12,12 @@ import {
 } from 'lucide-react';
 import { currentUser } from '../data/mockData';
 
-export default function Header() {
+interface HeaderProps {
+  onCreateNewBook: () => void;
+  onAddUser: () => void;
+}
+
+export default function Header({ onCreateNewBook, onAddUser }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
@@ -50,15 +55,27 @@ export default function Header() {
             {showQuickActions && (
               <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                 <div className="py-1">
-                  <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+                  <button 
+                    onClick={() => {
+                      onCreateNewBook();
+                      setShowQuickActions(false);
+                    }}
+                    className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                  >
                     <BookOpen className="w-4 h-4" />
                     <span>New Case Book</span>
                   </button>
                   <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
                     <FileText className="w-4 h-4" />
-                    <span>New Case</span>
+                    <span>New Case</span> {/* This will require more complex logic later */}
                   </button>
-                  <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+                  <button 
+                    onClick={() => {
+                      onAddUser();
+                      setShowQuickActions(false);
+                    }}
+                    className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                  >
                     <User className="w-4 h-4" />
                     <span>Add User</span>
                   </button>

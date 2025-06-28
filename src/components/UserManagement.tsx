@@ -9,14 +9,20 @@ import {
   Mail,
   Briefcase
 } from 'lucide-react';
-import { User, mockUsers } from '../data/mockData';
-import UserFormModal from './UserFormModal';
+import { User } from '../data/mockData';
+import UserFormModal from './UserFormModal'; // Keep import for type reference, but modal is rendered in Dashboard
 
-export default function UserManagement() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+interface UserManagementProps {
+  users: User[];
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
+  setEditingUser: React.Dispatch<React.SetStateAction<User | null>>;
+  handleDeleteUser: (userId: string) => void;
+}
+
+export default function UserManagement({ users, setUsers, setShowModal, setEditingUser, handleDeleteUser }: UserManagementProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  // showModal and editingUser states are now managed in Dashboard
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -34,24 +40,8 @@ export default function UserManagement() {
     setShowModal(true);
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      setUsers(users.filter(user => user.id !== userId));
-    }
-  };
-
-  const handleSaveUser = (user: User) => {
-    if (editingUser) {
-      // Edit existing user
-      setUsers(users.map(u => (u.id === user.id ? user : u)));
-    } else {
-      // Add new user
-      const newUser = { ...user, id: `user-${Date.now()}` }; // Simple ID generation
-      setUsers([...users, newUser]);
-    }
-    setShowModal(false);
-    setEditingUser(null);
-  };
+  // handleDeleteUser is now managed in Dashboard and passed as prop
+  // handleSaveUser is now managed in Dashboard and passed to UserFormModal
 
   return (
     <div className="p-6 max-w-full">
@@ -211,14 +201,7 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {/* User Form Modal */}
-      {showModal && (
-        <UserFormModal
-          onClose={() => setShowModal(false)}
-          onSave={handleSaveUser}
-          initialUser={editingUser}
-        />
-      )}
+      {/* User Form Modal is now rendered in Dashboard */}
     </div>
   );
 }

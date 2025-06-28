@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Handsontable custom styles */
+.handsontable-container {
+  font-family: inherit;
+}
+
+.handsontable .htCore {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.handsontable .htCore td {
+  border-color: #f3f4f6;
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+
+.handsontable .htCore th {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px;
+}
+
+.handsontable .htCore .htDimmed {
+  color: #9ca3af;
+}
+
+.handsontable .htCore .htInvalid {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.handsontable .htCore .htAutocompleteArrow {
+  color: #6b7280;
+}
+
+.handsontable .htCore .htCheckboxRendererInput {
+  margin: 0;
+}
+
+.handsontable .htCore .currentRow {
+  background-color: #f0f9ff;
+}
+
+.handsontable .htCore .area {
+  background-color: #dbeafe;
+}
+
+.handsontable .htCore .area-1 {
+  background-color: #bfdbfe;
+}
+
+.handsontable .htCore .area-2 {
+  background-color: #93c5fd;
+}
+
+.handsontable .htCore .area-3 {
+  background-color: #60a5fa;
+}
+
+.handsontable .htCore .area-4 {
+  background-color: #3b82f6;
+}
+
+.handsontable .htCore .area-5 {
+  background-color: #2563eb;
+}
+
+.handsontable .htCore .area-6 {
+  background-color: #1d4ed8;
+}
+
+.handsontable .htCore .area-7 {
+  background-color: #1e40af;
+}
+
+/* Context menu styling */
+.htContextMenu {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.htContextMenu .ht_master .htCore {
+  border: none;
+}
+
+.htContextMenu .ht_master .htCore td {
+  padding: 8px 16px;
+  border: none;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.htContextMenu .ht_master .htCore td:hover {
+  background-color: #f3f4f6;
+}
+
+/* Dropdown menu styling */
+.htDropdownMenu {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+/* Column header styling */
+.handsontable .htCore .htColHeader {
+  background-color: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Row header styling */
+.handsontable .htCore .htRowHeader {
+  background-color: #f9fafb;
+  border-right: 2px solid #e5e7eb;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+/* Selection styling */
+.handsontable .htCore .htBorders .current {
+  border: 2px solid #3b82f6;
+}
+
+.handsontable .htCore .htBorders .area {
+  border: 1px solid #60a5fa;
+}
+
+/* Input styling */
+.handsontable .htCore .htEditor {
+  border: 2px solid #3b82f6;
+  border-radius: 0.25rem;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Scrollbar styling */
+.handsontable .htCore::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.handsontable .htCore::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.handsontable .htCore::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.handsontable .htCore::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

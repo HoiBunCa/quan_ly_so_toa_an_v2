@@ -63,7 +63,7 @@ export default function CaseBooks({ onSelectBook, books, setBooks, setShowCreate
           </div>
           
           <button
-            onClick={() => setShowCreateModal(true)} {/* Use passed setShowCreateModal */}
+            onClick={() => setShowCreateModal(true)}
             className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -235,7 +235,7 @@ export default function CaseBooks({ onSelectBook, books, setBooks, setShowCreate
           </p>
           {(!searchTerm && selectedYear === 'all' && selectedType === 'all') && (
             <button
-              onClick={() => setShowCreateModal(true)} {/* Use passed setShowCreateModal */}
+              onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4" />

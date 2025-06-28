@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import CaseBooks from './CaseBooks';
 import CaseManagement from './CaseManagement';
+import UserManagement from './UserManagement'; // Import the new component
 import { CaseBook } from '../types/caseTypes';
 
 export default function Dashboard() {
@@ -23,6 +24,8 @@ export default function Dashboard() {
     switch (currentPage) {
       case 'case-books':
         return <CaseBooks onSelectBook={setSelectedBook} />;
+      case 'user-management': // New case for user management
+        return <UserManagement />;
       case 'reports':
         return (
           <div className="p-6">

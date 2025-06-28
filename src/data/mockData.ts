@@ -40,6 +40,44 @@ export const currentUser: User = {
   role: 'Project Manager'
 };
 
+export const mockUsers: User[] = [
+  {
+    id: '1',
+    name: 'Sarah Johnson',
+    email: 'sarah.johnson@company.com',
+    avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400',
+    role: 'Court Administrator'
+  },
+  {
+    id: '2',
+    name: 'John Doe',
+    email: 'john.doe@company.com',
+    avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400',
+    role: 'Case Manager'
+  },
+  {
+    id: '3',
+    name: 'Alice Smith',
+    email: 'alice.smith@company.com',
+    avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=400',
+    role: 'Legal Assistant'
+  },
+  {
+    id: '4',
+    name: 'Robert Brown',
+    email: 'robert.brown@company.com',
+    avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=400',
+    role: 'Judge'
+  },
+  {
+    id: '5',
+    name: 'Emily White',
+    email: 'emily.white@company.com',
+    avatar: 'https://images.pexels.com/photos/1065084/pexels-photo-1065084.jpeg?auto=compress&cs=tinysrgb&w=400',
+    role: 'Clerk'
+  }
+];
+
 export const summaryStats = [
   {
     title: 'Total Users',

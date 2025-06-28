@@ -3,7 +3,8 @@ import {
   BarChart3, 
   Settings, 
   ChevronLeft,
-  Scale
+  Scale,
+  Users // Import Users icon
 } from 'lucide-react';
 import { currentUser } from '../data/mockData';
 
@@ -16,6 +17,7 @@ interface SidebarProps {
 
 const menuItems = [
   { icon: BookOpen, label: 'Case Books', page: 'case-books' },
+  { icon: Users, label: 'User Management', page: 'user-management' }, // New menu item
   { icon: BarChart3, label: 'Reports', page: 'reports' },
   { icon: Settings, label: 'Settings', page: 'settings' },
 ];

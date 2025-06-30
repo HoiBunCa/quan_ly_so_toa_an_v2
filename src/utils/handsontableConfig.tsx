@@ -151,7 +151,7 @@ export function getHandsontableConfig({
             td.innerHTML = `<span class="px-2 py-1 text-xs font-medium rounded-full ${colorClass}">${value}</span>`;
             return td;
           } : undefined,
-          colHeader: customHeaderRenderer // Apply custom header renderer
+          // colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'date':
         return {
@@ -160,13 +160,13 @@ export function getHandsontableConfig({
           dateFormat: 'YYYY-MM-DD', 
           correctFormat: true,
           renderer: dateDisplayRenderer,
-          colHeader: customHeaderRenderer // Apply custom header renderer
+          // colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'number':
         return {
           ...baseColumn,
           type: 'numeric',
-          colHeader: customHeaderRenderer // Apply custom header renderer
+          // colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'textarea':
         return {
@@ -179,7 +179,7 @@ export function getHandsontableConfig({
         return {
           ...baseColumn,
           type: 'text',
-          colHeader: customHeaderRenderer // Apply custom header renderer
+          // colHeader: customHeaderRenderer // Apply custom header renderer
         };
     }
   });

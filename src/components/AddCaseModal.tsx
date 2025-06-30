@@ -8,10 +8,9 @@ interface AddCaseModalProps {
   bookId: string; // Pass the current book's ID
   bookYear: number; // Pass the current book's year for case number generation
   caseTypeCode: string; // Pass the case type code for case number generation
-  onGenerateCaseNumber?: () => string; // New prop for auto-generating case number
 }
 
-export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber }: AddCaseModalProps) {
+export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode }: AddCaseModalProps) {
   const [soThuLy, setSoThuLy] = useState('');
   const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
   const [error, setError] = useState('');
@@ -69,17 +68,24 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     }
   };
 
-  const handleGenerateNumber = () => {
-    if (onGenerateCaseNumber) {
-      setSoThuLy(onGenerateCaseNumber());
-    } else {
-      // Fallback if onGenerateCaseNumber is not provided (e.g., for mock data)
-      const today = new Date();
-      const dd = String(today.getDate()).padStart(2, '0');
-      const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
-      const yyyy = today.getFullYear();
-      setSoThuLy(`${dd}${mm}${yyyy}`); // Example: 25122024
-      toast.info('Tự động lấy số thụ lý theo định dạng ngày tháng năm hiện tại.');
+  const handleGenerateNumber = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/get_max_so/?year=${bookYear}&field_name=so_thu_ly`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      const maxNumber = data.max_so ? parseInt(data.max_so) : 0;
+      setSoThuLy((maxNumber + 1).toString());
+      toast.success('Đã lấy số thụ lý lớn nhất và tăng lên 1.');
+    } catch (e: any) {
+      console.error("Failed to fetch max number:", e);
+      setError(`Không thể lấy số tự động: ${e.message}`);
+      toast.error(`Không thể lấy số tự động: ${e.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

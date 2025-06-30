@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatDateForDisplay } from '../utils/dateUtils'; // Import new utility
 
 interface AddCaseModalProps {
   onClose: () => void;
@@ -17,16 +18,6 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Helper to format YYYY-MM-DD to DD-MM-YYYY for display
-  const formatDisplayDate = (dateString: string): string => {
-    if (!dateString) return '';
-    const parts = dateString.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
-    }
-    return dateString; // Return as is if not in expected format
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,7 +146,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
               </div>
               {ngayThuLy && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Định dạng hiển thị: {formatDisplayDate(ngayThuLy)}
+                  Định dạng hiển thị: {formatDateForDisplay(ngayThuLy)}
                 </p>
               )}
             </div>

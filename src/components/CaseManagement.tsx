@@ -13,6 +13,7 @@ import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
 import { useCasesData } from '../hooks/useCasesData';
 import { getHandsontableConfig } from '../utils/handsontableConfig';
+import { parseNumberDateString, combineNumberAndDate } from '../utils/dateUtils'; // Import new utilities
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -133,7 +134,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         return nextNumber;
       }
     } else {
-      return 1;
+      return '1'; // Changed to string '1' for consistency
     }
 
     // Fallback logic if max number for this field is not available or invalid
@@ -156,26 +157,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     fetchCases(); // Refresh data after a new case is added
   };
 
-  // Helper to parse combined "Số: [number]\nNgày: [date]" string
-  const parseNumberDateString = (combinedString: string) => {
-    const lines = String(combinedString || '').split('\n');
-    let number = '';
-    let date = '';
-    if (lines[0]?.startsWith('Số: ')) {
-      number = lines[0].substring('Số: '.length);
-    }
-    if (lines[1]?.startsWith('Ngày: ')) {
-      // Convert DD-MM-YYYY back to YYYY-MM-DD for internal state
-      const dateParts = lines[1].substring('Ngày: '.length).split('-');
-      if (dateParts.length === 3) {
-        date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-      } else {
-        date = lines[1].substring('Ngày: '.length);
-      }
-    }
-    return { number, date };
-  };
-
   const handleUpdateCase = useCallback(async (caseId: string, prop: string, newValue: any) => {
     const caseToUpdate = cases.find(c => c.id === caseId);
     if (!caseToUpdate) {
@@ -184,6 +165,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
 
     let payload: { [key: string]: any } = { created_by: 1 };
+    let updatedDisplayValue: any = newValue; // Value to update in local state for display
 
     if (prop === 'thong_tin_nguoi_khoi_kien') {
       const lines = String(newValue || '').split('\n');
@@ -196,10 +178,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       payload.nam_sinh_nguoi_bi_kien = lines[1] || '';
       payload.dia_chi_nguoi_bi_kien = lines[2] || '';
     } else if (prop.startsWith('thong_tin_')) { // Handle combined number/date fields
-      const { number, date } = parseNumberDateString(newValue);
+      const { number, date } = parseNumberDateString(newValue); // date is YYYY-MM-DD from modal
       const originalPropName = prop.replace('thong_tin_', ''); // e.g., 'chuyen_hoa_giai'
       payload[`so_${originalPropName}`] = number;
-      payload[`ngay_${originalPropName}`] = date;
+      payload[`ngay_${originalPropName}`] = date; // Send YYYY-MM-DD to API
+
+      // Reconstruct the display value using combineNumberAndDate for local state
+      updatedDisplayValue = combineNumberAndDate(number, date);
     }
     else {
       payload[prop] = newValue;
@@ -214,19 +199,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC.ho_ten_nguoi_khoi_kien = lines[0] || '';
           updatedC.nam_sinh_nguoi_khoi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_khoi_kien = lines[2] || '';
-          updatedC.thong_tin_nguoi_khoi_kien = newValue;
+          updatedC.thong_tin_nguoi_khoi_kien = updatedDisplayValue; // Use updatedDisplayValue
         } else if (prop === 'thong_tin_nguoi_bi_kien') {
           const lines = String(newValue || '').split('\n');
           updatedC.ho_ten_nguoi_bi_kien = lines[0] || '';
           updatedC.nam_sinh_nguoi_bi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_bi_kien = lines[2] || '';
-          updatedC.thong_tin_nguoi_bi_kien = newValue;
+          updatedC.thong_tin_nguoi_bi_kien = updatedDisplayValue; // Use updatedDisplayValue
         } else if (prop.startsWith('thong_tin_')) {
           const { number, date } = parseNumberDateString(newValue);
           const originalPropName = prop.replace('thong_tin_', '');
           updatedC[`so_${originalPropName}`] = number;
           updatedC[`ngay_${originalPropName}`] = date;
-          updatedC[prop] = newValue; // Keep the combined value for display
+          updatedC[prop] = updatedDisplayValue; // Use the correctly formatted display value
         }
         else {
           updatedC[prop] = newValue;
@@ -290,15 +275,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     if (!currentNumberDateCaseId || !currentNumberDateProp) return;
 
     setIsSavingNumberDateInfo(true);
-    // Format date back to YYYY-MM-DD for API
-    // The date from modal is already YYYY-MM-DD, so no need to reformat here.
-    const combinedValue = [
-      data.number ? `Số: ${data.number}` : '',
-      data.date ? `Ngày: ${data.date}` : ''
-    ].filter(Boolean).join('\n');
+    // data.date is already YYYY-MM-DD from the modal input type="date"
+    const combinedValueForAPI = combineNumberAndDate(data.number, data.date); // This is for API, but we need to pass the raw number/date to handleUpdateCase
     
     try {
-      await handleUpdateCase(currentNumberDateCaseId, currentNumberDateProp, combinedValue);
+      // Pass the raw number and date to handleUpdateCase, which will then format for API and display
+      // The `newValue` for `handleUpdateCase` should be the string that `parseNumberDateString` can understand.
+      // So, we reconstruct it here in the format expected by `parseNumberDateString`
+      const rawCombinedString = [
+        data.number ? `Số: ${data.number}` : '',
+        data.date ? `Ngày: ${data.date}` : '' // Keep YYYY-MM-DD here for parsing
+      ].filter(Boolean).join('\n');
+
+      await handleUpdateCase(currentNumberDateCaseId, currentNumberDateProp, rawCombinedString);
       setShowNumberDateInfoModal(false);
     } finally {
       setIsSavingNumberDateInfo(false);
@@ -311,31 +300,37 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
     if (prop === 'thong_tin_nguoi_khoi_kien') {
       setCurrentCaseIdForPlaintiffEdit(caseId);
-      const lines = String(value || '').split('\n');
-      setCurrentPlaintiffInfo({
-        name: lines[0]?.replace('Họ tên: ', '') || '',
-        year: lines[1]?.replace('Năm sinh: ', '') || '',
-        address: lines[2]?.replace('Địa chỉ: ', '') || ''
-      });
+      // When opening modal, parse the combined display string back to individual fields
+      const caseItem = cases.find(c => c.id === caseId);
+      const name = caseItem?.ho_ten_nguoi_khoi_kien || '';
+      const year = caseItem?.nam_sinh_nguoi_khoi_kien || '';
+      const address = caseItem?.dia_chi_nguoi_khoi_kien || '';
+      setCurrentPlaintiffInfo({ name, year, address });
       setShowPlaintiffInfoModal(true);
     } else if (prop === 'thong_tin_nguoi_bi_kien') {
       setCurrentCaseIdForDefendantEdit(caseId);
-      const lines = String(value || '').split('\n');
-      setCurrentDefendantInfo({
-        name: lines[0]?.replace('Họ tên: ', '') || '',
-        year: lines[1]?.replace('Năm sinh: ', '') || '',
-        address: lines[2]?.replace('Địa chỉ: ', '') || ''
-      });
+      // When opening modal, parse the combined display string back to individual fields
+      const caseItem = cases.find(c => c.id === caseId);
+      const name = caseItem?.ho_ten_nguoi_bi_kien || '';
+      const year = caseItem?.nam_sinh_nguoi_bi_kien || '';
+      const address = caseItem?.dia_chi_nguoi_bi_kien || '';
+      setCurrentDefendantInfo({ name, year, address });
       setShowDefendantInfoModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
       setCurrentNumberDateCaseId(caseId);
       setCurrentNumberDateProp(prop);
       setNumberDateModalTitle(`Chỉnh sửa ${title}`);
-      const { number, date } = parseNumberDateString(String(value || ''));
+      
+      // When opening modal, get the raw number and date from the case object
+      const caseItem = cases.find(c => c.id === caseId);
+      const originalPropName = prop.replace('thong_tin_', '');
+      const number = caseItem?.[`so_${originalPropName}`] || '';
+      const date = caseItem?.[`ngay_${originalPropName}`] || ''; // This date is YYYY-MM-DD from API
+      
       setCurrentNumberDateInfo({ number, date });
       setShowNumberDateInfoModal(true);
     }
-  }, [caseType.attributes]);
+  }, [caseType.attributes, cases]); // Add 'cases' to dependencies
 
   const exportData = () => {
     const headers = caseType.attributes.map(attr => attr.name);

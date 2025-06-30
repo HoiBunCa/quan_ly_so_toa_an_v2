@@ -1,8 +1,7 @@
 import { CaseType, Case } from '../types/caseTypes';
 import { HotTableProps } from '@handsontable/react';
 import Handsontable from 'handsontable';
-// Removed: import { Text, Calendar, Hash, ListFilter, FileText } from 'lucide-react';
-// Removed: import ReactDOMServer from 'react-dom/server'; // To render React components to HTML string
+import { formatDateForDisplay } from './dateUtils'; // Import new utility
 
 interface GetHandsontableConfigArgs {
   caseType: CaseType;
@@ -42,7 +41,9 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       formattedValue += `${lines[0]}`; // "Số: [number]"
     }
     if (lines.length >= 2 && lines[1]) {
-      formattedValue += `\n${lines[1]}`; // "Ngày: [date]"
+      // Ensure the date part is formatted for display
+      const datePart = lines[1].startsWith('Ngày: ') ? lines[1].substring('Ngày: '.length) : lines[1];
+      formattedValue += `\nNgày: ${formatDateForDisplay(datePart)}`;
     }
     td.innerHTML = formattedValue;
   }
@@ -57,10 +58,7 @@ function dateDisplayRenderer(instance: any, td: HTMLElement, row: number, col: n
   Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
 
   if (value && typeof value === 'string') {
-    const parts = value.split('-'); // Assuming value is YYYY-MM-DD
-    if (parts.length === 3) {
-      td.innerText = `${parts[2]}-${parts[1]}-${parts[0]}`; // Format to DD-MM-YYYY
-    }
+    td.innerText = formatDateForDisplay(value); // Use the centralized utility
   }
 }
 

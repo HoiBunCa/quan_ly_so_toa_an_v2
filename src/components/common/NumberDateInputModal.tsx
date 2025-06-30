@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Hash, Calendar, AlertCircle, Loader2 } from 'lucide-react';
+import { formatDateForDisplay } from '../../utils/dateUtils'; // Import new utility
 
 interface NumberDateInputModalProps {
   title: string;
@@ -21,16 +22,6 @@ export default function NumberDateInputModal({ title, initialNumber, initialDate
     setNumber(initialNumber);
     setDate(initialDate);
   }, [initialNumber, initialDate]);
-
-  // Helper to format YYYY-MM-DD to DD-MM-YYYY for display
-  const formatDisplayDate = (dateString: string): string => {
-    if (!dateString) return '';
-    const parts = dateString.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
-    }
-    return dateString; // Return as is if not in expected format
-  };
 
   const handleGenerateNumber = () => {
     const generatedNumber = onGenerateNumber(); // Use the passed function
@@ -128,7 +119,7 @@ export default function NumberDateInputModal({ title, initialNumber, initialDate
               </div>
               {date && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Định dạng hiển thị: {formatDisplayDate(date)}
+                  Định dạng hiển thị: {formatDateForDisplay(date)}
                 </p>
               )}
             </div>

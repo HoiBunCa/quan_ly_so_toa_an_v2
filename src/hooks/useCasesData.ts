@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CaseBook, Case } from '../types/caseTypes';
 import { mockCases } from '../data/mockCaseData'; // For non-HON_NHAN types
+import { combineNumberAndDate, formatDateForDisplay } from '../utils/dateUtils'; // Import new utilities
 
 interface UseCasesDataResult {
   cases: Case[];
@@ -14,35 +15,6 @@ interface UseCasesDataResult {
   deleteCases: (idsToDelete: string[]) => Promise<void>;
   setCases: React.Dispatch<React.SetStateAction<Case[]>>; // Expose setCases for local updates
 }
-
-// Helper to format date from YYYY-MM-DD to DD-MM-YYYY for display
-const formatDateForDisplay = (dateString: string | undefined) => {
-  if (!dateString) return '';
-  
-  // Try to parse as a Date object first for robustness
-  const dateObj = new Date(dateString);
-  
-  // Check if the date is valid and not "Invalid Date"
-  if (!isNaN(dateObj.getTime())) {
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-    const year = dateObj.getFullYear();
-    return `${day}-${month}-${year}`; // Format to DD-MM-YYYY
-  }
-  
-  // Fallback to original logic if Date parsing fails (e.g., if it's already DD-MM-YYYY)
-  const parts = dateString.split('-');
-  if (parts.length === 3) {
-    // If it's YYYY-MM-DD, convert it
-    if (parts[0].length === 4) { // Likely YYYY-MM-DD
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    // If it's DD-MM-YYYY already, return as is
-    return dateString;
-  }
-  
-  return dateString; // Return as is if still not in expected format
-};
 
 export function useCasesData(book: CaseBook): UseCasesDataResult {
   const [cases, setCases] = useState<Case[]>([]);
@@ -84,14 +56,6 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
             item.nam_sinh_nguoi_bi_kien,
             item.dia_chi_nguoi_bi_kien
           ].filter(Boolean).join('\n');
-
-          // Combine "Số" and "Ngày" fields for display
-          const combineNumberAndDate = (num: string | undefined, date: string | undefined) => {
-            const parts = [];
-            if (num) parts.push(`Số: ${num}`);
-            if (date) parts.push(`Ngày: ${formatDateForDisplay(date)}`);
-            return parts.filter(Boolean).join('\n');
-          };
 
           newCase.thong_tin_chuyen_hoa_giai = combineNumberAndDate(item.so_chuyen_hoa_giai, item.ngay_chuyen_hoa_giai);
           newCase.thong_tin_tra_lai_don = combineNumberAndDate(item.so_tra_lai_don, item.ngay_tra_lai_don);
@@ -182,7 +146,6 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     searchTerm,
     setSearchTerm,
     fetchCases,
-    deleteCases,
     setCases,
   };
 }

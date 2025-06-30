@@ -15,7 +15,7 @@ export const caseTypes: CaseType[] = [
       { id: 'tai_lieu_kem_theo', name: 'Tài liệu kèm theo', type: 'textarea', required: false, width: 300 },
       { id: 'ngay_nhan_don', name: 'Ngày nhận đơn', type: 'date', required: false, width: 120 },
       // Combined fields
-      { id: 'thong_tin_chuyen_hoa_giai', name: 'Thông tin chuyển hoà giải', type: 'textarea', required: false, width: 250 },
+      { id: 'thong_tin_chuyen_hoa_giai', name: 'Chuyển hoà giải', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_tra_lai_don', name: 'Thông tin trả lại đơn', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_yeu_cau_sua_doi_bo_sung', name: 'Thông tin yêu cầu sửa đổi bổ sung', type: 'textarea', required: false, width: 320 },
       { id: 'thong_tin_chuyen_don_khoi_kien', name: 'Thông tin chuyển đơn khởi kiện', type: 'textarea', required: false, width: 250 },

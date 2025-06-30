@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'; // Import toast for error messages
 interface GetHandsontableConfigArgs {
   caseType: CaseType;
   filteredCases: Case[];
-  deleteCases: (ids: string[]) => Promise<void>;
+  onDeleteRows: (ids: string[]) => Promise<void>; // Changed from deleteCases to onDeleteRows
   setSelectedRows: (ids: string[]) => void;
   onUpdateCase: (caseId: string, prop: string, newValue: any) => Promise<void>;
 }
@@ -66,7 +66,7 @@ function dateDisplayRenderer(instance: any, td: HTMLElement, row: number, col: n
 export function getHandsontableConfig({
   caseType,
   filteredCases,
-  deleteCases, // This is the prop we need to access
+  onDeleteRows, // Changed from deleteCases to onDeleteRows
   setSelectedRows,
   onUpdateCase,
 }: GetHandsontableConfigArgs): Pick<HotTableProps, 'columns' | 'settings'> {
@@ -156,7 +156,7 @@ export function getHandsontableConfig({
                 const clickedRowIndex = clickedCell[0]; // The row where the right-click happened
                 const caseItem = filteredCases[clickedRowIndex];
                 if (caseItem && caseItem.id) {
-                  deleteCases([caseItem.id]);
+                  onDeleteRows([caseItem.id]); // Call the new onDeleteRows callback
                 } else {
                   toast.error('Không thể xác định vụ án để xóa.');
                 }
@@ -183,10 +183,10 @@ export function getHandsontableConfig({
               }
             });
             
-            if (typeof deleteCases === 'function') {
-              deleteCases(idsFromSelection);
+            if (typeof onDeleteRows === 'function') { // Check the new prop
+              onDeleteRows(idsFromSelection); // Call the new onDeleteRows callback
             } else {
-              console.error('deleteCases is not a function when called in context menu callback!', deleteCases);
+              console.error('onDeleteRows is not a function when called in context menu callback!', onDeleteRows);
               toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
             }
           }

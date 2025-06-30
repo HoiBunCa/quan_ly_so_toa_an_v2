@@ -13,9 +13,16 @@ interface AddCaseModalProps {
 
 export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber }: AddCaseModalProps) {
   const [soThuLy, setSoThuLy] = useState('');
-  const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // Default to current date
+  const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // Default to current date (YYYY-MM-DD)
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper function to format date from YYYY-MM-DD to DD/MM/YYYY
+  const formatDateToDDMMYYYY = (dateString: string): string => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +37,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     try {
       const payload = {
         so_thu_ly: soThuLy,
-        ngay_thu_ly: ngayThuLy,
+        ngay_thu_ly: formatDateToDDMMYYYY(ngayThuLy), // Format date to DD/MM/YYYY
         created_by: 1,
       };
 
@@ -97,8 +104,8 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
               <label htmlFor="soThuLy" className="block text-sm font-medium text-gray-700 mb-2">
                 Số thụ lý
               </label>
-              <div className="flex"> {/* Changed to flex container for input and button */}
-                <div className="relative flex-1"> {/* This div holds the input and its left icon */}
+              <div className="flex">
+                <div className="relative flex-1">
                   <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"

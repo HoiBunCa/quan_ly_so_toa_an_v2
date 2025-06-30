@@ -146,7 +146,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       console.log('Parsed currentMax:', parsedMax);
 
       if (!isNaN(parsedMax)) {
-        const nextNumber = (parsedMax + 1).toString(); // Corrected: Increment by 1
+        const nextNumber = (parsedMax).toString(); // Corrected: Increment by 1
         console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }

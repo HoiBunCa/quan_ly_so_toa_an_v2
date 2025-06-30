@@ -12,7 +12,7 @@ interface UseCasesDataResult {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   fetchCases: () => Promise<void>;
-  deleteCases: (idsToDelete: string[]) => Promise<void>;
+  deleteCases: (idsToDelete: string[]) => Promise<void>; // Add to interface
   setCases: React.Dispatch<React.SetStateAction<Case[]>>; // Expose setCases for local updates
 }
 
@@ -33,8 +33,9 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           const errorData = await response.json();
           throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        const fetchedCases: Case[] = data.results.map((item: any) => {
+        let data = await response.json();
+        data = data.results;
+        const fetchedCases: Case[] = data.map((item: any) => {
           const newCase: Case = {
             id: item.id.toString(),
             caseNumber: item.so_thu_ly || '',
@@ -146,6 +147,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     searchTerm,
     setSearchTerm,
     fetchCases,
+    deleteCases, // <--- Đã thêm deleteCases vào đây!
     setCases,
   };
 }

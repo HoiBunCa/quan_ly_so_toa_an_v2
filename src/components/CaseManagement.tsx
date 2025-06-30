@@ -119,7 +119,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       console.log('Parsed currentSoThuLy:', currentSoThuLy);
 
       if (!isNaN(currentSoThuLy)) {
-        const nextSoThuLy = (currentSoThuLy + 1).toString();
+        const nextSoThuLy = (currentSoThuLy).toString();
         console.log('Generated next so_thu_ly:', nextSoThuLy);
         return nextSoThuLy;
       }

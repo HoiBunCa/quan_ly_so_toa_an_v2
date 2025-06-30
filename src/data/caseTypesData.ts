@@ -25,8 +25,8 @@ export const caseTypes: CaseType[] = [
       { id: 'thong_tin_giu_nguyen_tra_lai_don', name: 'Thông tin giữ nguyên trả lại đơn', type: 'textarea', required: false, width: 320 },
       // New combined fields for editing
       { id: 'thong_tin_nhan_lai_don_khoi_kien_va_tai_lieu', name: 'Số/Ngày nhận lại đơn khởi kiện và tài liệu', type: 'textarea', required: false, width: 320 },
-      { id: 'thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien', name: 'Số/Ngày yêu cầu toà án nhận lại đơn khởi kiện', type: 'textarea', required: false, width: 320 },
-      { id: 'thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi', name: 'Thông tin áp dụng biện pháp khẩn cấp tạm thời', type: 'textarea', required: false, width: 280 },
+      { id: 'thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien', name: 'Yêu cầu toà án nhận lại đơn khởi kiện', type: 'textarea', required: false, width: 320 },
+      { id: 'thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi', name: 'Áp dụng biện pháp khẩn cấp tạm thời', type: 'textarea', required: false, width: 280 },
       
       { id: 'tham_phan', name: 'Thẩm phán', type: 'text', required: false, width: 150 },
       { id: 'ghi_chu', name: 'Ghi chú', type: 'textarea', required: false, width: 300 }

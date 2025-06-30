@@ -15,11 +15,15 @@ import {
   Save,
   FileText,
   Calendar,
-  User
+  User,
+  Loader2, // Import Loader2 for loading indicator
+  AlertCircle // Import AlertCircle for error indicator
 } from 'lucide-react';
 import { CaseBook, Case } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
-import { mockCases } from '../data/mockCaseData';
+import { mockCases } from '../data/mockCaseData'; // Keep for other case types or fallback
+import toast from 'react-hot-toast'; // Import toast
+import AddCaseModal from './AddCaseModal'; // Import the new modal
 
 // Register Handsontable's modules
 registerAllModules();
@@ -31,16 +35,70 @@ interface CaseManagementProps {
 
 export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const hotTableRef = useRef<HotTable>(null);
-  const [cases, setCases] = useState<Case[]>(mockCases[book.id] || []);
+  const [cases, setCases] = useState<Case[]>([]); // Initialize empty, will fetch from API
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddCaseModal, setShowAddCaseModal] = useState(false); // New state for modal
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
   if (!caseType) {
     return <div>Case type not found</div>;
   }
+
+  const fetchCases = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (book.caseTypeId === 'HON_NHAN') { // Only fetch from this API for 'HON_NHAN' type
+        const response = await fetch('http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        const fetchedCases: Case[] = data.results.map((item: any) => {
+          const newCase: Case = {
+            id: item.id.toString(), // Ensure ID is string
+            caseNumber: item.so_thu_ly || '', // Use so_thu_ly as caseNumber
+            bookId: book.id, // Link to current book
+            createdDate: item.ngay_thu_ly || item.ngay_nhan_don || '', // Use relevant date from API
+            lastModified: new Date().toISOString().split('T')[0], // Set to current date for now
+            ...item // Spread all other properties from API response
+          };
+          return newCase;
+        }).filter((c: Case) => {
+            // Filter by year of the current book based on caseNumber format (e.g., CIV-2024-001)
+            // This assumes caseNumber contains the year. If not, a different filtering logic is needed.
+            // For 'HON_NHAN', we might need to rely on a 'year' field from the API or infer from date.
+            // For now, let's assume the backend filters by book ID or we need to add a year field to the case.
+            // If 'so_thu_ly' doesn't contain year, this filter might be problematic.
+            // For simplicity, let's assume the API returns cases relevant to the selected book's year.
+            // Or, if the API returns all, we need a more robust way to filter by book.
+            // For now, I'll remove the year filter as 'so_thu_ly' might not contain it.
+            // If the API supports filtering by bookId, that would be ideal.
+            // For now, we'll display all cases from the API for HON_NHAN.
+            return true; // Display all cases from the API for HON_NHAN type
+        });
+        setCases(fetchedCases);
+      } else {
+        // For other case types, continue using mock data or implement specific API calls
+        setCases(mockCases[book.id] || []);
+      }
+    } catch (e: any) {
+      console.error("Failed to fetch cases:", e);
+      setError(`Failed to load cases: ${e.message}`);
+      toast.error(`Failed to load cases: ${e.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCases();
+  }, [book]); // Re-fetch when the selected book changes
 
   const getNextCaseNumber = () => {
     const year = book.year;
@@ -54,32 +112,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     return `${prefix}-${year}-${nextNumber.toString().padStart(3, '0')}`;
   };
 
-  const addNewCase = () => {
-    const newCase: Case = {
-      id: `case-${Date.now()}`,
-      caseNumber: getNextCaseNumber(),
-      bookId: book.id,
-      createdDate: new Date().toISOString().split('T')[0],
-      lastModified: new Date().toISOString().split('T')[0]
-    };
-    
-    // Initialize with default values based on case type attributes
-    caseType.attributes.forEach(attr => {
-      if (attr.id !== 'caseNumber') {
-        (newCase as any)[attr.id] = attr.type === 'number' ? 0 : '';
-      }
-    });
-    
-    const newCases = [...cases, newCase];
-    setCases(newCases);
-    
-    // Focus on the new row
-    setTimeout(() => {
-      const hot = hotTableRef.current?.hotInstance;
-      if (hot) {
-        hot.selectCell(newCases.length - 1, 1);
-      }
-    }, 100);
+  const handleAddNewCaseClick = () => {
+    setShowAddCaseModal(true);
+  };
+
+  const handleCaseAdded = () => {
+    setShowAddCaseModal(false);
+    fetchCases(); // Refresh the list of cases
   };
 
   const deleteSelectedRows = () => {
@@ -91,11 +130,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   };
 
   const refreshData = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setCases([...(mockCases[book.id] || [])]);
-      setIsLoading(false);
-    }, 1000);
+    fetchCases(); // Call the fetch function to refresh
   };
 
   const exportData = () => {
@@ -118,7 +153,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   const filteredCases = cases.filter(caseItem =>
     Object.values(caseItem).some(value =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
@@ -127,7 +162,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       data: attr.id,
       title: attr.name,
       width: attr.width || 120,
-      readOnly: attr.id === 'caseNumber',
+      readOnly: attr.id === 'caseNumber', // Keep caseNumber readOnly
       className: attr.id === 'caseNumber' ? 'font-medium text-blue-600' : ''
     };
 
@@ -139,6 +174,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           source: attr.options || [],
           renderer: attr.id === 'status' ? (instance: any, td: HTMLElement, row: number, col: number, prop: string, value: string) => {
             const statusColors: { [key: string]: string } = {
+              'Đã thụ lý': 'bg-blue-100 text-blue-800',
+              'Đang giải quyết': 'bg-yellow-100 text-yellow-800',
+              'Đã hòa giải': 'bg-green-100 text-green-800',
+              'Đã trả lại đơn': 'bg-red-100 text-red-800',
+              'Đã chuyển': 'bg-purple-100 text-purple-800',
               'Filed': 'bg-blue-100 text-blue-800',
               'In Progress': 'bg-yellow-100 text-yellow-800',
               'Settled': 'bg-green-100 text-green-800',
@@ -265,7 +305,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             </button>
             
             <button
-              onClick={addNewCase}
+              onClick={handleAddNewCaseClick} // Changed to open modal
               className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -323,12 +363,43 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         </div>
         
         <div className="p-4 flex-1 overflow-y-auto"> {/* Added flex-1 overflow-y-auto */}
-          <div className="handsontable-container">
-            <HotTable
-              ref={hotTableRef}
-              settings={hotSettings}
-            />
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full text-gray-500">
+              <Loader2 className="w-8 h-8 animate-spin mr-3" />
+              <span>Đang tải vụ án...</span>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full text-red-600 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <AlertCircle className="w-6 h-6 mr-3" />
+              <span>Lỗi: {error}</span>
+            </div>
+          ) : filteredCases.length === 0 ? (
+            <div className="text-center py-12 flex flex-col justify-center items-center h-full">
+              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy vụ án nào</h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm
+                  ? 'Hãy thử điều chỉnh bộ lọc của bạn để xem thêm kết quả.'
+                  : 'Thêm vụ án mới để bắt đầu quản lý.'}
+              </p>
+              {!searchTerm && (
+                <button
+                  onClick={handleAddNewCaseClick} // Changed to open modal
+                  className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Thêm vụ án mới</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="handsontable-container">
+              <HotTable
+                ref={hotTableRef}
+                settings={hotSettings}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -344,6 +415,17 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           <li>• Case numbers are automatically generated</li>
         </ul>
       </div>
+
+      {/* Add Case Modal */}
+      {showAddCaseModal && (
+        <AddCaseModal
+          onClose={() => setShowAddCaseModal(false)}
+          onCaseAdded={handleCaseAdded}
+          bookId={book.id}
+          bookYear={book.year}
+          caseTypeCode={caseType.code}
+        />
+      )}
     </div>
   );
 }

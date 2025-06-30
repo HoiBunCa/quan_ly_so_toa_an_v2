@@ -1,18 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { CaseBook } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
-import NumberDateInputModal from './common/NumberDateInputModal'; // Import the new generic modal
+import NumberDateInfoModal from './case-management/NumberDateInfoModal';
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
 import { useCasesData } from '../hooks/useCasesData';
-import { getHandsontableConfig } from '../utils/handsontableConfig'; // Updated import path
+import { getHandsontableConfig } from '../utils/handsontableConfig';
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -22,6 +22,7 @@ interface CaseManagementProps {
 export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [showAddCaseModal, setShowAddCaseModal] = useState(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]); // State for selected row IDs
+  const [maxSoThuLy, setMaxSoThuLy] = useState<string | null>(null); // State to store max_so_thu_ly from WebSocket
 
   // State for Plaintiff Info Modal
   const [showPlaintiffInfoModal, setShowPlaintiffInfoModal] = useState(false);
@@ -35,13 +36,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentDefendantInfo, setCurrentDefendantInfo] = useState({ name: '', year: '', address: '' });
   const [isSavingDefendantInfo, setIsSavingDefendantInfo] = useState(false);
 
-  // State for generic Number/Date Input Modal
-  const [showNumberDateInputModal, setShowNumberDateInputModal] = useState(false);
-  const [currentNumberDateInputInfo, setCurrentNumberDateInputInfo] = useState({ number: '', date: '' });
-  const [currentNumberDateInputProp, setCurrentNumberDateInputProp] = useState<string | null>(null);
-  const [currentNumberDateInputCaseId, setCurrentNumberDateInputCaseId] = useState<string | null>(null);
-  const [isSavingNumberDateInputInfo, setIsSavingNumberDateInputInfo] = useState(false);
-  const [numberDateInputModalTitle, setNumberDateInputModalTitle] = useState('');
+  // State for generic Number/Date Info Modal
+  const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
+  const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
+  const [currentNumberDateProp, setCurrentNumberDateProp] = useState<string | null>(null);
+  const [currentNumberDateCaseId, setCurrentNumberDateCaseId] = useState<string | null>(null);
+  const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
+  const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
@@ -61,17 +62,55 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setCases, // Expose setCases for local updates
   } = useCasesData(book);
 
+  // WebSocket connection for max_so_thu_ly
+  useEffect(() => {
+    if (book.caseTypeId === 'HON_NHAN') {
+      const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
+
+      ws.onopen = () => {
+        console.log('WebSocket connected for max_so_thu_ly');
+        // Optionally send a message to request the initial max_so_thu_ly
+        ws.send(JSON.stringify({ action: 'get_max_so_thu_ly', year: book.year }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.max_so_thu_ly !== undefined) {
+          setMaxSoThuLy(data.max_so_thu_ly);
+          console.log('Received max_so_thu_ly:', data.max_so_thu_ly);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected for max_so_thu_ly');
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        toast.error('Lỗi kết nối WebSocket để lấy số thụ lý tối đa.');
+      };
+
+      return () => {
+        ws.close();
+      };
+    }
+  }, [book.caseTypeId, book.year]); // Reconnect if book type or year changes
+
   const getNextCaseNumber = useCallback(() => {
-    const year = book.year;
-    const prefix = caseType.code;
-    const existingNumbers = cases
-      .map(c => c.caseNumber)
-      .filter(num => num.startsWith(`${prefix}-${year}-`))
-      .map(num => parseInt(num.split('-')[2]) || 0);
-    
-    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
-    return `${prefix}-${year}-${nextNumber.toString().padStart(3, '0')}`;
-  }, [cases, book.year, caseType.code]);
+    if (maxSoThuLy !== null) {
+      // If maxSoThuLy is available from WebSocket, increment it
+      const currentMax = parseInt(maxSoThuLy, 10);
+      if (!isNaN(currentMax)) {
+        return (currentMax + 1).toString();
+      }
+    }
+    // Fallback to date-based generation if WebSocket data is not available or invalid
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+    const yyyy = today.getFullYear();
+    return `${dd}${mm}${yyyy}`;
+  }, [maxSoThuLy]);
 
   const handleAddNewCaseClick = () => {
     setShowAddCaseModal(true);
@@ -184,57 +223,22 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   }, [cases, fetchCases, setCases, caseType.attributes]);
 
-  const handleSavePlaintiffInfo = async (data: { name: string, year: string, address: string }) => {
-    if (!currentCaseIdForPlaintiffEdit) return;
+  const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
+    if (!currentNumberDateCaseId || !currentNumberDateProp) return;
 
-    setIsSavingPlaintiffInfo(true);
-    const combinedValue = [
-      data.name,
-      data.year,
-      data.address
-    ].filter(Boolean).join('\n');
-
-    try {
-      await handleUpdateCase(currentCaseIdForPlaintiffEdit, 'thong_tin_nguoi_khoi_kien', combinedValue);
-      setShowPlaintiffInfoModal(false);
-    } finally {
-      setIsSavingPlaintiffInfo(false);
-    }
-  };
-
-  const handleSaveDefendantInfo = async (data: { name: string, year: string, address: string }) => {
-    if (!currentCaseIdForDefendantEdit) return;
-
-    setIsSavingDefendantInfo(true);
-    const combinedValue = [
-      data.name,
-      data.year,
-      data.address
-    ].filter(Boolean).join('\n');
-
-    try {
-      await handleUpdateCase(currentCaseIdForDefendantEdit, 'thong_tin_nguoi_bi_kien', combinedValue);
-      setShowDefendantInfoModal(false);
-    } finally {
-      setIsSavingDefendantInfo(false);
-    }
-  };
-
-  const handleSaveNumberDateInputInfo = async (data: { number: string, date: string }) => {
-    if (!currentNumberDateInputCaseId || !currentNumberDateInputProp) return;
-
-    setIsSavingNumberDateInputInfo(true);
-    // The date from the modal is already YYYY-MM-DD, so no need to re-parse for API
+    setIsSavingNumberDateInfo(true);
+    // Format date back to YYYY-MM-DD for API
+    const formattedDate = data.date.split('-').reverse().join('-');
     const combinedValue = [
       data.number ? `Số: ${data.number}` : '',
-      data.date ? `Ngày: ${data.date.split('-').reverse().join('-')}` : '' // Format for display in combined string
+      data.date ? `Ngày: ${data.date}` : ''
     ].filter(Boolean).join('\n');
     
     try {
-      await handleUpdateCase(currentNumberDateInputCaseId, currentNumberDateInputProp, combinedValue);
-      setShowNumberDateInputModal(false);
+      await handleUpdateCase(currentNumberDateCaseId, currentNumberDateProp, combinedValue);
+      setShowNumberDateInfoModal(false);
     } finally {
-      setIsSavingNumberDateInputInfo(false);
+      setIsSavingNumberDateInfo(false);
     }
   };
 
@@ -261,12 +265,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       });
       setShowDefendantInfoModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
-      setCurrentNumberDateInputCaseId(caseId);
-      setCurrentNumberDateInputProp(prop);
-      setNumberDateInputModalTitle(`Chỉnh sửa ${title}`);
+      setCurrentNumberDateCaseId(caseId);
+      setCurrentNumberDateProp(prop);
+      setNumberDateModalTitle(`Chỉnh sửa ${title}`);
       const { number, date } = parseNumberDateString(String(value || ''));
-      setCurrentNumberDateInputInfo({ number, date });
-      setShowNumberDateInputModal(true);
+      setCurrentNumberDateInfo({ number, date });
+      setShowNumberDateInfoModal(true);
     }
   }, [caseType.attributes]);
 
@@ -355,14 +359,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         />
       )}
 
-      {showNumberDateInputModal && (
-        <NumberDateInputModal
-          title={numberDateInputModalTitle}
-          initialNumber={currentNumberDateInputInfo.number}
-          initialDate={currentNumberDateInputInfo.date}
-          onSave={handleSaveNumberDateInputInfo}
-          onClose={() => setShowNumberDateInputModal(false)}
-          isSaving={isSavingNumberDateInputInfo}
+      {showNumberDateInfoModal && (
+        <NumberDateInfoModal
+          title={numberDateModalTitle}
+          initialData={currentNumberDateInfo}
+          onSave={handleSaveNumberDateInfo}
+          onClose={() => setShowNumberDateInfoModal(false)}
+          isSaving={isSavingNumberDateInfo}
         />
       )}
     </div>

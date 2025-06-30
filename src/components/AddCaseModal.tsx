@@ -8,7 +8,7 @@ interface AddCaseModalProps {
   bookId: string; // Pass the current book's ID
   bookYear: number; // Pass the current book's year for case number generation
   caseTypeCode: string; // Pass the case type code for case number generation
-  onGenerateCaseNumber?: () => string; // New prop for auto-generating case number
+  onGenerateCaseNumber: () => string; // Updated prop for auto-generating case number
 }
 
 export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber }: AddCaseModalProps) {
@@ -70,17 +70,9 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   };
 
   const handleGenerateNumber = () => {
-    if (onGenerateCaseNumber) {
-      setSoThuLy(onGenerateCaseNumber());
-    } else {
-      // Fallback if onGenerateCaseNumber is not provided (e.g., for mock data)
-      const today = new Date();
-      const dd = String(today.getDate()).padStart(2, '0');
-      const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
-      const yyyy = today.getFullYear();
-      setSoThuLy(`${dd}${mm}${yyyy}`); // Example: 25122024
-      toast.info('Tự động lấy số thụ lý theo định dạng ngày tháng năm hiện tại.');
-    }
+    const generatedNumber = onGenerateCaseNumber();
+    setSoThuLy(generatedNumber);
+    toast.info('Tự động lấy số thụ lý.');
   };
 
   return (

@@ -123,7 +123,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
     setIsLoading(true);
     let successfulDeletions = 0;
-    const casesToDelete = selectedRows.map(rowIndex => cases[rowIndex]);
+    // Lấy các vụ án cần xóa từ filteredCases thay vì cases
+    const casesToDelete = selectedRows.map(rowIndex => filteredCases[rowIndex]); 
     const failedDeletions: string[] = [];
 
     for (const caseItem of casesToDelete) {

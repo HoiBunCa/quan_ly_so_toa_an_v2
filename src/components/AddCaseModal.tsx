@@ -28,15 +28,10 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
 
     setIsSubmitting(true);
     try {
-      // Construct the payload based on the backend model
-      // Only sending the fields requested, backend should handle defaults for others
       const payload = {
         so_thu_ly: soThuLy,
         ngay_thu_ly: ngayThuLy,
-        // Other fields from SoThuLyDonKhoiKien can be added here if needed
-        // For now, we'll assume backend handles defaults or they are optional
-        // Example: created_by: 1 (if required by backend and not handled by auth)
-        created_by: 1, // Assuming a default user ID for now, similar to CreateBookModal
+        created_by: 1,
       };
 
       const response = await fetch('http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/', {
@@ -53,8 +48,8 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
       }
 
       toast.success('Vụ án đã được thêm thành công!');
-      onCaseAdded(); // Signal success to parent to refresh data
-      onClose(); // Close modal
+      onCaseAdded();
+      onClose();
     } catch (e: any) {
       console.error("Failed to add case:", e);
       setError(`Thêm vụ án thất bại: ${e.message}`);
@@ -102,22 +97,24 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
               <label htmlFor="soThuLy" className="block text-sm font-medium text-gray-700 mb-2">
                 Số thụ lý
               </label>
-              <div className="relative flex items-center">
-                <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  id="soThuLy"
-                  value={soThuLy}
-                  onChange={(e) => setSoThuLy(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nhập số thụ lý"
-                  required
-                  disabled={isSubmitting}
-                />
+              <div className="flex"> {/* Changed to flex container for input and button */}
+                <div className="relative flex-1"> {/* This div holds the input and its left icon */}
+                  <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    id="soThuLy"
+                    value={soThuLy}
+                    onChange={(e) => setSoThuLy(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Nhập số thụ lý"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={handleGenerateNumber}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-r-lg hover:bg-gray-200 transition-colors h-full"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors"
                   disabled={isSubmitting}
                 >
                   Tự động lấy số

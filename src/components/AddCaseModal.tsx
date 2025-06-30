@@ -72,7 +72,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   const handleGenerateNumber = () => {
     const generatedNumber = onGenerateCaseNumber();
     setSoThuLy(generatedNumber);
-    toast.info('Tự động lấy số thụ lý.');
+    toast('Tự động lấy số thụ lý.'); // Changed from toast.info to toast
   };
 
   return (

@@ -229,12 +229,40 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   }, [cases, fetchCases, setCases, caseType.attributes]);
 
+  const handleSavePlaintiffInfo = async (data: { name: string; year: string; address: string }) => {
+    if (!currentCaseIdForPlaintiffEdit) return;
+
+    setIsSavingPlaintiffInfo(true);
+    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForPlaintiffEdit, 'thong_tin_nguoi_khoi_kien', combinedValue);
+      setShowPlaintiffInfoModal(false);
+    } finally {
+      setIsSavingPlaintiffInfo(false);
+    }
+  };
+
+  const handleSaveDefendantInfo = async (data: { name: string; year: string; address: string }) => {
+    if (!currentCaseIdForDefendantEdit) return;
+
+    setIsSavingDefendantInfo(true);
+    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForDefendantEdit, 'thong_tin_nguoi_bi_kien', combinedValue);
+      setShowDefendantInfoModal(false);
+    } finally {
+      setIsSavingDefendantInfo(false);
+    }
+  };
+
   const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
     if (!currentNumberDateCaseId || !currentNumberDateProp) return;
 
     setIsSavingNumberDateInfo(true);
     // Format date back to YYYY-MM-DD for API
-    const formattedDate = data.date.split('-').reverse().join('-');
+    // The date from modal is already YYYY-MM-DD, so no need to reformat here.
     const combinedValue = [
       data.number ? `Số: ${data.number}` : '',
       data.date ? `Ngày: ${data.date}` : ''

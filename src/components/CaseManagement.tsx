@@ -12,7 +12,7 @@ import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
 import { useCasesData } from '../hooks/useCasesData';
-import { getHandsontableConfig } from '../utils/handsontableConfig';
+import { getHandsontableConfig } from '../utils/handsontableConfig'; // Updated import path
 
 interface CaseManagementProps {
   book: CaseBook;

@@ -87,12 +87,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
             if (Object.prototype.hasOwnProperty.call(data, key)) {
               formattedData[key] = String(data[key]); // Ensure all values are strings
-              
-  
+
             }
           }
-          
-          
           
           setMaxNumbersByField(formattedData); 
 

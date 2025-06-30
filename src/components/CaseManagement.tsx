@@ -76,11 +76,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.max_so_thu_ly !== undefined) {
-          setMaxSoThuLy(data.max_so_thu_ly);
-          console.log('Received max_so_thu_ly:', data.max_so_thu_ly);
+        if (data.max_so_thu_ly !== undefined && data.max_so_thu_ly !== null) {
+          setMaxSoThuLy(String(data.max_so_thu_ly)); // Ensure it's a string
+          console.log('WebSocket: Received max_so_thu_ly and setting state:', data.max_so_thu_ly);
+        } else {
+          setMaxSoThuLy(null); // Explicitly set to null if undefined/null
+          console.log('WebSocket: Received undefined/null max_so_thu_ly. Setting state to null.');
         }
-        setIsMaxSoThuLyLoading(false); // Set loading to false after receiving data
+        setIsMaxSoThuLyLoading(false);
+        console.log('WebSocket: Setting isMaxSoThuLyLoading to false.');
       };
 
       ws.onclose = () => {
@@ -98,25 +102,39 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         ws.close();
       };
     } else {
-      setIsMaxSoThuLyLoading(false); // Not HON_NHAN type, so no WebSocket loading
+      // If not HON_NHAN, we don't need to load max_so_thu_ly, so it's not loading.
+      setIsMaxSoThuLyLoading(false);
+      setMaxSoThuLy(null); // Ensure it's null for non-HON_NHAN types
     }
   }, [book.caseTypeId, book.year]); // Reconnect if book type or year changes
 
   const getNextCaseNumber = useCallback(() => {
-    if (maxSoThuLy !== null) {
-      // If maxSoThuLy is available from WebSocket, increment it
-      const currentMax = parseInt(maxSoThuLy, 10);
-      if (!isNaN(currentMax)) {
-        return (currentMax + 1).toString();
+    console.log('getNextCaseNumber called.');
+    console.log('Current maxSoThuLy from WebSocket:', maxSoThuLy, '(Type:', typeof maxSoThuLy, ')');
+
+    // The 'maxSoThuLy' state already holds the maximum 'so_thu_ly' value from the WebSocket.
+    // We need to ensure it's a valid number string before incrementing.
+    if (maxSoThuLy !== null && maxSoThuLy !== undefined && String(maxSoThuLy).trim() !== '') {
+      const currentSoThuLy = parseInt(String(maxSoThuLy), 10); // Ensure it's parsed as an integer
+      console.log('Parsed currentSoThuLy:', currentSoThuLy);
+
+      if (!isNaN(currentSoThuLy)) {
+        const nextSoThuLy = (currentSoThuLy + 1).toString();
+        console.log('Generated next so_thu_ly:', nextSoThuLy);
+        return nextSoThuLy;
       }
     }
-    // Fallback to date-based generation if WebSocket data is not available or invalid
+
+    // Fallback logic if maxSoThuLy is not available or invalid
+    console.log('maxSoThuLy is not a valid number. Falling back to date-based generation.');
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
     const yyyy = today.getFullYear();
-    return `${dd}${mm}${yyyy}`;
-  }, [maxSoThuLy]);
+    const fallbackNumber = `${dd}${mm}${yyyy}`;
+    console.log('Fallback number:', fallbackNumber);
+    return fallbackNumber;
+  }, [maxSoThuLy]); // Dependency on maxSoThuLy ensures this function updates when maxSoThuLy changes.
 
   const handleAddNewCaseClick = () => {
     setShowAddCaseModal(true);

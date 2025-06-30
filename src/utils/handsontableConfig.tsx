@@ -2,6 +2,7 @@ import { CaseType, Case } from '../types/caseTypes';
 import { HotTableProps } from '@handsontable/react';
 import Handsontable from 'handsontable';
 import { formatDateForDisplay } from './dateUtils'; // Import new utility
+import toast from 'react-hot-toast'; // Import toast for error messages
 
 interface GetHandsontableConfigArgs {
   caseType: CaseType;
@@ -65,10 +66,14 @@ function dateDisplayRenderer(instance: any, td: HTMLElement, row: number, col: n
 export function getHandsontableConfig({
   caseType,
   filteredCases,
-  deleteCases,
+  deleteCases: deleteCasesProp, // Renamed to avoid any potential conflict
   setSelectedRows,
   onUpdateCase,
 }: GetHandsontableConfigArgs): Pick<HotTableProps, 'columns' | 'settings'> {
+
+  // Capture deleteCases in a local constant to ensure it's available in the closure
+  const actualDeleteCases = deleteCasesProp; 
+  console.log('deleteCases received in getHandsontableConfig:', actualDeleteCases);
 
   const columns = caseType.attributes.map(attr => {
     const baseColumn: Handsontable.ColumnSettings = {
@@ -149,7 +154,7 @@ export function getHandsontableConfig({
         'hsep1': '---------',
         'remove_row': {
           name: 'Xóa hàng đã chọn',
-          callback: function(key: string, selection: any, clickEvent: any) {
+          callback: function(this: Handsontable, key: string, selection: any, clickEvent: any) {
             const hot = this;
             const selectedRange = hot.getSelectedLast();
 
@@ -167,7 +172,14 @@ export function getHandsontableConfig({
                   idsFromSelection.push(caseItem.id);
                 }
               });
-              deleteCases(idsFromSelection);
+              
+              // Use the captured variable and add a safety check
+              if (typeof actualDeleteCases === 'function') {
+                actualDeleteCases(idsFromSelection);
+              } else {
+                console.error('actualDeleteCases is not a function when called in context menu callback!', actualDeleteCases);
+                toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
+              }
             }
           }
         },

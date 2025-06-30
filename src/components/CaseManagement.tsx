@@ -61,9 +61,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     searchTerm,
     setSearchTerm,
     fetchCases,
-    deleteCases,
+    deleteCases, // Expose deleteCases from the hook
     setCases, // Expose setCases for local updates
   } = useCasesData(book);
+
+  console.log('deleteCases in CaseManagement (from hook):', deleteCases); // Debug log
 
   // WebSocket connection for max numbers
   useEffect(() => {

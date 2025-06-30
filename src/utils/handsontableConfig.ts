@@ -69,12 +69,8 @@ export function getHandsontableConfig({
       case 'textarea':
         return {
           ...baseColumn,
-          type: 'text',
-          renderer: (instance: any, td: HTMLElement, row: number, col: number, prop: string, value: string) => {
-            td.innerHTML = value ? value.replace(/\n/g, '<br>') : '';
-            return td;
-          },
-          editor: 'textarea'
+          type: 'textarea', // Changed from 'text' to 'textarea'
+          // Removed custom renderer and editor as they are handled by 'textarea' type
         };
       default:
         return {

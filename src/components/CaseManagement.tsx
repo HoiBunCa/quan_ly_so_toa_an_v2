@@ -53,7 +53,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setError(null);
     try {
       if (book.caseTypeId === 'HON_NHAN') { // Only fetch from this API for 'HON_NHAN' type
-        const response = await fetch('http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/');
+        // Construct the URL with the year parameter
+        const apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/?year=${book.year}`;
+        const response = await fetch(apiUrl);
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
@@ -69,18 +71,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             ...item // Spread all other properties from API response
           };
           return newCase;
-        }).filter((c: Case) => {
-            // Filter by year of the current book based on caseNumber format (e.g., CIV-2024-001)
-            // This assumes caseNumber contains the year. If not, a different filtering logic is needed.
-            // For 'HON_NHAN', we might need to rely on a 'year' field from the API or infer from date.
-            // For now, let's assume the backend filters by book ID or we need to add a year field to the case.
-            // If 'so_thu_ly' doesn't contain year, this filter might be problematic.
-            // For simplicity, let's assume the API returns cases relevant to the selected book's year.
-            // Or, if the API returns all, we need a more robust way to filter by book.
-            // For now, I'll remove the year filter as 'so_thu_ly' might not contain it.
-            // If the API supports filtering by bookId, that would be ideal.
-            // For now, we'll display all cases from the API for HON_NHAN.
-            return true; // Display all cases from the API for HON_NHAN type
         });
         setCases(fetchedCases);
       } else {
@@ -406,7 +396,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       {/* Instructions */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="text-sm font-semibold text-blue-900 mb-2">Table Features:</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
+        <ul className="text-sm text-blue-800 space-y-1}>
           <li>• Click any cell to edit inline (except Case Number)</li>
           <li>• Right-click for context menu with additional options</li>
           <li>• Use column headers to sort and filter data</li>

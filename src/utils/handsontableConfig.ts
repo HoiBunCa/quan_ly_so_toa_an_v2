@@ -10,6 +10,16 @@ interface GetHandsontableConfigArgs {
   onUpdateCase: (caseId: string, prop: string, newValue: any) => Promise<void>;
 }
 
+// Define and register a custom textarea cell type
+// This ensures that the textarea editor and renderer are explicitly linked
+Handsontable.cellTypes.registerCellType('customTextarea', {
+  editor: Handsontable.editors.TextareaEditor,
+  renderer: Handsontable.renderers.TextareaRenderer,
+  // You can inherit from 'text' type if needed, but for simplicity,
+  // directly assigning editor and renderer is often sufficient.
+  // extend: 'text' 
+});
+
 export function getHandsontableConfig({
   caseType,
   filteredCases,
@@ -69,8 +79,7 @@ export function getHandsontableConfig({
       case 'textarea':
         return {
           ...baseColumn,
-          type: 'textarea', // Changed from 'text' to 'textarea'
-          // Removed custom renderer and editor as they are handled by 'textarea' type
+          type: 'customTextarea', // Use the custom registered type
         };
       default:
         return {

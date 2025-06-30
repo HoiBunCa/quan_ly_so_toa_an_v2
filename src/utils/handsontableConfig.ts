@@ -15,21 +15,23 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
   // Apply default text renderer first
   Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
 
-  // Custom formatting for 'thong_tin_nguoi_khoi_kien'
-  if (prop === 'thong_tin_nguoi_khoi_kien' && typeof value === 'string') {
-    const lines = value.split('\n');
-    let formattedValue = '';
-    if (lines.length >= 1 && lines[0]) {
-      formattedValue += `Họ tên: ${lines[0]}`;
+  // Custom formatting for 'thong_tin_nguoi_khoi_kien' and 'thong_tin_nguoi_bi_kien'
+  if (prop === 'thong_tin_nguoi_khoi_kien' || prop === 'thong_tin_nguoi_bi_kien') {
+    if (typeof value === 'string') {
+      const lines = value.split('\n');
+      let formattedValue = '';
+      if (lines.length >= 1 && lines[0]) {
+        formattedValue += `Họ tên: ${lines[0]}`;
+      }
+      if (lines.length >= 2 && lines[1]) {
+        formattedValue += `\nNăm sinh: ${lines[1]}`;
+      }
+      if (lines.length >= 3 && lines[2]) {
+        formattedValue += `\nĐịa chỉ: ${lines[2]}`;
+      }
+      // Update the innerHTML of the cell with the formatted value
+      td.innerHTML = formattedValue;
     }
-    if (lines.length >= 2 && lines[1]) {
-      formattedValue += `\nNăm sinh: ${lines[1]}`;
-    }
-    if (lines.length >= 3 && lines[2]) {
-      formattedValue += `\nĐịa chỉ: ${lines[2]}`;
-    }
-    // Update the innerHTML of the cell with the formatted value
-    td.innerHTML = formattedValue;
   }
 
   td.style.whiteSpace = 'pre-wrap'; // Ensure text wraps
@@ -50,7 +52,7 @@ export function getHandsontableConfig({
       data: attr.id,
       title: attr.name,
       width: attr.width || 120,
-      readOnly: attr.id === 'caseNumber' || attr.id === 'thong_tin_nguoi_khoi_kien', // Make plaintiff info read-only
+      readOnly: attr.id === 'caseNumber' || attr.id === 'thong_tin_nguoi_khoi_kien' || attr.id === 'thong_tin_nguoi_bi_kien', // Make plaintiff and defendant info read-only
       className: attr.id === 'caseNumber' ? 'font-medium text-blue-600' : ''
     };
 
@@ -172,9 +174,9 @@ export function getHandsontableConfig({
         for (const [rowIndex, prop, oldValue, newValue] of changes) {
           const changedCaseInFilteredData = filteredCases[rowIndex];
           
-          // Only update if the property is NOT 'thong_tin_nguoi_khoi_kien'
-          // The plaintiff info is updated via the modal's save handler
-          if (oldValue !== newValue && changedCaseInFilteredData && prop !== 'thong_tin_nguoi_khoi_kien') {
+          // Only update if the property is NOT 'thong_tin_nguoi_khoi_kien' or 'thong_tin_nguoi_bi_kien'
+          // These infos are updated via their respective modal's save handler
+          if (oldValue !== newValue && changedCaseInFilteredData && prop !== 'thong_tin_nguoi_khoi_kien' && prop !== 'thong_tin_nguoi_bi_kien') {
             const caseId = changedCaseInFilteredData.id;
             await onUpdateCase(caseId, prop, newValue);
           }

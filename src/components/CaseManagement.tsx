@@ -4,6 +4,7 @@ import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal'; // Import the new modal
+import DefendantInfoModal from './case-management/DefendantInfoModal'; // Import the new Defendant modal
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
@@ -26,6 +27,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentCaseIdForPlaintiffEdit, setCurrentCaseIdForPlaintiffEdit] = useState<string | null>(null);
   const [currentPlaintiffInfo, setCurrentPlaintiffInfo] = useState({ name: '', year: '', address: '' });
   const [isSavingPlaintiffInfo, setIsSavingPlaintiffInfo] = useState(false);
+
+  // State for Defendant Info Modal
+  const [showDefendantInfoModal, setShowDefendantInfoModal] = useState(false);
+  const [currentCaseIdForDefendantEdit, setCurrentCaseIdForDefendantEdit] = useState<string | null>(null);
+  const [currentDefendantInfo, setCurrentDefendantInfo] = useState({ name: '', year: '', address: '' });
+  const [isSavingDefendantInfo, setIsSavingDefendantInfo] = useState(false);
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
@@ -80,7 +87,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       payload.ho_ten_nguoi_khoi_kien = lines[0] || '';
       payload.nam_sinh_nguoi_khoi_kien = lines[1] || '';
       payload.dia_chi_nguoi_khoi_kien = lines[2] || '';
-    } else {
+    } else if (prop === 'thong_tin_nguoi_bi_kien') { // Handle defendant info
+      const lines = String(newValue || '').split('\n');
+      payload.ho_ten_nguoi_bi_kien = lines[0] || '';
+      payload.nam_sinh_nguoi_bi_kien = lines[1] || '';
+      payload.dia_chi_nguoi_bi_kien = lines[2] || '';
+    }
+    else {
       payload[prop] = newValue;
     }
 
@@ -94,7 +107,14 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC.nam_sinh_nguoi_khoi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_khoi_kien = lines[2] || '';
           updatedC.thong_tin_nguoi_khoi_kien = newValue; // Keep the combined value for display
-        } else {
+        } else if (prop === 'thong_tin_nguoi_bi_kien') { // Update local state for defendant info
+          const lines = String(newValue || '').split('\n');
+          updatedC.ho_ten_nguoi_bi_kien = lines[0] || '';
+          updatedC.nam_sinh_nguoi_bi_kien = lines[1] || '';
+          updatedC.dia_chi_nguoi_bi_kien = lines[2] || '';
+          updatedC.thong_tin_nguoi_bi_kien = newValue; // Keep the combined value for display
+        }
+        else {
           updatedC[prop] = newValue;
         }
         return updatedC;
@@ -135,6 +155,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         address: lines[2] || ''
       });
       setShowPlaintiffInfoModal(true);
+    } else if (prop === 'thong_tin_nguoi_bi_kien') { // Handle click for defendant info
+      setCurrentCaseIdForDefendantEdit(caseId);
+      const lines = String(value || '').split('\n');
+      setCurrentDefendantInfo({
+        name: lines[0] || '',
+        year: lines[1] || '',
+        address: lines[2] || ''
+      });
+      setShowDefendantInfoModal(true);
     }
   }, []);
 
@@ -149,6 +178,20 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       setShowPlaintiffInfoModal(false);
     } finally {
       setIsSavingPlaintiffInfo(false);
+    }
+  };
+
+  const handleSaveDefendantInfo = async (data: { name: string, year: string, address: string }) => {
+    if (!currentCaseIdForDefendantEdit) return;
+
+    setIsSavingDefendantInfo(true);
+    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForDefendantEdit, 'thong_tin_nguoi_bi_kien', combinedValue);
+      setShowDefendantInfoModal(false);
+    } finally {
+      setIsSavingDefendantInfo(false);
     }
   };
 
@@ -225,6 +268,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSavePlaintiffInfo}
           onClose={() => setShowPlaintiffInfoModal(false)}
           isSaving={isSavingPlaintiffInfo}
+        />
+      )}
+
+      {showDefendantInfoModal && (
+        <DefendantInfoModal
+          initialData={currentDefendantInfo}
+          onSave={handleSaveDefendantInfo}
+          onClose={() => setShowDefendantInfoModal(false)}
+          isSaving={isSavingDefendantInfo}
         />
       )}
     </div>

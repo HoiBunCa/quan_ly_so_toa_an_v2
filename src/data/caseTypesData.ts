@@ -15,9 +15,12 @@ export const caseTypes: CaseType[] = [
       // { id: 'ho_ten_nguoi_khoi_kien', name: 'Họ tên người khởi kiện', type: 'text', required: false, width: 180 },
       // { id: 'nam_sinh_nguoi_khoi_kien', name: 'Năm sinh người khởi kiện', type: 'text', required: false, width: 150 },
       // { id: 'dia_chi_nguoi_khoi_kien', name: 'Địa chỉ người khởi kiện', type: 'textarea', required: false, width: 250 },
-      { id: 'ho_ten_nguoi_bi_kien', name: 'Họ tên người bị kiện', type: 'text', required: false, width: 180 },
-      { id: 'nam_sinh_nguoi_bi_kien', name: 'Năm sinh người bị kiện', type: 'text', required: false, width: 150 },
-      { id: 'dia_chi_nguoi_bi_kien', name: 'Địa chỉ người bị kiện', type: 'textarea', required: false, width: 250 },
+      // Combined field for defendant information
+      { id: 'thong_tin_nguoi_bi_kien', name: 'Thông tin người bị kiện', type: 'textarea', required: false, width: 250 },
+      // Original fields for defendant are removed
+      // { id: 'ho_ten_nguoi_bi_kien', name: 'Họ tên người bị kiện', type: 'text', required: false, width: 180 },
+      // { id: 'nam_sinh_nguoi_bi_kien', name: 'Năm sinh người bị kiện', type: 'text', required: false, width: 150 },
+      // { id: 'dia_chi_nguoi_bi_kien', name: 'Địa chỉ người bị kiện', type: 'textarea', required: false, width: 250 },
       { id: 'ngay_lam_don', name: 'Ngày làm đơn', type: 'date', required: false, width: 120 },
       { id: 'noi_dung_don', name: 'Nội dung đơn', type: 'textarea', required: false, width: 300 },
       { id: 'tai_lieu_kem_theo', name: 'Tài liệu kèm theo', type: 'textarea', required: false, width: 300 },

@@ -48,6 +48,14 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
             item.nam_sinh_nguoi_khoi_kien,
             item.dia_chi_nguoi_khoi_kien
           ].filter(Boolean).join('\n');
+
+          // Combine defendant info for display
+          newCase.thong_tin_nguoi_bi_kien = [
+            item.ho_ten_nguoi_bi_kien,
+            item.nam_sinh_nguoi_bi_kien,
+            item.dia_chi_nguoi_bi_kien
+          ].filter(Boolean).join('\n');
+
           return newCase;
         });
         setCases(fetchedCases);

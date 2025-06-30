@@ -112,23 +112,30 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   };
 
   const deleteSelectedRows = async () => {
+    console.log('deleteSelectedRows function called.'); // Log 1
+    console.log('Current selectedRows:', selectedRows); // Log 2
+
     if (selectedRows.length === 0) {
       toast.info('Vui lòng chọn ít nhất một hàng để xóa.');
+      console.log('No rows selected, returning.'); // Log 3
       return;
     }
 
-    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} vụ án đã chọn? Hành động này không thể hoàn tác.`)) {
+    const confirmation = confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} vụ án đã chọn? Hành động này không thể hoàn tác.`);
+    console.log('Confirmation result:', confirmation); // Log 4
+    if (!confirmation) {
+      console.log('Deletion cancelled by user.'); // Log 5
       return;
     }
 
     setIsLoading(true);
     let successfulDeletions = 0;
-    // Now selectedRows contains IDs, so we find the actual case objects from the main 'cases' array
     const casesToDelete = cases.filter(caseItem => selectedRows.includes(caseItem.id));
-    const failedDeletions: string[] = [];
+    console.log('Cases to delete (after filtering):', casesToDelete.map(c => c.id)); // Log 6
 
     for (const caseItem of casesToDelete) {
       if (caseItem && caseItem.id) {
+        console.log(`Attempting to DELETE case with ID: ${caseItem.id}`); // Log 7
         try {
           const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseItem.id}/`, {
             method: 'DELETE',
@@ -139,6 +146,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
           }
           successfulDeletions++;
+          console.log(`Successfully deleted case ID: ${caseItem.id}`); // Log 8
         } catch (e: any) {
           console.error(`Failed to delete case ${caseItem.id}:`, e);
           failedDeletions.push(caseItem.caseNumber || caseItem.id);
@@ -155,6 +163,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       toast.error(`Không thể xóa các vụ án: ${failedDeletions.join(', ')}. Vui lòng kiểm tra console để biết thêm chi tiết.`);
     }
     setSelectedRows([]); // Clear selected IDs
+    console.log('Deletion process finished. selectedRows cleared.'); // Log 9
   };
 
   const refreshData = () => {

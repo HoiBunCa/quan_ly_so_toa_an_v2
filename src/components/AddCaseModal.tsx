@@ -13,7 +13,7 @@ interface AddCaseModalProps {
 }
 
 export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber, isGeneratingCaseNumber }: AddCaseModalProps) {
-  const [so_thu_ly, setSo_thu_ly] = useState(''); // Renamed state variable
+  const [soThuLy, setSoThuLy] = useState('');
   const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,7 +32,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     e.preventDefault();
     setError('');
 
-    if (!so_thu_ly || !ngayThuLy) { // Use new state variable
+    if (!soThuLy || !ngayThuLy) {
       setError('Vui lòng nhập đầy đủ Số thụ lý và Ngày thụ lý.');
       return;
     }
@@ -40,7 +40,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     setIsSubmitting(true);
     try {
       const payload = {
-        so_thu_ly: so_thu_ly, // Use new state variable in payload
+        so_thu_ly: soThuLy,
         ngay_thu_ly: ngayThuLy, // API still receives YYYY-MM-DD
         created_by: 1,
       };
@@ -72,7 +72,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
 
   const handleGenerateNumber = () => {
     const generatedNumber = onGenerateCaseNumber();
-    setSo_thu_ly(generatedNumber); // Use new setter
+    setSoThuLy(generatedNumber);
     toast('Tự động lấy số thụ lý.');
   };
 
@@ -103,7 +103,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="so_thu_ly" className="block text-sm font-medium text-gray-700 mb-2"> {/* Updated htmlFor */}
+              <label htmlFor="soThuLy" className="block text-sm font-medium text-gray-700 mb-2">
                 Số thụ lý
               </label>
               <div className="flex">
@@ -111,20 +111,20 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
                   <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    id="so_thu_ly" // Updated id
-                    value={so_thu_ly} // Use new state variable
-                    onChange={(e) => setSo_thu_ly(e.target.value)} // Use new setter
+                    id="soThuLy"
+                    value={soThuLy}
+                    onChange={(e) => setSoThuLy(e.target.value)}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Nhập số thụ lý"
                     required
-                    disabled={isSubmitting}
+                    disabled={isSubmitting} // Chỉ vô hiệu hóa nếu đang gửi form
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleGenerateNumber}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting} // Chỉ vô hiệu hóa nếu đang gửi form
                 >
                   Tự động lấy số
                 </button>
@@ -140,7 +140,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
                 <input
                   type="date"
                   id="ngayThuLy"
-                  value={ngayThuLy}
+                  value={ngayThuLy} // Value is YYYY-MM-DD for type="date"
                   onChange={(e) => setNgayThuLy(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required

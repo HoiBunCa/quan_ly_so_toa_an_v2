@@ -9,9 +9,10 @@ interface AddCaseModalProps {
   bookYear: number; // Pass the current book's year for case number generation
   caseTypeCode: string; // Pass the case type code for case number generation
   onGenerateCaseNumber: () => string; // Updated prop for auto-generating case number
+  isGeneratingCaseNumber: boolean; // New prop to indicate if case number is being generated
 }
 
-export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber }: AddCaseModalProps) {
+export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber, isGeneratingCaseNumber }: AddCaseModalProps) {
   const [soThuLy, setSoThuLy] = useState('');
   const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
   const [error, setError] = useState('');
@@ -72,7 +73,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   const handleGenerateNumber = () => {
     const generatedNumber = onGenerateCaseNumber();
     setSoThuLy(generatedNumber);
-    toast('Tự động lấy số thụ lý.'); // Changed from toast.info to toast
+    toast('Tự động lấy số thụ lý.');
   };
 
   return (
@@ -116,16 +117,22 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Nhập số thụ lý"
                     required
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isGeneratingCaseNumber} {/* Disable if submitting or generating */}
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleGenerateNumber}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors"
-                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSubmitting || isGeneratingCaseNumber} {/* Disable if submitting or generating */}
                 >
-                  Tự động lấy số
+                  {isGeneratingCaseNumber ? (
+                    <span className="flex items-center">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" /> Đang tải...
+                    </span>
+                  ) : (
+                    'Tự động lấy số'
+                  )}
                 </button>
               </div>
             </div>

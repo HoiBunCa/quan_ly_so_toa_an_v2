@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
-import NumberDateInputModal from './common/NumberDateInputModal'; // Corrected import path
+import NumberDateInputModal from './common/NumberDateInputModal';
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
@@ -23,6 +23,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [showAddCaseModal, setShowAddCaseModal] = useState(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]); // State for selected row IDs
   const [maxSoThuLy, setMaxSoThuLy] = useState<string | null>(null); // State to store max_so_thu_ly from WebSocket
+  const [isMaxSoThuLyLoading, setIsMaxSoThuLyLoading] = useState(true); // New state for loading max_so_thu_ly
 
   // State for Plaintiff Info Modal
   const [showPlaintiffInfoModal, setShowPlaintiffInfoModal] = useState(false);
@@ -65,11 +66,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   // WebSocket connection for max_so_thu_ly
   useEffect(() => {
     if (book.caseTypeId === 'HON_NHAN') {
+      setIsMaxSoThuLyLoading(true); // Set loading to true when starting connection
       const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
 
       ws.onopen = () => {
         console.log('WebSocket connected for max_so_thu_ly');
-        // Optionally send a message to request the initial max_so_thu_ly
         ws.send(JSON.stringify({ action: 'get_max_so_thu_ly', year: book.year }));
       };
 
@@ -79,20 +80,25 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           setMaxSoThuLy(data.max_so_thu_ly);
           console.log('Received max_so_thu_ly:', data.max_so_thu_ly);
         }
+        setIsMaxSoThuLyLoading(false); // Set loading to false after receiving data
       };
 
       ws.onclose = () => {
         console.log('WebSocket disconnected for max_so_thu_ly');
+        setIsMaxSoThuLyLoading(false); // Set loading to false on close
       };
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
         toast.error('Lỗi kết nối WebSocket để lấy số thụ lý tối đa.');
+        setIsMaxSoThuLyLoading(false); // Set loading to false on error
       };
 
       return () => {
         ws.close();
       };
+    } else {
+      setIsMaxSoThuLyLoading(false); // Not HON_NHAN type, so no WebSocket loading
     }
   }, [book.caseTypeId, book.year]); // Reconnect if book type or year changes
 
@@ -338,6 +344,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookYear={book.year}
           caseTypeCode={caseType.code}
           onGenerateCaseNumber={getNextCaseNumber}
+          isGeneratingCaseNumber={isMaxSoThuLyLoading} {/* Pass loading state */}
         />
       )}
 
@@ -360,10 +367,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       )}
 
       {showNumberDateInfoModal && (
-        <NumberDateInputModal // Changed from NumberDateInfoModal to NumberDateInputModal
+        <NumberDateInputModal
           title={numberDateModalTitle}
-          initialNumber={currentNumberDateInfo.number} // Pass individual props
-          initialDate={currentNumberDateInfo.date}     // Pass individual props
+          initialNumber={currentNumberDateInfo.number}
+          initialDate={currentNumberDateInfo.date}
           onSave={handleSaveNumberDateInfo}
           onClose={() => setShowNumberDateInfoModal(false)}
           isSaving={isSavingNumberDateInfo}

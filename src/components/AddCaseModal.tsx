@@ -13,9 +13,29 @@ interface AddCaseModalProps {
 
 export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber }: AddCaseModalProps) {
   const [soThuLy, setSoThuLy] = useState('');
-  const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // Default to current date (YYYY-MM-DD)
+  const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper function to format YYYY-MM-DD to DD-MM-YYYY for display
+  const formatDisplayDate = (dateString: string): string => {
+    if (!dateString) return '';
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
+    }
+    return dateString; // Return as is if not in expected format
+  };
+
+  // Helper function to parse DD-MM-YYYY (from input) to YYYY-MM-DD (for state/API)
+  const parseInputDate = (dateString: string): string => {
+    if (!dateString) return '';
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
+    }
+    return dateString; // Return as is if not in expected format
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +50,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     try {
       const payload = {
         so_thu_ly: soThuLy,
-        ngay_thu_ly: ngayThuLy, // Directly use YYYY-MM-DD format
+        ngay_thu_ly: ngayThuLy, // API still receives YYYY-MM-DD
         created_by: 1,
       };
 
@@ -129,11 +149,12 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="date"
+                  type="text" // Changed to text
                   id="ngayThuLy"
-                  value={ngayThuLy}
-                  onChange={(e) => setNgayThuLy(e.target.value)}
+                  value={formatDisplayDate(ngayThuLy)} // Display DD-MM-YYYY
+                  onChange={(e) => setNgayThuLy(parseInputDate(e.target.value))} // Parse back to YYYY-MM-DD for state
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="DD-MM-YYYY" // Hint for user
                   required
                   disabled={isSubmitting}
                 />

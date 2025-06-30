@@ -124,15 +124,10 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
                   type="button"
                   onClick={handleGenerateNumber}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isSubmitting || isGeneratingCaseNumber}
+                  disabled={isSubmitting || isGeneratingCaseNumber} // Keep disabled state
                 >
-                  {isGeneratingCaseNumber ? (
-                    <span className="flex items-center">
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" /> Đang tải...
-                    </span>
-                  ) : (
-                    'Tự động lấy số'
-                  )}
+                  {/* Removed the conditional rendering for "Đang tải..." */}
+                  Tự động lấy số
                 </button>
               </div>
             </div>

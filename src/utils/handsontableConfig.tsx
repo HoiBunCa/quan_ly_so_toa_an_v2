@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'; // Import toast for error messages
 interface GetHandsontableConfigArgs {
   caseType: CaseType;
   filteredCases: Case[];
-  deleteCases: (ids: string[]) => Promise<void>;
+  refreshData: () => Promise<void>; // New prop to trigger data refresh
   setSelectedRows: (ids: string[]) => void;
   onUpdateCase: (caseId: string, prop: string, newValue: any) => Promise<void>;
 }
@@ -66,7 +66,7 @@ function dateDisplayRenderer(instance: any, td: HTMLElement, row: number, col: n
 export function getHandsontableConfig({
   caseType,
   filteredCases,
-  deleteCases, // This is the prop we need to access
+  refreshData, // Now receiving refreshData callback
   setSelectedRows,
   onUpdateCase,
 }: GetHandsontableConfigArgs): Pick<HotTableProps, 'columns' | 'settings'> {
@@ -147,47 +147,75 @@ export function getHandsontableConfig({
           name: 'Xóa hàng đã chọn',
           callback: async function(this: Handsontable, key: string, selection: any, clickEvent: any) {
             const hotInstance = this;
-            const selectedRanges = hotInstance.getSelected(); // Get all selected ranges
+            const selectedRanges = hotInstance.getSelected();
+
+            let idsToDelete: string[] = [];
 
             if (!selectedRanges || selectedRanges.length === 0) {
-              // If no explicit selection, consider the row where the right-click occurred
-              const clickedCell = hotInstance.getSelectedLast(); // [row, col, row2, col2]
-              if (clickedCell) {
-                const clickedRowIndex = clickedCell[0]; // The row where the right-click happened
-                const caseItem = filteredCases[clickedRowIndex];
-                if (caseItem && caseItem.id) {
-                  deleteCases([caseItem.id]);
-                } else {
-                  toast.error('Không thể xác định vụ án để xóa.');
+                const clickedCell = hotInstance.getSelectedLast();
+                if (clickedCell) {
+                    const clickedRowIndex = clickedCell[0];
+                    const caseItem = filteredCases[clickedRowIndex];
+                    if (caseItem && caseItem.id) {
+                        idsToDelete.push(caseItem.id);
+                    }
                 }
-              } else {
-                toast.info('Vui lòng chọn hàng để xóa.');
-              }
-              return;
+            } else {
+                const uniqueRowIndices = new Set<number>();
+                selectedRanges.forEach(range => {
+                    const [startRow, , endRow, ] = range;
+                    for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
+                        uniqueRowIndices.add(i);
+                    }
+                });
+                Array.from(uniqueRowIndices).sort((a, b) => a - b).forEach(rowIndex => {
+                    const caseItem = filteredCases[rowIndex];
+                    if (caseItem && caseItem.id) {
+                        idsToDelete.push(caseItem.id);
+                    }
+                });
             }
 
-            const idsFromSelection: string[] = [];
-            const uniqueRowIndices = new Set<number>();
+            if (idsToDelete.length === 0) {
+                toast.info('Vui lòng chọn ít nhất một hàng để xóa.');
+                return;
+            }
 
-            selectedRanges.forEach(range => {
-              const [startRow, , endRow, ] = range;
-              for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
-                uniqueRowIndices.add(i);
-              }
-            });
+            const confirmation = confirm(`Bạn có chắc chắn muốn xóa ${idsToDelete.length} vụ án đã chọn? Hành động này không thể hoàn tác.`);
+            if (!confirmation) {
+                return;
+            }
 
-            Array.from(uniqueRowIndices).sort((a, b) => a - b).forEach(rowIndex => {
-              const caseItem = filteredCases[rowIndex];
-              if (caseItem && caseItem.id) {
-                idsFromSelection.push(caseItem.id);
-              }
-            });
-            
-            if (typeof deleteCases === 'function') {
-              deleteCases(idsFromSelection);
-            } else {
-              console.error('deleteCases is not a function when called in context menu callback!', deleteCases);
-              toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
+            let successfulDeletions = 0;
+            const failedDeletions: string[] = [];
+
+            for (const caseId of idsToDelete) {
+                try {
+                    const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`, {
+                        method: 'DELETE',
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                    }
+                    successfulDeletions++;
+                } catch (e: any) {
+                    console.error(`Failed to delete case ${caseId}:`, e);
+                    const failedCase = filteredCases.find(c => c.id === caseId);
+                    failedDeletions.push(failedCase?.caseNumber || caseId);
+                }
+            }
+
+            if (successfulDeletions > 0) {
+                toast.success(`Đã xóa thành công ${successfulDeletions} vụ án.`);
+                // Call the refreshData callback passed from CaseManagement
+                if (typeof refreshData === 'function') {
+                    refreshData();
+                }
+            }
+            if (failedDeletions.length > 0) {
+                toast.error(`Không thể xóa các vụ án: ${failedDeletions.join(', ')}. Vui lòng kiểm tra console để biết thêm chi tiết.`);
             }
           }
         },

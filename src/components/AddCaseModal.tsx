@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react'; // Removed User, Home, Cake icons
+import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface AddCaseModalProps {
@@ -14,11 +14,10 @@ interface AddCaseModalProps {
 export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber }: AddCaseModalProps) {
   const [soThuLy, setSoThuLy] = useState('');
   const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
-  // Removed state for hoTenNguoiKhoiKien, namSinhNguoiKhoiKien, diaChiNguoiKhoiKien
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Helper function to format YYYY-MM-DD to DD-MM-YYYY for display
+  // Helper to format YYYY-MM-DD to DD-MM-YYYY for display
   const formatDisplayDate = (dateString: string): string => {
     if (!dateString) return '';
     const parts = dateString.split('-');
@@ -28,21 +27,11 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     return dateString; // Return as is if not in expected format
   };
 
-  // Helper function to parse DD-MM-YYYY (from input) to YYYY-MM-DD (for state/API)
-  const parseInputDate = (dateString: string): string => {
-    if (!dateString) return '';
-    const parts = dateString.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
-    }
-    return dateString; // Return as is if not in expected format
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!soThuLy || !ngayThuLy) { // Updated validation
+    if (!soThuLy || !ngayThuLy) {
       setError('Vui lòng nhập đầy đủ Số thụ lý và Ngày thụ lý.');
       return;
     }
@@ -52,7 +41,6 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
       const payload = {
         so_thu_ly: soThuLy,
         ngay_thu_ly: ngayThuLy, // API still receives YYYY-MM-DD
-        // Removed ho_ten_nguoi_khoi_kien, nam_sinh_nguoi_khoi_kien, dia_chi_nguoi_khoi_kien from payload
         created_by: 1,
       };
 
@@ -85,7 +73,13 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     if (onGenerateCaseNumber) {
       setSoThuLy(onGenerateCaseNumber());
     } else {
-      toast.error('Không thể tự động lấy số thụ lý.');
+      // Fallback if onGenerateCaseNumber is not provided (e.g., for mock data)
+      const today = new Date();
+      const dd = String(today.getDate()).padStart(2, '0');
+      const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+      const yyyy = today.getFullYear();
+      setSoThuLy(`${dd}${mm}${yyyy}`); // Example: 25122024
+      toast.info('Tự động lấy số thụ lý theo định dạng ngày tháng năm hiện tại.');
     }
   };
 
@@ -151,19 +145,21 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="text" // Changed to text
+                  type="date"
                   id="ngayThuLy"
-                  value={formatDisplayDate(ngayThuLy)} // Display DD-MM-YYYY
-                  onChange={(e) => setNgayThuLy(parseInputDate(e.target.value))} // Parse back to YYYY-MM-DD for state
+                  value={ngayThuLy} // Value is YYYY-MM-DD for type="date"
+                  onChange={(e) => setNgayThuLy(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="DD-MM-YYYY" // Hint for user
                   required
                   disabled={isSubmitting}
                 />
               </div>
+              {ngayThuLy && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Định dạng hiển thị: {formatDisplayDate(ngayThuLy)}
+                </p>
+              )}
             </div>
-
-            {/* Removed new fields for Người khởi kiện */}
           </div>
 
           <div className="flex items-center justify-end space-x-3 mt-6">

@@ -83,6 +83,7 @@ export function getHandsontableConfig({
 
     // Determine icon based on attribute type
     let IconComponent;
+    console.log("==========", attr.type);
     switch (attr.type) {
       case 'text':
         IconComponent = Text;

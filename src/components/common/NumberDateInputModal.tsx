@@ -1,48 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { X, Hash, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 
-interface NumberDateInfo {
-  number: string;
-  date: string;
-}
-
-interface NumberDateInfoModalProps {
+interface NumberDateInputModalProps {
   title: string;
-  initialData: NumberDateInfo;
-  onSave: (data: NumberDateInfo) => void;
+  initialNumber: string;
+  initialDate: string; // YYYY-MM-DD format
+  onSave: (data: { number: string; date: string }) => void;
   onClose: () => void;
   isSaving: boolean;
 }
 
-// Helper to format date from YYYY-MM-DD to DD-MM-YYYY for display
-const formatDisplayDate = (dateString: string): string => {
-  if (!dateString) return '';
-  const parts = dateString.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
-  }
-  return dateString; // Return as is if not in expected format
-};
-
-// Helper to parse DD-MM-YYYY (from input) to YYYY-MM-DD (for state/API)
-const parseInputDate = (dateString: string): string => {
-  if (!dateString) return '';
-  const parts = dateString.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
-  }
-  return dateString; // Return as is if not in expected format
-};
-
-export default function NumberDateInfoModal({ title, initialData, onSave, onClose, isSaving }: NumberDateInfoModalProps) {
-  const [number, setNumber] = useState(initialData.number);
-  const [date, setDate] = useState(initialData.date);
+export default function NumberDateInputModal({ title, initialNumber, initialDate, onSave, onClose, isSaving }: NumberDateInputModalProps) {
+  const [number, setNumber] = useState(initialNumber);
+  const [date, setDate] = useState(initialDate); // State stores YYYY-MM-DD
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setNumber(initialData.number);
-    setDate(initialData.date);
-  }, [initialData]);
+    setNumber(initialNumber);
+    setDate(initialDate);
+  }, [initialNumber, initialDate]);
+
+  // Helper to format YYYY-MM-DD to DD-MM-YYYY for display
+  const formatDisplayDate = (dateString: string): string => {
+    if (!dateString) return '';
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
+    }
+    return dateString; // Return as is if not in expected format
+  };
+
+  const handleGenerateNumber = () => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+    const yyyy = today.getFullYear();
+    setNumber(`${dd}${mm}${yyyy}`); // Example: 25122024
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +47,7 @@ export default function NumberDateInfoModal({ title, initialData, onSave, onClos
       return;
     }
 
-    onSave({ number, date });
+    onSave({ number, date }); // Pass YYYY-MM-DD for date
   };
 
   return (
@@ -86,17 +80,27 @@ export default function NumberDateInfoModal({ title, initialData, onSave, onClos
               <label htmlFor="number" className="block text-sm font-medium text-gray-700 mb-2">
                 Số
               </label>
-              <div className="relative">
-                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  id="number"
-                  value={number}
-                  onChange={(e) => setNumber(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nhập số"
+              <div className="flex">
+                <div className="relative flex-1">
+                  <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    id="number"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Nhập số"
+                    disabled={isSaving}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGenerateNumber}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors"
                   disabled={isSaving}
-                />
+                >
+                  Tự động lấy số
+                </button>
               </div>
             </div>
 
@@ -107,15 +111,20 @@ export default function NumberDateInfoModal({ title, initialData, onSave, onClos
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="text"
+                  type="date" // Changed to type="date"
                   id="date"
-                  value={formatDisplayDate(date)}
-                  onChange={(e) => setDate(parseInputDate(e.target.value))}
+                  value={date} // Value is YYYY-MM-DD for type="date"
+                  onChange={(e) => setDate(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="DD-MM-YYYY"
+                  required
                   disabled={isSaving}
                 />
               </div>
+              {date && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Định dạng hiển thị: {formatDisplayDate(date)}
+                </p>
+              )}
             </div>
           </div>
 

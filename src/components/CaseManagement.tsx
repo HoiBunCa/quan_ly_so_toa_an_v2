@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
-import NumberDateInfoModal from './case-management/NumberDateInfoModal'; // Import the new modal
+import NumberDateInputModal from './common/NumberDateInputModal'; // Import the new generic modal
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
@@ -35,13 +35,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentDefendantInfo, setCurrentDefendantInfo] = useState({ name: '', year: '', address: '' });
   const [isSavingDefendantInfo, setIsSavingDefendantInfo] = useState(false);
 
-  // State for generic Number/Date Info Modal
-  const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
-  const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
-  const [currentNumberDateProp, setCurrentNumberDateProp] = useState<string | null>(null);
-  const [currentNumberDateCaseId, setCurrentNumberDateCaseId] = useState<string | null>(null);
-  const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
-  const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
+  // State for generic Number/Date Input Modal
+  const [showNumberDateInputModal, setShowNumberDateInputModal] = useState(false);
+  const [currentNumberDateInputInfo, setCurrentNumberDateInputInfo] = useState({ number: '', date: '' });
+  const [currentNumberDateInputProp, setCurrentNumberDateInputProp] = useState<string | null>(null);
+  const [currentNumberDateInputCaseId, setCurrentNumberDateInputCaseId] = useState<string | null>(null);
+  const [isSavingNumberDateInputInfo, setIsSavingNumberDateInputInfo] = useState(false);
+  const [numberDateInputModalTitle, setNumberDateInputModalTitle] = useState('');
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
@@ -84,7 +84,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   // Helper to parse combined "Số: [number]\nNgày: [date]" string
   const parseNumberDateString = (combinedString: string) => {
-    const lines = combinedString.split('\n');
+    const lines = String(combinedString || '').split('\n');
     let number = '';
     let date = '';
     if (lines[0]?.startsWith('Số: ')) {
@@ -220,22 +220,21 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   };
 
-  const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
-    if (!currentNumberDateCaseId || !currentNumberDateProp) return;
+  const handleSaveNumberDateInputInfo = async (data: { number: string, date: string }) => {
+    if (!currentNumberDateInputCaseId || !currentNumberDateInputProp) return;
 
-    setIsSavingNumberDateInfo(true);
-    // Format date back to YYYY-MM-DD for API
-    const formattedDate = data.date.split('-').reverse().join('-');
+    setIsSavingNumberDateInputInfo(true);
+    // The date from the modal is already YYYY-MM-DD, so no need to re-parse for API
     const combinedValue = [
       data.number ? `Số: ${data.number}` : '',
-      data.date ? `Ngày: ${data.date}` : ''
+      data.date ? `Ngày: ${data.date.split('-').reverse().join('-')}` : '' // Format for display in combined string
     ].filter(Boolean).join('\n');
     
     try {
-      await handleUpdateCase(currentNumberDateCaseId, currentNumberDateProp, combinedValue);
-      setShowNumberDateInfoModal(false);
+      await handleUpdateCase(currentNumberDateInputCaseId, currentNumberDateInputProp, combinedValue);
+      setShowNumberDateInputModal(false);
     } finally {
-      setIsSavingNumberDateInfo(false);
+      setIsSavingNumberDateInputInfo(false);
     }
   };
 
@@ -262,12 +261,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       });
       setShowDefendantInfoModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
-      setCurrentNumberDateCaseId(caseId);
-      setCurrentNumberDateProp(prop);
-      setNumberDateModalTitle(`Chỉnh sửa ${title}`);
+      setCurrentNumberDateInputCaseId(caseId);
+      setCurrentNumberDateInputProp(prop);
+      setNumberDateInputModalTitle(`Chỉnh sửa ${title}`);
       const { number, date } = parseNumberDateString(String(value || ''));
-      setCurrentNumberDateInfo({ number, date });
-      setShowNumberDateInfoModal(true);
+      setCurrentNumberDateInputInfo({ number, date });
+      setShowNumberDateInputModal(true);
     }
   }, [caseType.attributes]);
 
@@ -356,13 +355,14 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         />
       )}
 
-      {showNumberDateInfoModal && (
-        <NumberDateInfoModal
-          title={numberDateModalTitle}
-          initialData={currentNumberDateInfo}
-          onSave={handleSaveNumberDateInfo}
-          onClose={() => setShowNumberDateInfoModal(false)}
-          isSaving={isSavingNumberDateInfo}
+      {showNumberDateInputModal && (
+        <NumberDateInputModal
+          title={numberDateInputModalTitle}
+          initialNumber={currentNumberDateInputInfo.number}
+          initialDate={currentNumberDateInputInfo.date}
+          onSave={handleSaveNumberDateInputInfo}
+          onClose={() => setShowNumberDateInputModal(false)}
+          isSaving={isSavingNumberDateInputInfo}
         />
       )}
     </div>

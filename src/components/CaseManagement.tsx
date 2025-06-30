@@ -64,7 +64,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         const data = await response.json();
         const fetchedCases: Case[] = data.results.map((item: any) => {
           const newCase: Case = {
-            id: item.id.toString(), // Ensure ID is stored as string, but will parse to int for API call
+            id: item.id.toString(),
             caseNumber: item.so_thu_ly || '',
             bookId: book.id,
             createdDate: item.ngay_thu_ly || item.ngay_nhan_don || '',
@@ -130,13 +130,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     for (const caseItem of casesToDelete) {
       if (caseItem && caseItem.id) {
         try {
-          // Chuyển đổi ID thành số nguyên trước khi gửi đến API
-          const idToDelete = parseInt(caseItem.id);
-          if (isNaN(idToDelete)) {
-            throw new Error(`Invalid case ID: ${caseItem.id}`);
-          }
-
-          const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${idToDelete}/`, {
+          const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseItem.id}/`, {
             method: 'DELETE',
           });
 
@@ -282,52 +276,38 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         return;
       }
       if (changes) {
-        // When filtering is active, 'row' index from 'changes' refers to the index in the filtered data.
-        // We need to find the corresponding original object in the 'cases' array.
-        // A more robust solution for editing filtered data would involve mapping back to original indices
-        // or using Handsontable's internal data mapping more deeply.
-        // For now, we'll assume changes are applied to the currently visible data.
-        // If issues arise with editing filtered rows, this section will need a more complex update.
-        const currentDataInTable = hotTableRef.current?.hotInstance?.getData(); // Get current data from Handsontable instance
-        
+        const newCases = [...cases];
         for (const [row, prop, oldValue, newValue] of changes) {
-          if (oldValue !== newValue && currentDataInTable && currentDataInTable[row]) {
-            const changedCaseData = currentDataInTable[row];
-            const caseId = changedCaseData.id; // Get ID from the changed row data
+          if (oldValue !== newValue && newCases[row]) {
+            const caseToUpdate = newCases[row];
+            const caseId = caseToUpdate.id;
 
-            // Find the original case object in the 'cases' state array to update it
-            const originalCaseIndex = cases.findIndex(c => c.id === caseId);
-            if (originalCaseIndex !== -1) {
-              const updatedCases = [...cases];
-              const caseToUpdate = updatedCases[originalCaseIndex];
-              
-              (caseToUpdate as any)[prop] = newValue;
-              caseToUpdate.lastModified = new Date().toISOString().split('T')[0];
-              setCases(updatedCases); // Update the state with the modified case
+            (caseToUpdate as any)[prop] = newValue;
+            caseToUpdate.lastModified = new Date().toISOString().split('T')[0];
+            setCases([...newCases]);
 
-              const payload: { [key: string]: any } = {
-                [prop]: newValue,
-                created_by: 1
-              };
+            const payload: { [key: string]: any } = {
+              [prop]: newValue,
+              created_by: 1
+            };
 
-              try {
-                const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${parseInt(caseId)}/`, {
-                  method: 'PUT',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(payload),
-                });
+            try {
+              const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+              });
 
-                if (!response.ok) {
-                  const errorData = await response.json();
-                  throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-                }
-                toast.success(`Cập nhật '${caseType.attributes.find(a => a.id === prop)?.name || prop}' thành công!`);
-              } catch (e: any) {
-                console.error("Failed to update case:", e);
-                toast.error(`Cập nhật thất bại: ${e.message}`);
+              if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
               }
+              toast.success(`Cập nhật '${caseType.attributes.find(a => a.id === prop)?.name || prop}' thành công!`);
+            } catch (e: any) {
+              console.error("Failed to update case:", e);
+              toast.error(`Cập nhật thất bại: ${e.message}`);
             }
           }
         }

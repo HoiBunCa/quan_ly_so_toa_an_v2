@@ -7,7 +7,7 @@ export const caseTypes: CaseType[] = [
     code: 'CIV',
     attributes: [
       { id: 'so_thu_ly', name: '🔢 Số thụ lý', type: 'text', required: false, width: 120 },
-      { id: 'ngay_thu_ly', name: 'Ngày thụ lý', type: 'date', required: false, width: 120 },
+      { id: 'ngay_thu_ly', name: '📅 Ngày thụ lý', type: 'date', required: false, width: 120 },
       { id: 'thong_tin_nguoi_khoi_kien', name: 'Thông tin người khởi kiện', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_nguoi_bi_kien', name: 'Thông tin người bị kiện', type: 'textarea', required: false, width: 250 },
       { id: 'ngay_lam_don', name: 'Ngày làm đơn', type: 'date', required: false, width: 120 },

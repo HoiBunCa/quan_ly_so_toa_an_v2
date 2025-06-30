@@ -355,7 +355,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const { columns, settings } = getHandsontableConfig({
     caseType,
     filteredCases,
-    deleteCases,
+    // deleteCases, // Removed from here
     setSelectedRows,
     onUpdateCase: handleUpdateCase,
   });
@@ -386,6 +386,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         totalCount={cases.length}
         onAddCase={handleAddNewCaseClick}
         onCellClick={handleCellClick}
+        deleteCases={deleteCases} // Pass deleteCases directly to CaseTable
+        setSelectedRows={setSelectedRows} // Pass setSelectedRows directly to CaseTable
       />
 
       <CaseInstructions />

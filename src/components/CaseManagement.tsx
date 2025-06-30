@@ -111,46 +111,39 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     fetchCases();
   };
 
-  const deleteSelectedRows = async () => {
-    console.log('deleteSelectedRows function called.'); // Log 1
-    console.log('Current selectedRows:', selectedRows); // Log 2
+  // Modified to accept optional IDs, or use selectedRows state
+  const deleteSelectedRows = async (idsToDelete?: string[]) => {
+    const ids = idsToDelete && idsToDelete.length > 0 ? idsToDelete : selectedRows;
 
-    if (selectedRows.length === 0) {
+    if (ids.length === 0) {
       toast.info('Vui lòng chọn ít nhất một hàng để xóa.');
-      console.log('No rows selected, returning.'); // Log 3
       return;
     }
 
-    const confirmation = confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} vụ án đã chọn? Hành động này không thể hoàn tác.`);
-    console.log('Confirmation result:', confirmation); // Log 4
+    const confirmation = confirm(`Bạn có chắc chắn muốn xóa ${ids.length} vụ án đã chọn? Hành động này không thể hoàn tác.`);
     if (!confirmation) {
-      console.log('Deletion cancelled by user.'); // Log 5
       return;
     }
 
     setIsLoading(true);
     let successfulDeletions = 0;
-    const casesToDelete = cases.filter(caseItem => selectedRows.includes(caseItem.id));
-    console.log('Cases to delete (after filtering):', casesToDelete.map(c => c.id)); // Log 6
+    const failedDeletions: string[] = [];
 
-    for (const caseItem of casesToDelete) {
-      if (caseItem && caseItem.id) {
-        console.log(`Attempting to DELETE case with ID: ${caseItem.id}`); // Log 7
-        try {
-          const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseItem.id}/`, {
-            method: 'DELETE',
-          });
+    for (const caseId of ids) {
+      try {
+        const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`, {
+          method: 'DELETE',
+        });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-          }
-          successfulDeletions++;
-          console.log(`Successfully deleted case ID: ${caseItem.id}`); // Log 8
-        } catch (e: any) {
-          console.error(`Failed to delete case ${caseItem.id}:`, e);
-          failedDeletions.push(caseItem.caseNumber || caseItem.id);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
+        successfulDeletions++;
+      } catch (e: any) {
+        console.error(`Failed to delete case ${caseId}:`, e);
+        const failedCase = cases.find(c => c.id === caseId);
+        failedDeletions.push(failedCase?.caseNumber || caseId);
       }
     }
 
@@ -163,7 +156,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       toast.error(`Không thể xóa các vụ án: ${failedDeletions.join(', ')}. Vui lòng kiểm tra console để biết thêm chi tiết.`);
     }
     setSelectedRows([]); // Clear selected IDs
-    console.log('Deletion process finished. selectedRows cleared.'); // Log 9
   };
 
   const refreshData = () => {
@@ -261,7 +253,45 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     columns: columns,
     rowHeaders: false,
     colHeaders: true,
-    contextMenu: true,
+    contextMenu: {
+      items: {
+        'row_above': {}, // Default item
+        'row_below': {}, // Default item
+        'hsep1': '---------', // Separator
+        'remove_row': {
+          name: 'Xóa hàng đã chọn',
+          callback: function(key: string, selection: any, clickEvent: any) {
+            const hot = this; // 'this' refers to the Handsontable instance
+            const selectedRange = hot.getSelectedLast(); // [startRow, startCol, endRow, endCol]
+
+            if (selectedRange) {
+              const [startRow, , endRow, ] = selectedRange; // Only need row indices
+              const rowIndicesToDelete: number[] = [];
+              for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
+                rowIndicesToDelete.push(i);
+              }
+
+              const idsFromSelection: string[] = [];
+              rowIndicesToDelete.forEach(rowIndex => {
+                const caseItem = filteredCases[rowIndex]; // Get case from filtered data
+                if (caseItem && caseItem.id) {
+                  idsFromSelection.push(caseItem.id);
+                }
+              });
+              
+              // Call the main delete function with the IDs from the context menu selection
+              deleteSelectedRows(idsFromSelection);
+            }
+          }
+        },
+        'hsep2': '---------', // Separator
+        'undo': {}, // Default item
+        'redo': {}, // Default item
+        'cut': {}, // Default item
+        'copy': {}, // Default item
+        'paste': {} // Default item
+      }
+    },
     manualRowResize: true,
     manualColumnResize: true,
     manualRowMove: true,
@@ -418,7 +448,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             />
           </div>
           <button
-            onClick={deleteSelectedRows}
+            onClick={() => deleteSelectedRows()} // Call without arguments to use selectedRows state
             disabled={selectedRows.length === 0 || isLoading}
             className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >

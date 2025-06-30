@@ -1,10 +1,9 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react'; // Import useCallback
 import { HotTable } from '@handsontable/react';
 import { Loader2, AlertCircle, FileText, Plus } from 'lucide-react';
 import { Case } from '../../types/caseTypes';
 import { HotTableProps } from 'handsontable/plugins/contextMenu';
 import Handsontable from 'handsontable'; // Import Handsontable for hooks
-import toast from 'react-hot-toast'; // Import toast for error messages
 
 interface CaseTableProps {
   data: Case[];
@@ -16,9 +15,7 @@ interface CaseTableProps {
   filteredCount: number;
   totalCount: number;
   onAddCase: () => void;
-  onCellClick: (caseId: string, prop: string, value: any) => void;
-  deleteCases: (ids: string[]) => Promise<void>; // Add deleteCases prop
-  setSelectedRows: (ids: string[]) => void; // Add setSelectedRows prop
+  onCellClick: (caseId: string, prop: string, value: any) => void; // New prop for cell clicks
 }
 
 export default function CaseTable({
@@ -32,21 +29,8 @@ export default function CaseTable({
   totalCount,
   onAddCase,
   onCellClick,
-  deleteCases, // Destructure deleteCases
-  setSelectedRows, // Destructure setSelectedRows
 }: CaseTableProps) {
   const hotTableRef = useRef<HotTable>(null);
-  const dataRef = useRef<Case[]>(data); // Ref to keep track of the latest data
-  const deleteCasesRef = useRef<(ids: string[]) => Promise<void>>(deleteCases); // Ref for deleteCases function
-
-  // Update refs when props change
-  useEffect(() => {
-    dataRef.current = data;
-  }, [data]);
-
-  useEffect(() => {
-    deleteCasesRef.current = deleteCases;
-  }, [deleteCases]);
 
   // Make handleCellMouseDown stable using useCallback
   const handleCellMouseDown = useCallback((event: MouseEvent, coords: Handsontable.CellCoords) => {
@@ -54,7 +38,7 @@ export default function CaseTable({
     // Check if it's a left click and not a header, and if hotInstance exists
     if (event.button === 0 && coords.row >= 0 && coords.col >= 0 && hotInstance) {
       const prop = hotInstance.colToProp(coords.col);
-      const caseItem = dataRef.current[coords.row]; // Use dataRef.current
+      const caseItem = data[coords.row]; // `data` is a dependency, so this function needs to be in useCallback deps
       
       // Check if the property starts with 'thong_tin_' (our convention for combined fields)
       if (prop.startsWith('thong_tin_') && caseItem) { 
@@ -63,7 +47,7 @@ export default function CaseTable({
         event.stopImmediatePropagation(); // Stop further propagation
       }
     }
-  }, [onCellClick]); // Dependencies for useCallback
+  }, [data, onCellClick]); // Dependencies for useCallback
 
   useEffect(() => {
     const hotInstance = hotTableRef.current?.hotInstance;
@@ -71,54 +55,11 @@ export default function CaseTable({
     if (hotInstance) {
       hotInstance.addHook('afterOnCellMouseDown', handleCellMouseDown);
 
-      // Define the context menu hook here
-      const handleBeforeContextMenuShow = (coords: Handsontable.CellCoords[], menuItems: Handsontable.contextMenu.MenuItemConfig[]) => {
-        // Find and remove the default 'remove_row' item if it exists
-        const defaultRemoveRowIndex = menuItems.findIndex(item => (item as any).key === 'remove_row');
-        if (defaultRemoveRowIndex !== -1) {
-          menuItems.splice(defaultRemoveRowIndex, 1);
-        }
-
-        // Add our custom 'remove_row' item
-        menuItems.push({
-          key: 'remove_row',
-          name: 'Xóa hàng đã chọn',
-          callback: function(this: Handsontable, key: string, selection: any, clickEvent: any) {
-            const hot = this;
-            const selectedRange = hot.getSelectedLast();
-
-            if (selectedRange) {
-              const [startRow, , endRow, ] = selectedRange;
-              const rowIndicesToDelete: number[] = [];
-              for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
-                rowIndicesToDelete.push(i);
-              }
-
-              const idsFromSelection: string[] = [];
-              rowIndicesToDelete.forEach(rowIndex => {
-                const caseItem = dataRef.current[rowIndex]; // Use dataRef.current
-                if (caseItem && caseItem.id) {
-                  idsFromSelection.push(caseItem.id);
-                }
-              });
-
-              if (typeof deleteCasesRef.current === 'function') {
-                deleteCasesRef.current(idsFromSelection);
-              } else {
-                console.error('deleteCasesRef.current is not a function in context menu callback!', deleteCasesRef.current);
-                toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
-              }
-            }
-          }
-        });
-      };
-
-      hotInstance.addHook('beforeContextMenuShow', handleBeforeContextMenuShow);
-
       return () => {
+        // Ensure the instance still exists before trying to remove the hook
+        // This check is crucial for preventing errors during unmount
         if (hotTableRef.current?.hotInstance) {
           hotTableRef.current.hotInstance.removeHook('afterOnCellMouseDown', handleCellMouseDown);
-          hotTableRef.current.hotInstance.removeHook('beforeContextMenuShow', handleBeforeContextMenuShow);
         }
       };
     }
@@ -162,34 +103,7 @@ export default function CaseTable({
               ref={hotTableRef}
               data={data}
               columns={columns}
-              settings={{
-                ...settings, // Spread existing settings
-                // Override contextMenu here to ensure it's handled by CaseTable
-                contextMenu: {
-                  items: {
-                    'row_above': {},
-                    'row_below': {},
-                    'hsep1': '---------',
-                    // 'remove_row' will be added dynamically by beforeContextMenuShow hook
-                    'hsep2': '---------',
-                    'undo': {},
-                    'redo': {},
-                    'cut': {},
-                    'copy': {},
-                    'paste': {}
-                  }
-                },
-                afterSelection: (row: number, column: number, row2: number, column2: number) => {
-                  const selectedCaseIds: string[] = [];
-                  for (let i = Math.min(row, row2); i <= Math.max(row, row2); i++) {
-                    const caseItem = dataRef.current[i]; // Use dataRef.current
-                    if (caseItem && caseItem.id) {
-                      selectedCaseIds.push(caseItem.id);
-                    }
-                  }
-                  setSelectedRows(selectedCaseIds);
-                },
-              }}
+              settings={settings}
               height="100%"
             />
           </div>

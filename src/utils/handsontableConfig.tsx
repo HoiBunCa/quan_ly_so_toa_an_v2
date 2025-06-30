@@ -2,12 +2,12 @@ import { CaseType, Case } from '../types/caseTypes';
 import { HotTableProps } from '@handsontable/react';
 import Handsontable from 'handsontable';
 import { formatDateForDisplay } from './dateUtils'; // Import new utility
-// Removed: import toast from 'react-hot-toast'; // No longer needed here
+import toast from 'react-hot-toast'; // Import toast for error messages
 
 interface GetHandsontableConfigArgs {
   caseType: CaseType;
   filteredCases: Case[];
-  // Removed: deleteCases: (ids: string[]) => Promise<void>;
+  deleteCases: (ids: string[]) => Promise<void>;
   setSelectedRows: (ids: string[]) => void;
   onUpdateCase: (caseId: string, prop: string, newValue: any) => Promise<void>;
 }
@@ -63,18 +63,48 @@ function dateDisplayRenderer(instance: any, td: HTMLElement, row: number, col: n
   }
 }
 
-// Removed: createRemoveRowCallback factory function
+// New factory function to create the remove_row callback
+const createRemoveRowCallback = (deleteCasesFunc: (ids: string[]) => Promise<void>, casesData: Case[]) => {
+  return function(this: Handsontable, key: string, selection: any, clickEvent: any) {
+    const hot = this;
+    const selectedRange = hot.getSelectedLast();
+
+    if (selectedRange) {
+      const [startRow, , endRow, ] = selectedRange;
+      const rowIndicesToDelete: number[] = [];
+      for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
+        rowIndicesToDelete.push(i);
+      }
+
+      const idsFromSelection: string[] = [];
+      rowIndicesToDelete.forEach(rowIndex => {
+        const caseItem = casesData[rowIndex]; // Use casesData from the closure
+        if (caseItem && caseItem.id) {
+          idsFromSelection.push(caseItem.id);
+        }
+      });
+
+      if (typeof deleteCasesFunc === 'function') {
+        deleteCasesFunc(idsFromSelection);
+      } else {
+        console.error('deleteCasesFunc is not a function in createRemoveRowCallback!', deleteCasesFunc);
+        toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
+      }
+    }
+  };
+};
 
 export function getHandsontableConfig({
   caseType,
   filteredCases,
-  // Removed: deleteCases: deleteCasesProp,
+  deleteCases: deleteCasesProp, // Renamed to avoid any potential conflict
   setSelectedRows,
   onUpdateCase,
 }: GetHandsontableConfigArgs): Pick<HotTableProps, 'columns' | 'settings'> {
 
-  // Removed: const actualDeleteCases = deleteCasesProp; 
-  // Removed: console.log('deleteCases received in getHandsontableConfig:', actualDeleteCases);
+  // Capture deleteCases in a local constant to ensure it's available in the closure
+  const actualDeleteCases = deleteCasesProp; 
+  console.log('deleteCases received in getHandsontableConfig:', actualDeleteCases);
 
   const columns = caseType.attributes.map(attr => {
     const baseColumn: Handsontable.ColumnSettings = {
@@ -143,7 +173,23 @@ export function getHandsontableConfig({
   const settings: Handsontable.GridSettings = {
     rowHeaders: false,
     colHeaders: true,
-    // contextMenu is now handled directly in CaseTable.tsx
+    contextMenu: {
+      items: {
+        'row_above': {},
+        'row_below': {},
+        'hsep1': '---------',
+        'remove_row': {
+          name: 'Xóa hàng đã chọn',
+          callback: createRemoveRowCallback(actualDeleteCases, filteredCases) // Use the factory function here
+        },
+        'hsep2': '---------',
+        'undo': {},
+        'redo': {},
+        'cut': {},
+        'copy': {},
+        'paste': {}
+      }
+    },
     manualRowResize: true,
     manualColumnResize: true,
     manualRowMove: true,
@@ -177,7 +223,16 @@ export function getHandsontableConfig({
         }
       }
     },
-    // afterSelection is now handled directly in CaseTable.tsx
+    afterSelection: (row: number, column: number, row2: number, column2: number) => {
+      const selectedCaseIds: string[] = [];
+      for (let i = Math.min(row, row2); i <= Math.max(row, row2); i++) {
+        const caseItem = filteredCases[i];
+        if (caseItem && caseItem.id) {
+          selectedCaseIds.push(caseItem.id);
+        }
+      }
+      setSelectedRows(selectedCaseIds);
+    },
     afterRenderer: (TD, row, col, prop, value, cellProperties) => {
       const caseItem = filteredCases[row];
       if (caseItem && caseItem.id) {

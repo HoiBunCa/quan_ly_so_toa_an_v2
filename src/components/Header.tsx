@@ -1,168 +1,370 @@
-import React, { useState } from 'react';
-import { 
-  Search, 
-  Bell, 
-  Settings, 
-  User, 
-  LogOut,
-  ChevronDown,
-  Plus,
-  BookOpen,
-  FileText
-} from 'lucide-react';
-import { currentUser } from '../data/mockData';
+import React, { useState, useCallback } from 'react';
+import { CaseBook } from '../types/caseTypes';
+import { caseTypes } from '../data/caseTypesData';
+import toast from 'react-hot-toast';
+import AddCaseModal from './AddCaseModal';
+import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
+import DefendantInfoModal from './case-management/DefendantInfoModal';
+import NumberDateInfoModal from './case-management/NumberDateInfoModal'; // Import the new modal
 
-interface HeaderProps {
-  onCreateNewBook: () => void;
-  onAddUser: () => void;
+// Import new modular components and hook
+import CaseManagementHeader from './case-management/CaseManagementHeader';
+import CaseTable from './case-management/CaseTable';
+import CaseInstructions from './case-management/CaseInstructions';
+import { useCasesData } from '../hooks/useCasesData';
+import { getHandsontableConfig } #9ca3af from '../utils/handsontableConfig';
+
+interface CaseManagementProps {
+  book: CaseBook;
+  onBack: () => void;
 }
 
-export default function Header({ onCreateNewBook, onAddUser }: HeaderProps) {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
+export default function CaseManagement({ book, onBack }: CaseManagementProps) {
+  const [showAddCaseModal, setShowAddCaseModal] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]); // State for selected row IDs
+
+  // State for Plaintiff Info Modal
+  const [showPlaintiffInfoModal, setShowPlaintiffInfoModal] = useState(false);
+  const [currentCaseIdForPlaintiffEdit, setCurrentCaseIdForPlaintiffEdit] = useState<string | null>(null);
+  const [currentPlaintiffInfo, setCurrentPlaintiffInfo] = useState({ name: '', year: '', address: '' });
+  const [isSavingPlaintiffInfo, setIsSavingPlaintiffInfo] = useState(false);
+
+  // State for Defendant Info Modal
+  const [showDefendantInfoModal, setShowDefendantInfoModal] = useState(false);
+  const [currentCaseIdForDefendantEdit, setCurrentCaseIdForDefendantEdit] = useState<string | null>(null);
+  const [currentDefendantInfo, setCurrentDefendantInfo] = useState({ name: '', year: '', address: '' });
+  const [isSavingDefendantInfo, setIsSavingDefendantInfo] = useState(false);
+
+  // State for generic Number/Date Info Modal
+  const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
+  const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
+  const [currentNumberDateProp, setCurrentNumberDateProp] = useState<string | null>(null);
+  const [currentNumberDateCaseId, setCurrentNumberDateCaseId] = useState<string | null>(null);
+  const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
+  const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
+
+  const caseType = caseTypes.find(type => type.id === book.caseTypeId);
+  
+  if (!caseType) {
+    return <div>Case type not found</div>;
+  }
+
+  const {
+    cases,
+    filteredCases,
+    isLoading,
+    error,
+    searchTerm,
+    setSearchTerm,
+    fetchCases,
+    deleteCases,
+    setCases, // Expose setCases for local updates
+  } = useCasesData(book);
+
+  const getNextCaseNumber = useCallback(() => {
+    const year = book.year;
+    const prefix = caseType.code;
+    const existingNumbers = cases
+      .map(c => c.caseNumber)
+      .filter(num => num.startsWith(`${prefix}-${year}-`))
+      .map(num => parseInt(num.split('-')[2]) || 0);
+    
+    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+    return `${prefix}-${year}-${nextNumber.toString().padStart(3, '0')}`;
+  }, [cases, book.year, caseType.code]);
+
+  const handleAddNewCaseClick = () => {
+    setShowAddCaseModal(true);
+  };
+
+  const handleCaseAdded = () => {
+    setShowAddCaseModal(false);
+    fetchCases(); // Refresh data after a new case is added
+  };
+
+  // Helper to parse combined "Số: [number]\nNgày: [date]" string
+  const parseNumberDateString = (combinedString: string) => {
+    const lines = combinedString.split('\n');
+    let number = '';
+    let date = '';
+    if (lines[0]?.startsWith('Số: ')) {
+      number = lines[0].substring('Số: '.length);
+    }
+    if (lines[1]?.startsWith('Ngày: ')) {
+      // Convert DD-MM-YYYY back to YYYY-MM-DD for internal state
+      const dateParts = lines[1].substring('Ngày: '.length).split('-');
+      if (dateParts.length === 3) {
+        date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+      } else {
+        date = lines[1].substring('Ngày: '.length);
+      }
+    }
+    return { number, date };
+  };
+
+  const handleUpdateCase = useCallback(async (caseId: string, prop: string, newValue: any) => {
+    const caseToUpdate = cases.find(c => c.id === caseId);
+    if (!caseToUpdate) {
+      console.warn(`Case with ID ${caseId} not found for update.`);
+      return;
+    }
+
+    let payload: { [key: string]: any } = { created_by: 1 };
+
+    if (prop === 'thong_tin_nguoi_khoi_kien') {
+      const lines = String(newValue || '').split('\n');
+      payload.ho_ten_nguoi_khoi_kien = lines[0] || '';
+      payload.nam_sinh_nguoi_khoi_kien = lines[1] || '';
+      payload.dia_chi_nguoi_khoi_kien = lines[2] || '';
+    } else if (prop === 'thong_tin_nguoi_bi_kien') {
+      const lines = String(newValue || '').split('\n');
+      payload.ho_ten_nguoi_bi_kien = lines[0] || '';
+      payload.nam_sinh_nguoi_bi_kien = lines[1] || '';
+      payload.dia_chi_nguoi_bi_kien = lines[2] || '';
+    } else if (prop.startsWith('thong_tin_')) { // Handle combined number/date fields
+      const { number, date } = parseNumberDateString(newValue);
+      const originalPropName = prop.replace('thong_tin_', ''); // e.g., 'chuyen_hoa_giai'
+      payload[`so_${originalPropName}`] = number;
+      payload[`ngay_${originalPropName}`] = date;
+    }
+    else {
+      payload[prop] = newValue;
+    }
+
+    // Optimistic update: Update local state immediately
+    setCases(prevCases => prevCases.map(c => {
+      if (c.id === caseId) {
+        const updatedC = { ...c, lastModified: new Date().toISOString().split('T')[0] };
+        if (prop === 'thong_tin_nguoi_khoi_kien') {
+          const lines = String(newValue || '').split('\n');
+          updatedC.ho_ten_nguoi_khoi_kien = lines[0] || '';
+          updatedC.nam_sinh_nguoi_khoi_kien = lines[1] || '';
+          updatedC.dia_chi_nguoi_khoi_kien = lines[2] || '';
+          updatedC.thong_tin_nguoi_khoi_kien = newValue;
+        } else if (prop === 'thong_tin_nguoi_bi_kien') {
+          const lines = String(newValue || '').split('\n');
+          updatedC.ho_ten_nguoi_bi_kien = lines[0] || '';
+          updatedC.nam_sinh_nguoi_bi_kien = lines[1] || '';
+          updatedC.dia_chi_nguoi_bi_kien = lines[2] || '';
+          updatedC.thong_tin_nguoi_bi_kien = newValue;
+        } else if (prop.startsWith('thong_tin_')) {
+          const { number, date } = parseNumberDateString(newValue);
+          const originalPropName = prop.replace('thong_tin_', '');
+          updatedC[`so_${originalPropName}`] = number;
+          updatedC[`ngay_${originalPropName}`] = date;
+          updatedC[prop] = newValue; // Keep the combined value for display
+        }
+        else {
+          updatedC[prop] = newValue;
+        }
+        return updatedC;
+      }
+      return c;
+    }));
+
+    try {
+      const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      toast.success(`Cập nhật '${caseType.attributes.find(a => a.id === prop)?.name || prop}' thành công!`);
+    } catch (e: any) {
+      console.error("Failed to update case:", e);
+      toast.error(`Cập nhật thất bại: ${e.message}`);
+      // Revert if API call fails (optional, but good for robustness)
+      fetchCases(); 
+    }
+  }, [cases, fetchCases, setCases, caseType.attributes]);
+
+  const handleSavePlaintiffInfo = async (data: { name: string, year: string, address: string }) => {
+    if (!currentCaseIdForPlaintiffEdit) return;
+
+    setIsSavingPlaintiffInfo(true);
+    const combinedValue = [
+      data.name,
+      data.year,
+      data.address
+    ].filter(Boolean).join('\n');
+
+    try {
+      await handleUpdateCase(currentCaseIdForPlaintiffEdit, 'thong_tin_nguoi_khoi_kien', combinedValue);
+      setShowPlaintiffInfoModal(false);
+    } finally {
+      setIsSavingPlaintiffInfo(false);
+    }
+  };
+
+  const handleSaveDefendantInfo = async (data: { name: string, year: string, address: string }) => {
+    if (!currentCaseIdForDefendantEdit) return;
+
+    setIsSavingDefendantInfo(true);
+    const combinedValue = [
+      data.name,
+      data.year,
+      data.address
+    ].filter(Boolean).join('\n');
+
+    try {
+      await handleUpdateCase(currentCaseIdForDefendantEdit, 'thong_tin_nguoi_bi_kien', combinedValue);
+      setShowDefendantInfoModal(false);
+    } finally {
+      setIsSavingDefendantInfo(false);
+    }
+  };
+
+  const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
+    if (!currentNumberDateCaseId || !currentNumberDateProp) return;
+
+    setIsSavingNumberDateInfo(true);
+    // Format date back to YYYY-MM-DD for API
+    const formattedDate = data.date.split('-').reverse().join('-');
+    const combinedValue = [
+      data.number ? `Số: ${data.number}` : '',
+      data.date ? `Ngày: ${data.date}` : ''
+    ].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentNumberDateCaseId, currentNumberDateProp, combinedValue);
+      setShowNumberDateInfoModal(false);
+    } finally {
+      setIsSavingNumberDateInfo(false);
+    }
+  };
+
+  const handleCellClick = useCallback((caseId: string, prop: string, value: any) => {
+    const attribute = caseType.attributes.find(attr => attr.id === prop);
+    const title = attribute?.name || prop;
+
+    if (prop === 'thong_tin_nguoi_khoi_kien') {
+      setCurrentCaseIdForPlaintiffEdit(caseId);
+      const lines = String(value || '').split('\n');
+      setCurrentPlaintiffInfo({
+        name: lines[0]?.replace('Họ tên: ', '') || '',
+        year: lines[1]?.replace('Năm sinh: ', '') || '',
+        address: lines[2]?.replace('Địa chỉ: ', '') || ''
+      });
+      setShowPlaintiffInfoModal(true);
+    } else if (prop === 'thong_tin_nguoi_bi_kien') {
+      setCurrentCaseIdForDefendantEdit(caseId);
+      const lines = String(value || '').split('\n');
+      setCurrentDefendantInfo({
+        name: lines[0]?.replace('Họ tên: ', '') || '',
+        year: lines[1]?.replace('Năm sinh: ', '') || '',
+        address: lines[2]?.replace('Địa chỉ: ', '') || ''
+      });
+      setShowDefendantInfoModal(true);
+    } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
+      setCurrentNumberDateCaseId(caseId);
+      setCurrentNumberDateProp(prop);
+      setNumberDateModalTitle(`Chỉnh sửa ${title}`);
+      const { number, date } = parseNumberDateString(String(value || ''));
+      setCurrentNumberDateInfo({ number, date });
+      setShowNumberDateInfoModal(true);
+    }
+  }, [caseType.attributes]);
+
+  const exportData = () => {
+    const headers = caseType.attributes.map(attr => attr.name);
+    const csv = [
+      headers,
+      ...cases.map(caseItem => 
+        caseType.attributes.map(attr => (caseItem as any)[attr.id] || '')
+      )
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${book.caseTypeName}-${book.year}-cases.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const { columns, settings } = getHandsontableConfig({
+    caseType,
+    filteredCases,
+    deleteCases,
+    setSelectedRows,
+    onUpdateCase: handleUpdateCase,
+  });
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-3"> {/* Changed py-4 to py-3 */}
-      <div className="flex items-center justify-between">
-        {/* Search */}
-        <div className="flex-1 max-w-lg">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search cases, case numbers, parties..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              aria-label="Search"
-            />
-          </div>
-        </div>
+    <div className="p-6 flex flex-col h-full">
+      <CaseManagementHeader
+        book={book}
+        onBack={onBack}
+        onRefresh={fetchCases}
+        onExport={exportData}
+        onAddCase={handleAddNewCaseClick}
+        onDeleteSelected={() => deleteCases(selectedRows)}
+        selectedCount={selectedRows.length}
+        isLoading={isLoading}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
 
-        {/* Right section */}
-        <div className="flex items-center space-x-4">
-          {/* Quick Actions */}
-          <div className="relative">
-            <button
-              onClick={() => setShowQuickActions(!showQuickActions)}
-              className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-              aria-label="Quick actions"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Quick Actions</span>
-              <ChevronDown className="w-4 h-4" />
-            </button>
-            
-            {showQuickActions && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <div className="py-1">
-                  <button 
-                    onClick={() => {
-                      onCreateNewBook();
-                      setShowQuickActions(false);
-                    }}
-                    className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    <span>New Case Book</span>
-                  </button>
-                  <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
-                    <FileText className="w-4 h-4" />
-                    <span>New Case</span> {/* This will require more complex logic later */}
-                  </button>
-                  <button 
-                    onClick={() => {
-                      onAddUser();
-                      setShowQuickActions(false);
-                    }}
-                    className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                  >
-                    <User className="w-4 h-4" />
-                    <span>Add User</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+      <CaseTable
+        data={filteredCases}
+        columns={columns}
+        settings={settings}
+        isLoading={isLoading}
+        error={error}
+        searchTerm={searchTerm}
+        filteredCount={filteredCases.length}
+        totalCount={cases.length}
+        onAddCase={handleAddNewCaseClick}
+        onCellClick={handleCellClick}
+      />
 
-          {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Notifications"
-            >
-              <Bell className="w-6 h-6" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-            
-            {showNotifications && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {[
-                    { title: 'New case filed', desc: 'Civil case CIV-2025-001 has been filed', time: '5 minutes ago' },
-                    { title: 'Hearing scheduled', desc: 'Criminal case CRIM-2024-045 hearing set for tomorrow', time: '1 hour ago' },
-                    { title: 'Case status updated', desc: 'Family case FAM-2024-012 marked as settled', time: '2 hours ago' }
-                  ].map((notif, i) => (
-                    <div key={i} className="p-4 border-b border-gray-100 hover:bg-gray-50">
-                      <p className="text-sm font-medium text-gray-900">{notif.title}</p>
-                      <p className="text-xs text-gray-600 mt-1">{notif.desc}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-4">
-                  <button className="w-full text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    View all notifications
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+      <CaseInstructions />
 
-          {/* User Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              aria-label="User menu"
-            >
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-8 h-8 rounded-full object-cover"
-              />
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-gray-900">{currentUser.name}</p>
-                <p className="text-xs text-gray-600">Court Administrator</p>
-              </div>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            </button>
-            
-            {showUserMenu && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <div className="py-1">
-                  <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
-                    <User className="w-4 h-4" />
-                    <span>Profile</span>
-                  </button>
-                  <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
-                  </button>
-                  <hr className="my-1" />
-                  <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign out</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </header>
+      {showAddCaseModal && (
+        <AddCaseModal
+          onClose={() => setShowAddCaseModal(false)}
+          onCaseAdded={handleCaseAdded}
+          bookId={book.id}
+          bookYear={book.year}
+          caseTypeCode={caseType.code}
+          onGenerateCaseNumber={getNextCaseNumber}
+        />
+      )}
+
+      {showPlaintiffInfoModal && (
+        <PlaintiffInfoModal
+          initialData={currentPlaintiffInfo}
+          onSave={handleSavePlaintiffInfo}
+          onClose={() => setShowPlaintiffInfoModal(false)}
+          isSaving={isSavingPlaintiffInfo}
+        />
+      )}
+
+      {showDefendantInfoModal && (
+        <DefendantInfoModal
+          initialData={currentDefendantInfo}
+          onSave={handleSaveDefendantInfo}
+          onClose={() => setShowDefendantInfoModal(false)}
+          isSaving={isSavingDefendantInfo}
+        />
+      )}
+
+      {showNumberDateInfoModal && (
+        <NumberDateInfoModal
+          title={numberDateModalTitle}
+          initialData={currentNumberDateInfo}
+          onSave={handleSaveNumberDateInfo}
+          onClose={() => setShowNumberDateInfoModal(false)}
+          isSaving={isSavingNumberDateInfo}
+        />
+      )}
+    </div>
   );
 }

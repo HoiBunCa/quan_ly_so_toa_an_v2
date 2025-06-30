@@ -1,9 +1,9 @@
-import React, { useRef, useEffect, useCallback } from 'react'; // Import useCallback
+import React, { useRef } from 'react'; // Removed useEffect, useCallback
 import { HotTable } from '@handsontable/react';
 import { Loader2, AlertCircle, FileText, Plus } from 'lucide-react';
 import { Case } from '../../types/caseTypes';
 import { HotTableProps } from 'handsontable/plugins/contextMenu';
-import Handsontable from 'handsontable'; // Import Handsontable for hooks
+import Handsontable from 'handsontable'; // Import Handsontable for types
 
 interface CaseTableProps {
   data: Case[];
@@ -15,7 +15,7 @@ interface CaseTableProps {
   filteredCount: number;
   totalCount: number;
   onAddCase: () => void;
-  onCellClick: (caseId: string, prop: string, value: any) => void; // New prop for cell clicks
+  onCellClick: (caseId: string, prop: string, value: any) => void;
 }
 
 export default function CaseTable({
@@ -32,13 +32,15 @@ export default function CaseTable({
 }: CaseTableProps) {
   const hotTableRef = useRef<HotTable>(null);
 
-  // Make handleCellMouseDown stable using useCallback
-  const handleCellMouseDown = useCallback((event: MouseEvent, coords: Handsontable.CellCoords) => {
-    const hotInstance = hotTableRef.current?.hotInstance; // Access current instance here
-    // Check if it's a left click and not a header, and if hotInstance exists
-    if (event.button === 0 && coords.row >= 0 && coords.col >= 0 && hotInstance) {
+  // New handler for afterOnCellMouseDown, directly integrated into settings
+  const handleCellMouseDown = function(this: Handsontable, event: MouseEvent, coords: Handsontable.CellCoords) {
+    // 'this' context is the Handsontable instance
+    const hotInstance = this; 
+    
+    // Check if it's a left click and not a header
+    if (event.button === 0 && coords.row >= 0 && coords.col >= 0) {
       const prop = hotInstance.colToProp(coords.col);
-      const caseItem = data[coords.row]; // `data` is a dependency, so this function needs to be in useCallback deps
+      const caseItem = data[coords.row]; // `data` is passed as a prop, so it's accessible here
       
       // Check if the property starts with 'thong_tin_' (our convention for combined fields)
       if (prop.startsWith('thong_tin_') && caseItem) { 
@@ -47,23 +49,13 @@ export default function CaseTable({
         event.stopImmediatePropagation(); // Stop further propagation
       }
     }
-  }, [data, onCellClick]); // Dependencies for useCallback
+  };
 
-  useEffect(() => {
-    const hotInstance = hotTableRef.current?.hotInstance;
-
-    if (hotInstance) {
-      hotInstance.addHook('afterOnCellMouseDown', handleCellMouseDown);
-
-      return () => {
-        // Ensure the instance still exists before trying to remove the hook
-        // This check is crucial for preventing errors during unmount
-        if (hotTableRef.current?.hotInstance) {
-          hotTableRef.current.hotInstance.removeHook('afterOnCellMouseDown', handleCellMouseDown);
-        }
-      };
-    }
-  }, [handleCellMouseDown]); // Now useEffect depends on the stable handleCellMouseDown
+  // Merge the custom afterOnCellMouseDown hook with existing settings
+  const mergedSettings = {
+    ...settings,
+    afterOnCellMouseDown: handleCellMouseDown,
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col">
@@ -103,7 +95,7 @@ export default function CaseTable({
               ref={hotTableRef}
               data={data}
               columns={columns}
-              settings={settings}
+              settings={mergedSettings} {/* Use mergedSettings here */}
               height="100%"
             />
           </div>

@@ -41,8 +41,8 @@ export default function CreateBookModal({ onClose, onBookCreated }: CreateBookMo
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                code: caseType.code, // Changed from selectedCaseType to caseType.code
-                name: caseType.name,
+                code: selectedCaseType, // Use selectedCaseType (e.g., 'HON_NHAN') as the 'code' for the API
+                name: caseType.name, // Use the name from the found caseType
                 year: selectedYear,
                 created_by: 1 // As requested
             }),
@@ -78,7 +78,6 @@ export default function CreateBookModal({ onClose, onBookCreated }: CreateBookMo
           <button
             onClick={onClose}
             className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-            disabled={isSubmitting}
           >
             <X className="w-5 h-5" />
           </button>

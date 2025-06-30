@@ -92,6 +92,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       };
 
       ws.onmessage = (event) => {
+        console.log('WebSocket: Raw message received:', event.data);
         const data = JSON.parse(event.data);
         // Assuming data is an object like { "so_thu_ly": "6", "so_chuyen_hoa_giai": "10", ... }
         if (data) {
@@ -136,6 +137,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   // Renamed to be more generic and accept a fieldKey
   const getNextNumberForField = useCallback((fieldKey: string) => {
     console.log(`getNextNumberForField called for: ${fieldKey}`);
+    console.log('Current maxNumbersByField state:', maxNumbersByField); // Log the entire state
     const currentMax = maxNumbersByField[fieldKey];
     console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
 
@@ -144,11 +146,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       console.log('Parsed currentMax:', parsedMax);
 
       if (!isNaN(parsedMax)) {
-        const nextNumber = (parsedMax).toString();
+        const nextNumber = (parsedMax + 1).toString(); // Corrected: Increment by 1
         console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }
     } else {
+      console.warn(`Max number for ${fieldKey} is not a valid number or is empty. Falling back to '1'.`);
       return '1'; // Changed to string '1' for consistency
     }
 

@@ -64,6 +64,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   const handleGenerateNumber = () => {
     const generatedNumber = onGenerateCaseNumber();
     setSoThuLy(generatedNumber);
+    console.log('Generated Case Number:', generatedNumber); // Log the generated number
     toast('Tự động lấy số thụ lý.');
   };
 

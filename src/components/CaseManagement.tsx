@@ -353,7 +353,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const { columns, settings } = getHandsontableConfig({
     caseType,
     filteredCases,
-    onDeleteRows: deleteCases, // Pass deleteCases as onDeleteRows
+    refreshData: fetchCases, // Pass fetchCases as refreshData
     setSelectedRows,
     onUpdateCase: handleUpdateCase,
   });

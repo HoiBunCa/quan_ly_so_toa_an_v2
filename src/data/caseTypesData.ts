@@ -6,11 +6,7 @@ export const caseTypes: CaseType[] = [
     name: 'Sổ thụ lý đơn khởi kiện',
     code: 'CIV',
     attributes: [
-      { id: 'caseNumber', name: 'Số vụ án', type: 'text', required: true, width: 120 },
-      { id: 'createdDate', name: 'Ngày tạo', type: 'date', required: true, width: 120 },
-      { id: 'lastModified', name: 'Ngày sửa đổi cuối', type: 'date', required: true, width: 150 },
-      { id: 'status', name: 'Trạng thái', type: 'dropdown', required: true, width: 120,
-        options: ['Đã thụ lý', 'Đang giải quyết', 'Đã hòa giải', 'Đã trả lại đơn', 'Đã chuyển'] }, // Example statuses
+ // Example statuses
       { id: 'so_thu_ly', name: 'Số thụ lý', type: 'text', required: false, width: 120 },
       { id: 'ngay_thu_ly', name: 'Ngày thụ lý', type: 'date', required: false, width: 120 },
       { id: 'ho_ten_nguoi_khoi_kien', name: 'Họ tên người khởi kiện', type: 'text', required: false, width: 180 },

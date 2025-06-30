@@ -111,11 +111,48 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     fetchCases();
   };
 
-  const deleteSelectedRows = () => {
-    if (selectedRows.length === 0) return;
-    
-    const newCases = cases.filter((_, index) => !selectedRows.includes(index));
-    setCases(newCases);
+  const deleteSelectedRows = async () => {
+    if (selectedRows.length === 0) {
+      toast.info('Vui lòng chọn ít nhất một hàng để xóa.');
+      return;
+    }
+
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} vụ án đã chọn? Hành động này không thể hoàn tác.`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    let successfulDeletions = 0;
+    const casesToDelete = selectedRows.map(rowIndex => cases[rowIndex]);
+    const failedDeletions: string[] = [];
+
+    for (const caseItem of casesToDelete) {
+      if (caseItem && caseItem.id) {
+        try {
+          const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseItem.id}/`, {
+            method: 'DELETE',
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+          }
+          successfulDeletions++;
+        } catch (e: any) {
+          console.error(`Failed to delete case ${caseItem.id}:`, e);
+          failedDeletions.push(caseItem.caseNumber || caseItem.id);
+        }
+      }
+    }
+
+    setIsLoading(false);
+    if (successfulDeletions > 0) {
+      toast.success(`Đã xóa thành công ${successfulDeletions} vụ án.`);
+      fetchCases(); // Re-fetch data to ensure UI is in sync with backend
+    }
+    if (failedDeletions.length > 0) {
+      toast.error(`Không thể xóa các vụ án: ${failedDeletions.join(', ')}. Vui lòng kiểm tra console để biết thêm chi tiết.`);
+    }
     setSelectedRows([]);
   };
 
@@ -212,7 +249,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const hotSettings = {
     data: filteredCases,
     columns: columns,
-    rowHeaders: true,
+    rowHeaders: false,
     colHeaders: true,
     contextMenu: true,
     manualRowResize: true,
@@ -228,11 +265,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     },
     licenseKey: 'non-commercial-and-evaluation',
     height: 'auto',
-    maxRows: 1000,
+    maxRows: 100000,
     stretchH: 'all',
     autoWrapRow: true,
     autoWrapCol: true,
-    fixedColumnsStart: 2,
+    // fixedColumnsStart: 1,
     afterChange: async (changes: any, source: string) => {
       if (source === 'loadData') {
         return;
@@ -287,7 +324,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   return (
     <div className="p-6 flex flex-col h-full">
       {/* Header */}
-      <div className="mb-8">
+      <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
             <button
@@ -297,7 +334,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
               <ArrowLeft className="w-4 h-4" />
               <span>Back to Books</span>
             </button>
-            
+
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center">
                 <FileText className="w-7 h-7 mr-3 text-blue-600" />
@@ -306,7 +343,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
               <p className="text-gray-600 mt-1">Manage cases for {book.caseTypeName.toLowerCase()} in {book.year}</p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             <button
               onClick={refreshData}
@@ -316,7 +353,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
             </button>
-            
+
             <button
               onClick={exportData}
               className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -324,7 +361,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
               <Download className="w-4 h-4" />
               <span>Export</span>
             </button>
-            
+
             <button
               onClick={handleAddNewCaseClick}
               className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
@@ -335,53 +372,33 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {/* ... existing stats content ... */}
+        {/* Search and Delete Selected */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search cases..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+            />
+          </div>
+          <button
+            onClick={deleteSelectedRows}
+            disabled={selectedRows.length === 0 || isLoading}
+            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Delete Selected ({selectedRows.length})</span>
+          </button>
         </div>
 
-        {/* Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-4 mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search cases..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
-              />
-            </div>
-            
-            {selectedRows.length > 0 && (
-              <button
-                onClick={deleteSelectedRows}
-                className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Delete Selected ({selectedRows.length})</span>
-              </button>
-            )}
-          </div>
-          
-          <div className="text-sm text-gray-600">
-            Showing {filteredCases.length} of {cases.length} cases
-          </div>
-        </div>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col">
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Cases Table</h3>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Edit3 className="w-4 h-4" />
-              <span>Click any cell to edit</span>
-            </div>
-          </div>
-        </div>
+
         
         <div className="p-4 flex-1 overflow-y-auto">
           {isLoading ? (
@@ -427,8 +444,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       {/* Instructions */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg">
-        <div 
-          className="flex items-center justify-between p-4 cursor-pointer"
+        <div
+          className="flex items-center justify-between p-[0.5rem] cursor-pointer"
           onClick={() => setShowInstructions(!showInstructions)}
         >
           <h4 className="text-sm font-semibold text-blue-900">Table Features:</h4>
@@ -438,8 +455,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             <ChevronDown className="w-5 h-5 text-blue-700" />
           )}
         </div>
-        
-        <div 
+
+        <div
           className={`overflow-hidden transition-all duration-300 ease-in-out ${
             showInstructions ? 'max-h-96 opacity-100 p-4 pt-0' : 'max-h-0 opacity-0'
           }`}

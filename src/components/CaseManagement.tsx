@@ -122,6 +122,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const getNextNumberForField = useCallback((fieldKey: string) => {
     console.log(`getNextNumberForField called for: ${fieldKey}`);
     const currentMax = maxNumbersByField[fieldKey];
+    console.log("maxNumbersByField: ", maxNumbersByField);
+    console.log("fieldKey: ", fieldKey);
     console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
 
     if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {

@@ -40,7 +40,7 @@ export default function CaseTable({
       const prop = hotInstance.colToProp(coords.col);
       const caseItem = data[coords.row]; // `data` is a dependency, so this function needs to be in useCallback deps
       
-      if (prop === 'thong_tin_nguoi_khoi_kien' && caseItem) {
+      if ((prop === 'thong_tin_nguoi_khoi_kien' || prop === 'thong_tin_nguoi_bi_kien') && caseItem) { // Added thong_tin_nguoi_bi_kien
         onCellClick(caseItem.id, prop, caseItem[prop]);
         event.preventDefault(); // Prevent Handsontable's default editor from opening
         event.stopImmediatePropagation(); // Stop further propagation

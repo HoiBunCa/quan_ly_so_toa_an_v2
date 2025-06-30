@@ -132,6 +132,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }
+    } else {
+      return 1;
     }
 
     // Fallback logic if max number for this field is not available or invalid

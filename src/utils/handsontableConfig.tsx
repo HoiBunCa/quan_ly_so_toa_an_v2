@@ -189,27 +189,20 @@ export function getHandsontableConfig({
     colHeaders: (colIndex: number) => {
       const column = columns[colIndex];
       if (!column) return '';
-
       const attrId = column.data as string;
-      const attrTitle = column.title as string;
-
-      // Map icon tương ứng với kiểu dữ liệu
-      const iconMap: Record<string, JSX.Element> = {
+      const attr = caseType.attributes.find(a => a.id === attrId);
+      const iconMap = {
         text: <Text className="w-4 h-4 mr-1 text-gray-500" />,
         number: <Hash className="w-4 h-4 mr-1 text-gray-500" />,
         date: <Calendar className="w-4 h-4 mr-1 text-gray-500" />,
         dropdown: <ListFilter className="w-4 h-4 mr-1 text-gray-500" />,
         textarea: <FileText className="w-4 h-4 mr-1 text-gray-500" />
       };
-
-      const attrType = caseType.attributes.find(attr => attr.id === attrId)?.type;
-      const icon = iconMap[attrType || 'text'];
-
-      // Render icon + text thành HTML
+      const icon = iconMap[attr?.type || 'text'];
       return ReactDOMServer.renderToStaticMarkup(
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
           {icon}
-          <span style={{ fontWeight: 600, color: '#374151' }}>{attrTitle}</span>
+          <span style={{ fontWeight: 600, color: '#374151' }}>{attr?.name || ''}</span>
         </span>
       );
     },

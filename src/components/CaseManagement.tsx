@@ -227,11 +227,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       indicators: true
     },
     licenseKey: 'non-commercial-and-evaluation',
-    height: 'auto', // Let flexbox manage height
+    height: 'auto', // Let Handsontable determine height based on content, but constrained by container
     maxRows: 1000,
     stretchH: 'all',
     autoWrapRow: true,
     autoWrapCol: true,
+    fixedColumnsStart: 2, // Cố định 2 cột đầu tiên
     afterChange: async (changes: any, source: string) => { // Add 'source' parameter
       if (source === 'loadData') { // Prevent API call on initial data load
         return;
@@ -387,7 +388,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           </div>
         </div>
         
-        <div className="p-4 flex-1 overflow-y-auto"> {/* Added flex-1 overflow-y-auto */}
+        <div className="p-4 flex-1"> {/* Removed overflow-y-auto here */}
           {isLoading ? (
             <div className="flex items-center justify-center h-full text-gray-500">
               <Loader2 className="w-8 h-8 animate-spin mr-3" />
@@ -418,10 +419,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
               )}
             </div>
           ) : (
-            <div className="handsontable-container">
+            <div className="handsontable-container h-full"> {/* Added h-full */}
               <HotTable
                 ref={hotTableRef}
                 settings={hotSettings}
+                height="100%" // Set height for HotTable to manage its own scroll
               />
             </div>
           )}

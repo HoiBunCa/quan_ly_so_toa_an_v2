@@ -26,7 +26,7 @@ export const caseTypes: CaseType[] = [
       // New combined fields for editing
       { id: 'thong_tin_nhan_lai_don_khoi_kien_va_tai_lieu', name: 'Số/Ngày nhận lại đơn khởi kiện và tài liệu', type: 'textarea', required: false, width: 320 },
       { id: 'thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien', name: 'Số/Ngày yêu cầu toà án nhận lại đơn khởi kiện', type: 'textarea', required: false, width: 320 },
-      { id: 'thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi', name: 'Số/Ngày áp dụng biện pháp khẩn cấp tạm thời', type: 'textarea', required: false, width: 280 },
+      { id: 'thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi', name: 'Thông tin áp dụng biện pháp khẩn cấp tạm thời', type: 'textarea', required: false, width: 280 },
       
       { id: 'tham_phan', name: 'Thẩm phán', type: 'text', required: false, width: 150 },
       { id: 'ghi_chu', name: 'Ghi chú', type: 'textarea', required: false, width: 300 }

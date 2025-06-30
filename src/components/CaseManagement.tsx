@@ -344,7 +344,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookYear={book.year}
           caseTypeCode={caseType.code}
           onGenerateCaseNumber={getNextCaseNumber}
-          isGeneratingCaseNumber={isMaxSoThuLyLoading} {/* Pass loading state */}
+          isGeneratingCaseNumber={isMaxSoThuLyLoading}
         />
       )}
 

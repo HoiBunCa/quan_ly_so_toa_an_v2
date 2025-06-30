@@ -1,6 +1,8 @@
 import { CaseType, Case } from '../types/caseTypes';
 import { HotTableProps } from '@handsontable/react';
 import Handsontable from 'handsontable';
+import { Text, Calendar, Hash, ListFilter, FileText } from 'lucide-react'; // Import necessary icons
+import ReactDOMServer from 'react-dom/server'; // To render React components to HTML string
 
 interface GetHandsontableConfigArgs {
   caseType: CaseType;
@@ -11,7 +13,7 @@ interface GetHandsontableConfigArgs {
 }
 
 // Custom renderer for multi-line text (like plaintiff info)
-function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col: number, prop: string, value: any, cellProperties: Handsontontable.CellProperties) {
+function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col: number, prop: string, value: any, cellProperties: Handsontable.CellProperties) {
   // Apply default text renderer first
   Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
 
@@ -75,9 +77,46 @@ export function getHandsontableConfig({
       data: attr.id,
       title: attr.name,
       width: attr.width || 120,
-      // Only 'caseNumber' should be readOnly. All 'thong_tin_' fields are now editable via modal.
       readOnly: attr.id === 'caseNumber', 
       className: attr.id === 'caseNumber' ? 'font-medium text-blue-600' : ''
+    };
+
+    // Determine icon based on attribute type
+    let IconComponent;
+    switch (attr.type) {
+      case 'text':
+        IconComponent = Text;
+        break;
+      case 'number':
+        IconComponent = Hash;
+        break;
+      case 'date':
+        IconComponent = Calendar;
+        break;
+      case 'dropdown':
+        IconComponent = ListFilter;
+        break;
+      case 'textarea':
+        IconComponent = FileText;
+        break;
+      default:
+        IconComponent = null;
+    }
+
+    // Create a custom header renderer
+    const customHeaderRenderer = (col: number, TH: HTMLElement) => {
+      const headerText = attr.name;
+      let iconHtml = '';
+      if (IconComponent) {
+        // Render the React icon component to an HTML string
+        iconHtml = ReactDOMServer.renderToString(
+          <IconComponent className="w-4 h-4 mr-2 text-gray-500" />
+        );
+      }
+      TH.innerHTML = `<div class="flex items-center justify-center h-full">
+                        ${iconHtml}
+                        <span class="whitespace-nowrap">${headerText}</span>
+                      </div>`;
     };
 
     switch (attr.type) {
@@ -106,32 +145,36 @@ export function getHandsontableConfig({
             const colorClass = statusColors[value] || 'bg-gray-100 text-gray-800';
             td.innerHTML = `<span class="px-2 py-1 text-xs font-medium rounded-full ${colorClass}">${value}</span>`;
             return td;
-          } : undefined
+          } : undefined,
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'date':
         return {
           ...baseColumn,
           type: 'date',
-          // Keep dateFormat as YYYY-MM-DD for internal data handling, or remove it to use default
           dateFormat: 'YYYY-MM-DD', 
-          correctFormat: true, // Ensure Handsontable corrects format if user types incorrectly
-          renderer: dateDisplayRenderer // Use custom renderer for display
+          correctFormat: true,
+          renderer: dateDisplayRenderer,
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'number':
         return {
           ...baseColumn,
-          type: 'numeric'
+          type: 'numeric',
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'textarea':
         return {
           ...baseColumn,
-          type: 'text', // Use 'text' type but with custom renderer for display
-          renderer: multiLineTextRenderer, // Apply custom renderer
+          type: 'text',
+          renderer: multiLineTextRenderer,
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
-      default:
+      default: // For 'text' type
         return {
           ...baseColumn,
-          type: 'text'
+          type: 'text',
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
     }
   });

@@ -1,8 +1,8 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react'; // Import useCallback
 import { HotTable } from '@handsontable/react';
 import { Loader2, AlertCircle, FileText, Plus } from 'lucide-react';
 import { Case } from '../../types/caseTypes';
-import { HotTableProps } from 'handsontable/plugins/contextMenu'; // Correct import for HotTableProps
+import { HotTableProps } from 'handsontable/plugins/contextMenu';
 import Handsontable from 'handsontable'; // Import Handsontable for hooks
 
 interface CaseTableProps {
@@ -32,31 +32,37 @@ export default function CaseTable({
 }: CaseTableProps) {
   const hotTableRef = useRef<HotTable>(null);
 
+  // Make handleCellMouseDown stable using useCallback
+  const handleCellMouseDown = useCallback((event: MouseEvent, coords: Handsontable.CellCoords) => {
+    const hotInstance = hotTableRef.current?.hotInstance; // Access current instance here
+    // Check if it's a left click and not a header, and if hotInstance exists
+    if (event.button === 0 && coords.row >= 0 && coords.col >= 0 && hotInstance) {
+      const prop = hotInstance.colToProp(coords.col);
+      const caseItem = data[coords.row]; // `data` is a dependency, so this function needs to be in useCallback deps
+      
+      if (prop === 'thong_tin_nguoi_khoi_kien' && caseItem) {
+        onCellClick(caseItem.id, prop, caseItem[prop]);
+        event.preventDefault(); // Prevent Handsontable's default editor from opening
+        event.stopImmediatePropagation(); // Stop further propagation
+      }
+    }
+  }, [data, onCellClick]); // Dependencies for useCallback
+
   useEffect(() => {
-    if (hotTableRef.current) {
-      const hotInstance = hotTableRef.current.hotInstance;
+    const hotInstance = hotTableRef.current?.hotInstance;
 
-      const handleCellMouseDown = (event: MouseEvent, coords: Handsontable.CellCoords) => {
-        // Check if it's a left click and not a header
-        if (event.button === 0 && coords.row >= 0 && coords.col >= 0) {
-          const prop = hotInstance?.colToProp(coords.col);
-          const caseItem = data[coords.row];
-          
-          if (prop === 'thong_tin_nguoi_khoi_kien' && caseItem) {
-            onCellClick(caseItem.id, prop, caseItem[prop]);
-            event.preventDefault(); // Prevent Handsontable's default editor from opening
-            event.stopImmediatePropagation(); // Stop further propagation
-          }
-        }
-      };
-
-      hotInstance?.addHook('afterOnCellMouseDown', handleCellMouseDown);
+    if (hotInstance) {
+      hotInstance.addHook('afterOnCellMouseDown', handleCellMouseDown);
 
       return () => {
-        hotInstance?.removeHook('afterOnCellMouseDown', handleCellMouseDown);
+        // Ensure the instance still exists before trying to remove the hook
+        // This check is crucial for preventing errors during unmount
+        if (hotTableRef.current?.hotInstance) {
+          hotTableRef.current.hotInstance.removeHook('afterOnCellMouseDown', handleCellMouseDown);
+        }
       };
     }
-  }, [data, onCellClick]); // Re-run effect if data or onCellClick changes
+  }, [handleCellMouseDown]); // Now useEffect depends on the stable handleCellMouseDown
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col">
@@ -93,7 +99,7 @@ export default function CaseTable({
         ) : (
           <div className="handsontable-container h-full">
             <HotTable
-              ref={hotTableRef} // Attach ref here
+              ref={hotTableRef}
               data={data}
               columns={columns}
               settings={settings}

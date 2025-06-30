@@ -146,11 +146,10 @@ export function getHandsontableConfig({
         'remove_row': {
           name: 'Xóa hàng đã chọn',
           // Sử dụng hàm mũi tên để đảm bảo `deleteCases` và `filteredCases` được đóng gói đúng cách
-          callback: (key: string, selection: any, clickEvent: any) => {
-            const hot = Handsontable.getInstance(clickEvent.target); // Lấy instance từ event target
-            if (!hot) return; // Đảm bảo instance tồn tại
-
-            const selectedRange = hot.getSelectedLast();
+          // 'this' trong callback của Handsontable sẽ là instance của Handsontable
+          callback: function(this: Handsontable, key: string, selection: any, clickEvent: any) {
+            const hotInstance = this; // 'this' ở đây chính là instance của Handsontable
+            const selectedRange = hotInstance.getSelectedLast();
 
             if (selectedRange) {
               const [startRow, , endRow, ] = selectedRange;

@@ -5,7 +5,8 @@ import {
   Download, 
   RefreshCw,
   Trash2,
-  Search
+  Search,
+  FileText // Import FileText icon
 } from 'lucide-react';
 import { CaseBook } from '../../types/caseTypes';
 

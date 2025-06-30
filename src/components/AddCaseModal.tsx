@@ -117,16 +117,15 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Nhập số thụ lý"
                     required
-                    disabled={isSubmitting || isGeneratingCaseNumber}
+                    disabled={isSubmitting} // Chỉ vô hiệu hóa nếu đang gửi form
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleGenerateNumber}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isSubmitting || isGeneratingCaseNumber} // Keep disabled state
+                  disabled={isSubmitting} // Chỉ vô hiệu hóa nếu đang gửi form
                 >
-                  {/* Removed the conditional rendering for "Đang tải..." */}
                   Tự động lấy số
                 </button>
               </div>

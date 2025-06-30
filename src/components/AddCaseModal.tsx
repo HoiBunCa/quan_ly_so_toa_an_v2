@@ -17,13 +17,6 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Helper function to format date from YYYY-MM-DD to DD/MM/YYYY
-  const formatDateToDDMMYYYY = (dateString: string): string => {
-    if (!dateString) return '';
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -37,7 +30,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     try {
       const payload = {
         so_thu_ly: soThuLy,
-        ngay_thu_ly: formatDateToDDMMYYYY(ngayThuLy), // Format date to DD/MM/YYYY
+        ngay_thu_ly: ngayThuLy, // Directly use YYYY-MM-DD format
         created_by: 1,
       };
 

@@ -8,9 +8,11 @@ interface NumberDateInputModalProps {
   onSave: (data: { number: string; date: string }) => void;
   onClose: () => void;
   isSaving: boolean;
+  onGenerateNumber: () => string; // New prop for generating number
+  isGeneratingNumber: boolean; // New prop to indicate if number is being generated
 }
 
-export default function NumberDateInputModal({ title, initialNumber, initialDate, onSave, onClose, isSaving }: NumberDateInputModalProps) {
+export default function NumberDateInputModal({ title, initialNumber, initialDate, onSave, onClose, isSaving, onGenerateNumber, isGeneratingNumber }: NumberDateInputModalProps) {
   const [number, setNumber] = useState(initialNumber);
   const [date, setDate] = useState(initialDate); // State stores YYYY-MM-DD
   const [error, setError] = useState('');
@@ -31,11 +33,9 @@ export default function NumberDateInputModal({ title, initialNumber, initialDate
   };
 
   const handleGenerateNumber = () => {
-    const today = new Date();
-    const dd = String(today.getDate()).padStart(2, '0');
-    const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
-    const yyyy = today.getFullYear();
-    setNumber(`${dd}${mm}${yyyy}`); // Example: 25122024
+    const generatedNumber = onGenerateNumber(); // Use the passed function
+    setNumber(generatedNumber);
+    // No toast here, as the parent (CaseManagement) might handle it or it's less critical for this modal.
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -90,16 +90,22 @@ export default function NumberDateInputModal({ title, initialNumber, initialDate
                     onChange={(e) => setNumber(e.target.value)}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Nhập số"
-                    disabled={isSaving}
+                    disabled={isSaving || isGeneratingNumber}
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleGenerateNumber}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors"
-                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSaving || isGeneratingNumber}
                 >
-                  Tự động lấy số
+                  {isGeneratingNumber ? (
+                    <span className="flex items-center">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" /> Đang tải số...
+                    </span>
+                  ) : (
+                    'Tự động lấy số'
+                  )}
                 </button>
               </div>
             </div>

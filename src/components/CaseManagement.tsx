@@ -76,9 +76,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.so_thu_ly !== undefined && data.so_thu_ly !== null) {
-          setMaxSoThuLy(String(data.so_thu_ly)); // Ensure it's a string
-          console.log('WebSocket: Received max_so_thu_ly and setting state:', data.so_thu_ly);
+        if (data.max_so_thu_ly !== undefined && data.max_so_thu_ly !== null) {
+          setMaxSoThuLy(String(data.max_so_thu_ly)); // Ensure it's a string
+          console.log('WebSocket: Received max_so_thu_ly and setting state:', data.max_so_thu_ly);
         } else {
           setMaxSoThuLy(null); // Explicitly set to null if undefined/null
           console.log('WebSocket: Received undefined/null max_so_thu_ly. Setting state to null.');
@@ -109,12 +109,17 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   }, [book.caseTypeId, book.year]); // Reconnect if book type or year changes
 
   const getNextCaseNumber = useCallback(() => {
+    console.log('getNextCaseNumber called.');
+    console.log('Current maxSoThuLy from WebSocket:', maxSoThuLy, '(Type:', typeof maxSoThuLy, ')');
+
+    // The 'maxSoThuLy' state already holds the maximum 'so_thu_ly' value from the WebSocket.
+    // We need to ensure it's a valid number string before incrementing.
     if (maxSoThuLy !== null && maxSoThuLy !== undefined && String(maxSoThuLy).trim() !== '') {
       const currentSoThuLy = parseInt(String(maxSoThuLy), 10); // Ensure it's parsed as an integer
       console.log('Parsed currentSoThuLy:', currentSoThuLy);
 
       if (!isNaN(currentSoThuLy)) {
-        const nextSoThuLy = (currentSoThuLy).toString();
+        const nextSoThuLy = (currentSoThuLy + 1).toString();
         console.log('Generated next so_thu_ly:', nextSoThuLy);
         return nextSoThuLy;
       }
@@ -415,6 +420,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveNumberDateInfo}
           onClose={() => setShowNumberDateInfoModal(false)}
           isSaving={isSavingNumberDateInfo}
+          onGenerateNumber={getNextCaseNumber} {/* Pass the function here */}
+          isGeneratingNumber={isMaxSoThuLyLoading} {/* Pass the loading state here */}
         />
       )}
     </div>

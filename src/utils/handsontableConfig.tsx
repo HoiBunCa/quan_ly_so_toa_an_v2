@@ -63,6 +63,37 @@ function dateDisplayRenderer(instance: any, td: HTMLElement, row: number, col: n
   }
 }
 
+// New factory function to create the remove_row callback
+const createRemoveRowCallback = (deleteCasesFunc: (ids: string[]) => Promise<void>, casesData: Case[]) => {
+  return function(this: Handsontable, key: string, selection: any, clickEvent: any) {
+    const hot = this;
+    const selectedRange = hot.getSelectedLast();
+
+    if (selectedRange) {
+      const [startRow, , endRow, ] = selectedRange;
+      const rowIndicesToDelete: number[] = [];
+      for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
+        rowIndicesToDelete.push(i);
+      }
+
+      const idsFromSelection: string[] = [];
+      rowIndicesToDelete.forEach(rowIndex => {
+        const caseItem = casesData[rowIndex]; // Use casesData from the closure
+        if (caseItem && caseItem.id) {
+          idsFromSelection.push(caseItem.id);
+        }
+      });
+
+      if (typeof deleteCasesFunc === 'function') {
+        deleteCasesFunc(idsFromSelection);
+      } else {
+        console.error('deleteCasesFunc is not a function in createRemoveRowCallback!', deleteCasesFunc);
+        toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
+      }
+    }
+  };
+};
+
 export function getHandsontableConfig({
   caseType,
   filteredCases,
@@ -111,7 +142,6 @@ export function getHandsontableConfig({
             td.innerHTML = `<span class="px-2 py-1 text-xs font-medium rounded-full ${colorClass}">${value}</span>`;
             return td;
           } : undefined,
-          // Removed: colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'date':
         return {
@@ -120,26 +150,22 @@ export function getHandsontableConfig({
           dateFormat: 'YYYY-MM-DD', 
           correctFormat: true,
           renderer: dateDisplayRenderer,
-          // Removed: colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'number':
         return {
           ...baseColumn,
           type: 'numeric',
-          // Removed: colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'textarea':
         return {
           ...baseColumn,
           type: 'text',
           renderer: multiLineTextRenderer,
-          // Removed: colHeader: customHeaderRenderer // Apply custom header renderer
         };
       default: // For 'text' type
         return {
           ...baseColumn,
           type: 'text',
-          // Removed: colHeader: customHeaderRenderer // Apply custom header renderer
         };
     }
   });
@@ -154,35 +180,7 @@ export function getHandsontableConfig({
         'hsep1': '---------',
         'remove_row': {
           name: 'Xóa hàng đã chọn',
-          callback: function(this: Handsontable, key: string, selection: any, clickEvent: any) {
-            const hot = this;
-            const selectedRange = hot.getSelectedLast();
-
-            if (selectedRange) {
-              const [startRow, , endRow, ] = selectedRange;
-              const rowIndicesToDelete: number[] = [];
-              for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
-                rowIndicesToDelete.push(i);
-              }
-
-              const idsFromSelection: string[] = [];
-              rowIndicesToDelete.forEach(rowIndex => {
-                const caseItem = filteredCases[rowIndex];
-                if (caseItem && caseItem.id) {
-                  idsFromSelection.push(caseItem.id);
-                }
-              });
-              
-              // Use the captured variable and add a safety check
-              if (typeof actualDeleteCases === 'function') {
-                console.log(idsFromSelection);
-                actualDeleteCases(idsFromSelection);
-              } else {
-                console.error('actualDeleteCases is not a function when called in context menu callback!', actualDeleteCases);
-                toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
-              }
-            }
-          }
+          callback: createRemoveRowCallback(actualDeleteCases, filteredCases) // Use the factory function here
         },
         'hsep2': '---------',
         'undo': {},

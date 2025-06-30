@@ -175,6 +175,7 @@ export function getHandsontableConfig({
               
               // Use the captured variable and add a safety check
               if (typeof actualDeleteCases === 'function') {
+                console.log(idsFromSelection);
                 actualDeleteCases(idsFromSelection);
               } else {
                 console.error('actualDeleteCases is not a function when called in context menu callback!', actualDeleteCases);

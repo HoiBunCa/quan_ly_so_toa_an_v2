@@ -81,6 +81,49 @@ export function getHandsontableConfig({
       className: attr.id === 'caseNumber' ? 'font-medium text-blue-600' : ''
     };
 
+    // Determine icon based on attribute type
+    let IconComponent;
+    switch (attr.type) {
+      case 'text':
+        IconComponent = Text;
+        break;
+      case 'number':
+        IconComponent = Hash;
+        break;
+      case 'date':
+        IconComponent = Calendar;
+        break;
+      case 'dropdown':
+        IconComponent = ListFilter;
+        break;
+      case 'textarea':
+        IconComponent = FileText;
+        break;
+      default:
+        IconComponent = null;
+    }
+
+    // Create a custom header renderer
+    const customHeaderRenderer = (col: number, TH: HTMLElement) => {
+      const headerText = attr.name;
+      let iconHtml = '';
+      if (IconComponent) {
+        // Render the React icon component to an HTML string
+        iconHtml = ReactDOMServer.renderToString(
+          <IconComponent className="w-4 h-4 mr-2 text-gray-500" />
+        );
+      }
+      // Ensure the TH element has flex properties and overflow visible
+      TH.style.display = 'flex';
+      TH.style.alignItems = 'center';
+      TH.style.justifyContent = 'center';
+      TH.style.height = '100%';
+      TH.style.overflow = 'visible'; // Ensure content is not clipped
+      TH.style.whiteSpace = 'nowrap'; // Prevent text wrapping in header
+
+      TH.innerHTML = `${iconHtml}<span style="color: #374151; font-weight: 600;">${headerText}</span>`;
+    };
+
     switch (attr.type) {
       case 'dropdown':
         return {
@@ -108,6 +151,7 @@ export function getHandsontableConfig({
             td.innerHTML = `<span class="px-2 py-1 text-xs font-medium rounded-full ${colorClass}">${value}</span>`;
             return td;
           } : undefined,
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'date':
         return {
@@ -116,48 +160,33 @@ export function getHandsontableConfig({
           dateFormat: 'YYYY-MM-DD', 
           correctFormat: true,
           renderer: dateDisplayRenderer,
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'number':
         return {
           ...baseColumn,
           type: 'numeric',
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
       case 'textarea':
         return {
           ...baseColumn,
           type: 'text',
           renderer: multiLineTextRenderer,
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
       default: // For 'text' type
         return {
           ...baseColumn,
           type: 'text',
+          colHeader: customHeaderRenderer // Apply custom header renderer
         };
     }
   });
 
   const settings: Handsontable.GridSettings = {
     rowHeaders: false,
-    colHeaders: (colIndex: number) => {
-      const column = columns[colIndex];
-      if (!column) return '';
-      const attrId = column.data as string;
-      const attr = caseType.attributes.find(a => a.id === attrId);
-      const iconMap = {
-        text: <Text className="w-4 h-4 mr-1 text-gray-500" />,
-        number: <Hash className="w-4 h-4 mr-1 text-gray-500" />,
-        date: <Calendar className="w-4 h-4 mr-1 text-gray-500" />,
-        dropdown: <ListFilter className="w-4 h-4 mr-1 text-gray-500" />,
-        textarea: <FileText className="w-4 h-4 mr-1 text-gray-500" />
-      };
-      const icon = iconMap[attr?.type || 'text'];
-      return ReactDOMServer.renderToStaticMarkup(
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-          {icon}
-          <span style={{ fontWeight: 600, color: '#374151' }}>{attr?.name || ''}</span>
-        </span>
-      );
-    },
+    colHeaders: true,
     contextMenu: {
       items: {
         'row_above': {},

@@ -136,26 +136,34 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   // Renamed to be more generic and accept a fieldKey
   const getNextNumberForField = useCallback((fieldKey: string) => {
-    console.log(`getNextNumberForField called for: ${fieldKey}`);
-    console.log('Current maxNumbersByField state:', maxNumbersByField); // Log the entire state
-    const currentMax = maxNumbersByField[fieldKey];
-    console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
+    console.log(`[getNextNumberForField] Called for: ${fieldKey}`);
+    console.log('[getNextNumberForField] Current maxNumbersByField state:', maxNumbersByField);
 
-    if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {
-      const parsedMax = parseInt(String(currentMax), 10); // Ensure it's parsed as an integer
-      console.log('Parsed currentMax:', parsedMax);
+    const valueFromBackend = maxNumbersByField[fieldKey];
+    console.log(`[getNextNumberForField] Value from backend for ${fieldKey}:`, valueFromBackend, '(Type:', typeof valueFromBackend, ')');
 
-      if (!isNaN(parsedMax)) {
-        // User explicitly requested: "chỉ lấy ra hiển thị, không tự động + 1 vào nữa"
-        // This implies the backend sends the *next available* number directly.
-        const nextNumber = parsedMax.toString(); 
-        console.log(`Generated next number for ${fieldKey}:`, nextNumber);
-        return nextNumber;
-      }
+    if (valueFromBackend === null || valueFromBackend === undefined) {
+      console.warn(`[getNextNumberForField] Value for ${fieldKey} is null or undefined. Falling back to '1'.`);
+      return '1';
     }
-    // Fallback to '1' if currentMax is invalid or empty.
-    console.warn(`Max number for ${fieldKey} is not a valid number or is empty. Falling back to '1'.`);
-    return '1';
+    
+    const trimmedValue = String(valueFromBackend).trim();
+    if (trimmedValue === '') {
+      console.warn(`[getNextNumberForField] Value for ${fieldKey} is an empty string. Falling back to '1'.`);
+      return '1';
+    }
+
+    const parsedValue = parseInt(trimmedValue, 10);
+    if (isNaN(parsedValue)) {
+      console.warn(`[getNextNumberForField] Value for ${fieldKey} is not a valid number (${trimmedValue}). Falling back to '1'.`);
+      return '1';
+    }
+
+    // As per user's request: "chỉ lấy ra hiển thị, không tự động + 1 vào nữa"
+    // This means the backend is expected to send the *next* number directly.
+    const nextNumberToDisplay = parsedValue.toString(); 
+    console.log(`[getNextNumberForField] Returning: ${nextNumberToDisplay}`);
+    return nextNumberToDisplay;
   }, [maxNumbersByField]); // Dependency on maxNumbersByField ensures this function updates when max numbers change.
 
   const handleAddNewCaseClick = () => {
@@ -165,6 +173,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const handleCaseAdded = () => {
     setShowAddCaseModal(false);
     fetchCases(); // Refresh data after a new case is added
+    console.log('handleCaseAdded: Calling requestMaxNumbersUpdate...');
     requestMaxNumbersUpdate(); // Request updated max numbers after a case is added
   };
 

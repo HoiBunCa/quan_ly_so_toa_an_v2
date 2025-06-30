@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
-import NumberDateInfoModal from './case-management/NumberDateInfoModal';
+import NumberDateInputModal from './common/NumberDateInputModal'; // Corrected import path
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
@@ -360,9 +360,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       )}
 
       {showNumberDateInfoModal && (
-        <NumberDateInfoModal
+        <NumberDateInputModal // Changed from NumberDateInfoModal to NumberDateInputModal
           title={numberDateModalTitle}
-          initialData={currentNumberDateInfo}
+          initialNumber={currentNumberDateInfo.number} // Pass individual props
+          initialDate={currentNumberDateInfo.date}     // Pass individual props
           onSave={handleSaveNumberDateInfo}
           onClose={() => setShowNumberDateInfoModal(false)}
           isSaving={isSavingNumberDateInfo}

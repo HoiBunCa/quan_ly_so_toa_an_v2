@@ -232,16 +232,51 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     stretchH: 'all',
     autoWrapRow: true,
     autoWrapCol: true,
-    afterChange: (changes: any) => {
+    afterChange: async (changes: any, source: string) => { // Add 'source' parameter
+      if (source === 'loadData') { // Prevent API call on initial data load
+        return;
+      }
       if (changes) {
         const newCases = [...cases];
-        changes.forEach(([row, prop, oldValue, newValue]: any) => {
+        for (const [row, prop, oldValue, newValue] of changes) {
           if (oldValue !== newValue && newCases[row]) {
-            (newCases[row] as any)[prop] = newValue;
-            newCases[row].lastModified = new Date().toISOString().split('T')[0];
+            const caseToUpdate = newCases[row];
+            const caseId = caseToUpdate.id; // Get the ID of the case
+
+            // Update local state optimistically
+            (caseToUpdate as any)[prop] = newValue;
+            caseToUpdate.lastModified = new Date().toISOString().split('T')[0];
+            setCases([...newCases]); // Trigger re-render with updated local state
+
+            // Prepare payload for API
+            const payload: { [key: string]: any } = {
+              [prop]: newValue,
+              created_by: 1 // As per requirement
+            };
+
+            try {
+              const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+              }
+              toast.success(`Cập nhật '${caseType.attributes.find(a => a.id === prop)?.name || prop}' thành công!`);
+            } catch (e: any) {
+              console.error("Failed to update case:", e);
+              toast.error(`Cập nhật thất bại: ${e.message}`);
+              // Revert local state if API call fails (optional, but good for UX)
+              // This would require storing the original value and reverting.
+              // For now, we'll just show an error toast.
+            }
           }
-        });
-        setCases(newCases);
+        }
       }
     },
     afterSelection: (row: number, column: number, row2: number, column2: number) => {
@@ -396,7 +431,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       {/* Instructions */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="text-sm font-semibold text-blue-900 mb-2">Table Features:</h4>
-        <ul className="text-sm text-blue-800 space-y-1"> {/* Đã sửa lỗi ở đây */}
+        <ul className="text-sm text-blue-800 space-y-1">
           <li>• Click any cell to edit inline (except Case Number)</li>
           <li>• Right-click for context menu with additional options</li>
           <li>• Use column headers to sort and filter data</li>

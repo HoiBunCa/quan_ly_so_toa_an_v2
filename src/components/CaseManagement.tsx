@@ -89,7 +89,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
               formattedData[key] = String(data[key]); // Ensure all values are strings
             }
           }
-          console.log(`formattedData: ${formattedData}`);
+          console.log(`key: ${key}`);
+          console.log(`val: ${String(data[key])}`);
+          
           setMaxNumbersByField(formattedData); 
 
         } else {

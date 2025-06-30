@@ -49,6 +49,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
+  // Ref to store the WebSocket instance
+  const wsRef = useRef<WebSocket | null>(null);
+
   if (!caseType) {
     return <div>Case type not found</div>;
   }
@@ -65,45 +68,53 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setCases, // Expose setCases for local updates
   } = useCasesData(book);
 
+  // Function to request max numbers update via WebSocket
+  const requestMaxNumbersUpdate = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('WebSocket: Requesting all max numbers update...');
+      wsRef.current.send(JSON.stringify({ action: 'get_all_max_numbers', year: book.year }));
+    } else {
+      console.warn('WebSocket not open. Cannot request max numbers update.');
+    }
+  }, [book.year]);
+
   // WebSocket connection for max numbers
   useEffect(() => {
     if (book.caseTypeId === 'HON_NHAN') {
       setIsMaxNumbersLoading(true); // Set loading to true when starting connection
       const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
+      wsRef.current = ws; // Store the WebSocket instance in the ref
 
       ws.onopen = () => {
-        // Request all max numbers for the current year
-        ws.send(JSON.stringify({ action: 'get_all_max_numbers', year: book.year })); 
+        console.log('WebSocket connected for max numbers');
+        // Request all max numbers for the current year on open
+        requestMaxNumbersUpdate(); 
       };
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log(`data: ${data}`);
-        
         // Assuming data is an object like { "so_thu_ly": "6", "so_chuyen_hoa_giai": "10", ... }
         if (data) {
           const formattedData: Record<string, string | null> = {};
           for (const key in data) {
-
             if (Object.prototype.hasOwnProperty.call(data, key)) {
               formattedData[key] = String(data[key]); // Ensure all values are strings
-
             }
           }
-          
           setMaxNumbersByField(formattedData); 
-
+          console.log('WebSocket: Received max numbers map and setting state:', formattedData);
         } else {
           setMaxNumbersByField({}); // Explicitly set to empty object if undefined/null
-
+          console.log('WebSocket: Received empty/invalid max numbers data. Setting state to empty object.');
         }
         setIsMaxNumbersLoading(false);
-
+        console.log('WebSocket: Setting isMaxNumbersLoading to false.');
       };
 
       ws.onclose = () => {
         console.log('WebSocket disconnected for max numbers');
         setIsMaxNumbersLoading(false); // Set loading to false on close
+        wsRef.current = null; // Clear the ref on close
       };
 
       ws.onerror = (error) => {
@@ -120,21 +131,21 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       setIsMaxNumbersLoading(false);
       setMaxNumbersByField({}); // Ensure it's empty for non-HON_NHAN types
     }
-  }, [book.caseTypeId, book.year]); // Reconnect if book type or year changes
+  }, [book.caseTypeId, book.year, requestMaxNumbersUpdate]); // Add requestMaxNumbersUpdate to dependencies
 
   // Renamed to be more generic and accept a fieldKey
   const getNextNumberForField = useCallback((fieldKey: string) => {
-    // console.log(`getNextNumberForField called for: ${fieldKey}`);
+    console.log(`getNextNumberForField called for: ${fieldKey}`);
     const currentMax = maxNumbersByField[fieldKey];
-    // console.log("maxNumbersByField: ", maxNumbersByField);
+    console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
 
     if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {
       const parsedMax = parseInt(String(currentMax), 10); // Ensure it's parsed as an integer
-
+      console.log('Parsed currentMax:', parsedMax);
 
       if (!isNaN(parsedMax)) {
         const nextNumber = (parsedMax).toString();
-
+        console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }
     } else {
@@ -159,6 +170,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const handleCaseAdded = () => {
     setShowAddCaseModal(false);
     fetchCases(); // Refresh data after a new case is added
+    requestMaxNumbersUpdate(); // Request updated max numbers after a case is added
   };
 
   const handleUpdateCase = useCallback(async (caseId: string, prop: string, newValue: any) => {

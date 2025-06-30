@@ -42,7 +42,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAddCaseModal, setShowAddCaseModal] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(true); // New state for instructions visibility
+  const [showInstructions, setShowInstructions] = useState(false); // Changed to false for auto-collapse
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   

@@ -76,9 +76,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.max_so_thu_ly !== undefined && data.max_so_thu_ly !== null) {
-          setMaxSoThuLy(String(data.max_so_thu_ly)); // Ensure it's a string
-          console.log('WebSocket: Received max_so_thu_ly and setting state:', data.max_so_thu_ly);
+        if (data.so_thu_ly !== undefined && data.so_thu_ly !== null) {
+          setMaxSoThuLy(String(data.so_thu_ly)); // Ensure it's a string
+          console.log('WebSocket: Received max_so_thu_ly and setting state:', data.so_thu_ly);
         } else {
           setMaxSoThuLy(null); // Explicitly set to null if undefined/null
           console.log('WebSocket: Received undefined/null max_so_thu_ly. Setting state to null.');

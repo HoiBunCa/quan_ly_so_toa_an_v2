@@ -424,6 +424,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookId={book.id}
           bookYear={book.year}
           caseTypeCode={caseType.code}
+          onGenerateCaseNumber={getNextCaseNumber} // Pass the function here
         />
       )}
     </div>

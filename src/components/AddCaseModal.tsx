@@ -8,9 +8,10 @@ interface AddCaseModalProps {
   bookId: string; // Pass the current book's ID
   bookYear: number; // Pass the current book's year for case number generation
   caseTypeCode: string; // Pass the case type code for case number generation
+  onGenerateCaseNumber?: () => string; // New prop for auto-generating case number
 }
 
-export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode }: AddCaseModalProps) {
+export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber }: AddCaseModalProps) {
   const [soThuLy, setSoThuLy] = useState('');
   const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // Default to current date
   const [error, setError] = useState('');
@@ -63,6 +64,14 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     }
   };
 
+  const handleGenerateNumber = () => {
+    if (onGenerateCaseNumber) {
+      setSoThuLy(onGenerateCaseNumber());
+    } else {
+      toast.error('Không thể tự động lấy số thụ lý.');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
@@ -93,18 +102,26 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
               <label htmlFor="soThuLy" className="block text-sm font-medium text-gray-700 mb-2">
                 Số thụ lý
               </label>
-              <div className="relative">
+              <div className="relative flex items-center"> {/* Added flex items-center */}
                 <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   id="soThuLy"
                   value={soThuLy}
                   onChange={(e) => setSoThuLy(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" {/* Changed to rounded-l-lg */}
                   placeholder="Nhập số thụ lý"
                   required
                   disabled={isSubmitting}
                 />
+                <button
+                  type="button"
+                  onClick={handleGenerateNumber}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-r-lg hover:bg-gray-200 transition-colors h-full" {/* Added h-full */}
+                  disabled={isSubmitting}
+                >
+                  Tự động lấy số
+                </button>
               </div>
             </div>
 

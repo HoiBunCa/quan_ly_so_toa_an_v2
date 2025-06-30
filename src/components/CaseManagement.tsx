@@ -93,24 +93,20 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       ws.onmessage = (event) => {
         console.log('WebSocket: Raw message received:', event.data);
-        const message = JSON.parse(event.data); // Parse the incoming message
-
-        // Check if the message has the expected structure for max numbers update
-        if (message && message.type === 'so_thu_ly_changed' && message.record) {
-          const rawMaxNumbers = message.record; // This is the object containing the max numbers
+        const data = JSON.parse(event.data);
+        // Assuming data is an object like { "so_thu_ly": "6", "so_chuyen_hoa_giai": "10", ... }
+        if (data) {
           const formattedData: Record<string, string | null> = {};
-          for (const key in rawMaxNumbers) {
-            if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
-              formattedData[key] = String(rawMaxNumbers[key]); // Ensure all values are strings
+          for (const key in data) {
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+              formattedData[key] = String(data[key]); // Ensure all values are strings
             }
           }
           setMaxNumbersByField(formattedData); 
           console.log('WebSocket: Received max numbers map and setting state:', formattedData);
         } else {
-          // Fallback for other message types or unexpected structure
-          console.warn('WebSocket: Received unexpected message format or type:', message);
-          // If it's not the expected max numbers update, we might want to keep current state
-          // or reset if it's a critical error. For now, just log and don't change state.
+          // setMaxNumbersByField({}); // Explicitly set to empty object if undefined/null
+          console.log('WebSocket: Received empty/invalid max numbers data. Setting state to empty object.');
         }
         setIsMaxNumbersLoading(false);
         console.log('WebSocket: Setting isMaxNumbersLoading to false.');
@@ -150,16 +146,24 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       console.log('Parsed currentMax:', parsedMax);
 
       if (!isNaN(parsedMax)) {
-        // User explicitly requested: "chỉ lấy ra hiển thị, không tự động + 1 vào nữa"
-        // This implies the backend sends the *next available* number directly.
-        const nextNumber = parsedMax.toString(); 
+        const nextNumber = (parsedMax + 1).toString(); // Corrected: Increment by 1
         console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }
+    } else {
+      console.warn(`Max number for ${fieldKey} is not a valid number or is empty. Falling back to '1'.`);
+      return '1'; // Changed to string '1' for consistency
     }
-    // Fallback to '1' if currentMax is invalid or empty.
-    console.warn(`Max number for ${fieldKey} is not a valid number or is empty. Falling back to '1'.`);
-    return '1';
+
+    // Fallback logic if max number for this field is not available or invalid
+    console.log(`Max number for ${fieldKey} is not a valid number. Falling back to date-based generation.`);
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+    const yyyy = today.getFullYear();
+    const fallbackNumber = `${dd}${mm}${yyyy}`;
+    console.log('Fallback number:', fallbackNumber);
+    return fallbackNumber;
   }, [maxNumbersByField]); // Dependency on maxNumbersByField ensures this function updates when max numbers change.
 
   const handleAddNewCaseClick = () => {

@@ -9,9 +9,12 @@ export const caseTypes: CaseType[] = [
  // Example statuses
       { id: 'so_thu_ly', name: 'Số thụ lý', type: 'text', required: false, width: 120 },
       { id: 'ngay_thu_ly', name: 'Ngày thụ lý', type: 'date', required: false, width: 120 },
-      { id: 'ho_ten_nguoi_khoi_kien', name: 'Họ tên người khởi kiện', type: 'text', required: false, width: 180 },
-      { id: 'nam_sinh_nguoi_khoi_kien', name: 'Năm sinh người khởi kiện', type: 'text', required: false, width: 150 },
-      { id: 'dia_chi_nguoi_khoi_kien', name: 'Địa chỉ người khởi kiện', type: 'textarea', required: false, width: 250 },
+      // Combined field for plaintiff information
+      { id: 'thong_tin_nguoi_khoi_kien', name: 'Thông tin người khởi kiện', type: 'textarea', required: false, width: 250 },
+      // Original fields are removed from this list as they are now combined for display
+      // { id: 'ho_ten_nguoi_khoi_kien', name: 'Họ tên người khởi kiện', type: 'text', required: false, width: 180 },
+      // { id: 'nam_sinh_nguoi_khoi_kien', name: 'Năm sinh người khởi kiện', type: 'text', required: false, width: 150 },
+      // { id: 'dia_chi_nguoi_khoi_kien', name: 'Địa chỉ người khởi kiện', type: 'textarea', required: false, width: 250 },
       { id: 'ho_ten_nguoi_bi_kien', name: 'Họ tên người bị kiện', type: 'text', required: false, width: 180 },
       { id: 'nam_sinh_nguoi_bi_kien', name: 'Năm sinh người bị kiện', type: 'text', required: false, width: 150 },
       { id: 'dia_chi_nguoi_bi_kien', name: 'Địa chỉ người bị kiện', type: 'textarea', required: false, width: 250 },

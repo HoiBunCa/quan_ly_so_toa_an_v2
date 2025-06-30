@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react';
+import { X, FileText, Calendar, AlertCircle, Loader2, User, Home, Cake } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface AddCaseModalProps {
@@ -14,6 +14,9 @@ interface AddCaseModalProps {
 export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber }: AddCaseModalProps) {
   const [soThuLy, setSoThuLy] = useState('');
   const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
+  const [hoTenNguoiKhoiKien, setHoTenNguoiKhoiKien] = useState('');
+  const [namSinhNguoiKhoiKien, setNamSinhNguoiKhoiKien] = useState('');
+  const [diaChiNguoiKhoiKien, setDiaChiNguoiKhoiKien] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,8 +44,8 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     e.preventDefault();
     setError('');
 
-    if (!soThuLy || !ngayThuLy) {
-      setError('Vui lòng nhập Số thụ lý và Ngày thụ lý.');
+    if (!soThuLy || !ngayThuLy || !hoTenNguoiKhoiKien || !namSinhNguoiKhoiKien || !diaChiNguoiKhoiKien) {
+      setError('Vui lòng nhập đầy đủ Số thụ lý, Ngày thụ lý, Họ tên, Năm sinh và Địa chỉ người khởi kiện.');
       return;
     }
 
@@ -51,6 +54,9 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
       const payload = {
         so_thu_ly: soThuLy,
         ngay_thu_ly: ngayThuLy, // API still receives YYYY-MM-DD
+        ho_ten_nguoi_khoi_kien: hoTenNguoiKhoiKien,
+        nam_sinh_nguoi_khoi_kien: namSinhNguoiKhoiKien,
+        dia_chi_nguoi_khoi_kien: diaChiNguoiKhoiKien,
         created_by: 1,
       };
 
@@ -158,6 +164,64 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
                   required
                   disabled={isSubmitting}
                 />
+              </div>
+            </div>
+
+            {/* New fields for Người khởi kiện */}
+            <div>
+              <label htmlFor="hoTenNguoiKhoiKien" className="block text-sm font-medium text-gray-700 mb-2">
+                Họ tên người khởi kiện
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  id="hoTenNguoiKhoiKien"
+                  value={hoTenNguoiKhoiKien}
+                  onChange={(e) => setHoTenNguoiKhoiKien(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Nhập họ tên người khởi kiện"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="namSinhNguoiKhoiKien" className="block text-sm font-medium text-gray-700 mb-2">
+                Năm sinh người khởi kiện
+              </label>
+              <div className="relative">
+                <Cake className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  id="namSinhNguoiKhoiKien"
+                  value={namSinhNguoiKhoiKien}
+                  onChange={(e) => setNamSinhNguoiKhoiKien(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Nhập năm sinh người khởi kiện"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="diaChiNguoiKhoiKien" className="block text-sm font-medium text-gray-700 mb-2">
+                Địa chỉ người khởi kiện
+              </label>
+              <div className="relative">
+                <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <textarea
+                  id="diaChiNguoiKhoiKien"
+                  value={diaChiNguoiKhoiKien}
+                  onChange={(e) => setDiaChiNguoiKhoiKien(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Nhập địa chỉ người khởi kiện"
+                  rows={3}
+                  required
+                  disabled={isSubmitting}
+                ></textarea>
               </div>
             </div>
           </div>

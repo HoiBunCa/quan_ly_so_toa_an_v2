@@ -71,6 +71,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             lastModified: new Date().toISOString().split('T')[0],
             ...item
           };
+          // Combine plaintiff info for display
+          newCase.thong_tin_nguoi_khoi_kien = [
+            item.ho_ten_nguoi_khoi_kien,
+            item.nam_sinh_nguoi_khoi_kien,
+            item.dia_chi_nguoi_khoi_kien
+          ].filter(Boolean).join('\n'); // Filter out null/undefined/empty strings
           return newCase;
         });
         setCases(fetchedCases);
@@ -237,8 +243,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       case 'textarea':
         return {
           ...baseColumn,
-          type: 'text',
-          width: 200
+          type: 'text', // Use 'text' type for textarea in Handsontable
+          renderer: (instance: any, td: HTMLElement, row: number, col: number, prop: string, value: string) => {
+            // Custom renderer to display newlines
+            td.innerHTML = value ? value.replace(/\n/g, '<br>') : '';
+            return td;
+          },
+          editor: 'textarea' // Use textarea editor for multi-line input
         };
       default:
         return {
@@ -330,16 +341,35 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
               continue; // Skip if not found
             }
 
-            // Create a new array with the updated case to trigger re-render
-            const updatedCases = cases.map(c => 
-              c.id === caseId ? { ...c, [prop]: newValue, lastModified: new Date().toISOString().split('T')[0] } : c
-            );
-            setCases(updatedCases); // Update the main cases state
+            let payload: { [key: string]: any } = { created_by: 1 };
 
-            const payload: { [key: string]: any } = {
-              [prop]: newValue,
-              created_by: 1
-            };
+            if (prop === 'thong_tin_nguoi_khoi_kien') {
+              const lines = String(newValue || '').split('\n');
+              payload.ho_ten_nguoi_khoi_kien = lines[0] || '';
+              payload.nam_sinh_nguoi_khoi_kien = lines[1] || '';
+              payload.dia_chi_nguoi_khoi_kien = lines[2] || '';
+            } else {
+              payload[prop] = newValue;
+            }
+
+            // Create a new array with the updated case to trigger re-render
+            const updatedCases = cases.map(c => {
+              if (c.id === caseId) {
+                const updatedC = { ...c, lastModified: new Date().toISOString().split('T')[0] };
+                if (prop === 'thong_tin_nguoi_khoi_kien') {
+                  const lines = String(newValue || '').split('\n');
+                  updatedC.ho_ten_nguoi_khoi_kien = lines[0] || '';
+                  updatedC.nam_sinh_nguoi_khoi_kien = lines[1] || '';
+                  updatedC.dia_chi_nguoi_khoi_kien = lines[2] || '';
+                  updatedC.thong_tin_nguoi_khoi_kien = newValue; // Keep the combined value for display
+                } else {
+                  updatedC[prop] = newValue;
+                }
+                return updatedC;
+              }
+              return c;
+            });
+            setCases(updatedCases); // Update the main cases state
 
             try {
               const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`, {

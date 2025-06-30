@@ -93,20 +93,24 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       ws.onmessage = (event) => {
         console.log('WebSocket: Raw message received:', event.data);
-        const data = JSON.parse(event.data);
-        // Assuming data is an object like { "so_thu_ly": "6", "so_chuyen_hoa_giai": "10", ... }
-        if (data) {
+        const message = JSON.parse(event.data); // Parse the incoming message
+
+        // Check if the message has the expected structure for max numbers update
+        if (message && message.type === 'so_thu_ly_changed' && message.record) {
+          const rawMaxNumbers = message.record; // This is the object containing the max numbers
           const formattedData: Record<string, string | null> = {};
-          for (const key in data) {
-            if (Object.prototype.hasOwnProperty.call(data, key)) {
-              formattedData[key] = String(data[key]); // Ensure all values are strings
+          for (const key in rawMaxNumbers) {
+            if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
+              formattedData[key] = String(rawMaxNumbers[key]); // Ensure all values are strings
             }
           }
           setMaxNumbersByField(formattedData); 
           console.log('WebSocket: Received max numbers map and setting state:', formattedData);
         } else {
-          setMaxNumbersByField({}); // Explicitly set to empty object if undefined/null
-          console.log('WebSocket: Received empty/invalid max numbers data. Setting state to empty object.');
+          // Fallback for other message types or unexpected structure
+          console.warn('WebSocket: Received unexpected message format or type:', message);
+          // If it's not the expected max numbers update, we might want to keep current state
+          // or reset if it's a critical error. For now, just log and don't change state.
         }
         setIsMaxNumbersLoading(false);
         console.log('WebSocket: Setting isMaxNumbersLoading to false.');

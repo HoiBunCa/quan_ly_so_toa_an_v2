@@ -186,7 +186,33 @@ export function getHandsontableConfig({
 
   const settings: Handsontable.GridSettings = {
     rowHeaders: false,
-    colHeaders: true,
+    colHeaders: (colIndex: number) => {
+      const column = columns[colIndex];
+      if (!column) return '';
+
+      const attrId = column.data as string;
+      const attrTitle = column.title as string;
+
+      // Map icon tương ứng với kiểu dữ liệu
+      const iconMap: Record<string, JSX.Element> = {
+        text: <Text className="w-4 h-4 mr-1 text-gray-500" />,
+        number: <Hash className="w-4 h-4 mr-1 text-gray-500" />,
+        date: <Calendar className="w-4 h-4 mr-1 text-gray-500" />,
+        dropdown: <ListFilter className="w-4 h-4 mr-1 text-gray-500" />,
+        textarea: <FileText className="w-4 h-4 mr-1 text-gray-500" />
+      };
+
+      const attrType = caseType.attributes.find(attr => attr.id === attrId)?.type;
+      const icon = iconMap[attrType || 'text'];
+
+      // Render icon + text thành HTML
+      return ReactDOMServer.renderToStaticMarkup(
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          {icon}
+          <span style={{ fontWeight: 600, color: '#374151' }}>{attrTitle}</span>
+        </span>
+      );
+    },
     contextMenu: {
       items: {
         'row_above': {},

@@ -145,33 +145,49 @@ export function getHandsontableConfig({
         'hsep1': '---------',
         'remove_row': {
           name: 'Xóa hàng đã chọn',
-          // Sử dụng hàm mũi tên để đảm bảo `deleteCases` và `filteredCases` được đóng gói đúng cách
-          // 'this' trong callback của Handsontable sẽ là instance của Handsontable
           callback: function(this: Handsontable, key: string, selection: any, clickEvent: any) {
-            const hotInstance = this; // 'this' ở đây chính là instance của Handsontable
-            const selectedRange = hotInstance.getSelectedLast();
+            const hotInstance = this;
+            const selectedRanges = hotInstance.getSelected(); // Get all selected ranges
 
-            if (selectedRange) {
-              const [startRow, , endRow, ] = selectedRange;
-              const rowIndicesToDelete: number[] = [];
-              for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
-                rowIndicesToDelete.push(i);
-              }
-
-              const idsFromSelection: string[] = [];
-              rowIndicesToDelete.forEach(rowIndex => {
-                const caseItem = filteredCases[rowIndex]; // `filteredCases` được truy cập từ closure
+            if (!selectedRanges || selectedRanges.length === 0) {
+              // If no explicit selection, consider the row where the right-click occurred
+              const clickedCell = hotInstance.getSelectedLast(); // [row, col, row2, col2]
+              if (clickedCell) {
+                const clickedRowIndex = clickedCell[0]; // The row where the right-click happened
+                const caseItem = filteredCases[clickedRowIndex];
                 if (caseItem && caseItem.id) {
-                  idsFromSelection.push(caseItem.id);
+                  deleteCases([caseItem.id]);
+                } else {
+                  toast.error('Không thể xác định vụ án để xóa.');
                 }
-              });
-              
-              if (typeof deleteCases === 'function') { // `deleteCases` được truy cập từ closure
-                deleteCases(idsFromSelection);
               } else {
-                console.error('deleteCases is not a function when called in context menu callback!', deleteCases);
-                toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
+                toast.info('Vui lòng chọn hàng để xóa.');
               }
+              return;
+            }
+
+            const idsFromSelection: string[] = [];
+            const uniqueRowIndices = new Set<number>();
+
+            selectedRanges.forEach(range => {
+              const [startRow, , endRow, ] = range;
+              for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
+                uniqueRowIndices.add(i);
+              }
+            });
+
+            Array.from(uniqueRowIndices).sort((a, b) => a - b).forEach(rowIndex => {
+              const caseItem = filteredCases[rowIndex];
+              if (caseItem && caseItem.id) {
+                idsFromSelection.push(caseItem.id);
+              }
+            });
+            
+            if (typeof deleteCases === 'function') {
+              deleteCases(idsFromSelection);
+            } else {
+              console.error('deleteCases is not a function when called in context menu callback!', deleteCases);
+              toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
             }
           }
         },

@@ -3,6 +3,7 @@ import { CaseBook } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
+import PlaintiffInfoModal from './case-management/PlaintiffInfoModal'; // Import the new modal
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
@@ -10,10 +11,6 @@ import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
 import { useCasesData } from '../hooks/useCasesData';
 import { getHandsontableConfig } from '../utils/handsontableConfig';
-
-// Removed: import { registerAllModules } from 'handsontable/registry';
-// Removed: import 'handsontable/dist/handsontable.full.min.css';
-// Removed: registerAllModules();
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -23,6 +20,12 @@ interface CaseManagementProps {
 export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [showAddCaseModal, setShowAddCaseModal] = useState(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]); // State for selected row IDs
+
+  // State for Plaintiff Info Modal
+  const [showPlaintiffInfoModal, setShowPlaintiffInfoModal] = useState(false);
+  const [currentCaseIdForPlaintiffEdit, setCurrentCaseIdForPlaintiffEdit] = useState<string | null>(null);
+  const [currentPlaintiffInfo, setCurrentPlaintiffInfo] = useState({ name: '', year: '', address: '' });
+  const [isSavingPlaintiffInfo, setIsSavingPlaintiffInfo] = useState(false);
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
@@ -121,6 +124,33 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   }, [cases, fetchCases, setCases, caseType.attributes]);
 
+  const handleCellClick = useCallback((caseId: string, prop: string, value: any) => {
+    if (prop === 'thong_tin_nguoi_khoi_kien') {
+      setCurrentCaseIdForPlaintiffEdit(caseId);
+      // Parse the combined string back into individual fields
+      const lines = String(value || '').split('\n');
+      setCurrentPlaintiffInfo({
+        name: lines[0] || '',
+        year: lines[1] || '',
+        address: lines[2] || ''
+      });
+      setShowPlaintiffInfoModal(true);
+    }
+  }, []);
+
+  const handleSavePlaintiffInfo = async (data: { name: string, year: string, address: string }) => {
+    if (!currentCaseIdForPlaintiffEdit) return;
+
+    setIsSavingPlaintiffInfo(true);
+    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForPlaintiffEdit, 'thong_tin_nguoi_khoi_kien', combinedValue);
+      setShowPlaintiffInfoModal(false);
+    } finally {
+      setIsSavingPlaintiffInfo(false);
+    }
+  };
 
   const exportData = () => {
     const headers = caseType.attributes.map(attr => attr.name);
@@ -173,6 +203,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         filteredCount={filteredCases.length}
         totalCount={cases.length}
         onAddCase={handleAddNewCaseClick}
+        onCellClick={handleCellClick} // Pass the new click handler
       />
 
       <CaseInstructions />
@@ -185,6 +216,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookYear={book.year}
           caseTypeCode={caseType.code}
           onGenerateCaseNumber={getNextCaseNumber}
+        />
+      )}
+
+      {showPlaintiffInfoModal && (
+        <PlaintiffInfoModal
+          initialData={currentPlaintiffInfo}
+          onSave={handleSavePlaintiffInfo}
+          onClose={() => setShowPlaintiffInfoModal(false)}
+          isSaving={isSavingPlaintiffInfo}
         />
       )}
     </div>

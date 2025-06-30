@@ -10,15 +10,13 @@ interface GetHandsontableConfigArgs {
   onUpdateCase: (caseId: string, prop: string, newValue: any) => Promise<void>;
 }
 
-// Define and register a custom textarea cell type
-// This ensures that the textarea editor and renderer are explicitly linked
-Handsontable.cellTypes.registerCellType('customTextarea', {
-  editor: Handsontable.editors.TextareaEditor,
-  renderer: Handsontable.renderers.TextareaRenderer,
-  // You can inherit from 'text' type if needed, but for simplicity,
-  // directly assigning editor and renderer is often sufficient.
-  // extend: 'text' 
-});
+// Custom renderer for multi-line text (like plaintiff info)
+function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col: number, prop: string, value: any, cellProperties: Handsontable.CellProperties) {
+  Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
+  td.style.whiteSpace = 'pre-wrap'; // Ensure text wraps
+  td.style.wordBreak = 'break-word'; // Break long words
+  td.style.verticalAlign = 'top'; // Align text to top
+}
 
 export function getHandsontableConfig({
   caseType,
@@ -33,7 +31,7 @@ export function getHandsontableConfig({
       data: attr.id,
       title: attr.name,
       width: attr.width || 120,
-      readOnly: attr.id === 'caseNumber',
+      readOnly: attr.id === 'caseNumber' || attr.id === 'thong_tin_nguoi_khoi_kien', // Make plaintiff info read-only
       className: attr.id === 'caseNumber' ? 'font-medium text-blue-600' : ''
     };
 
@@ -79,7 +77,8 @@ export function getHandsontableConfig({
       case 'textarea':
         return {
           ...baseColumn,
-          type: 'customTextarea', // Use the custom registered type
+          type: 'text', // Use 'text' type but with custom renderer for display
+          renderer: multiLineTextRenderer, // Apply custom renderer
         };
       default:
         return {
@@ -154,7 +153,9 @@ export function getHandsontableConfig({
         for (const [rowIndex, prop, oldValue, newValue] of changes) {
           const changedCaseInFilteredData = filteredCases[rowIndex];
           
-          if (oldValue !== newValue && changedCaseInFilteredData) {
+          // Only update if the property is NOT 'thong_tin_nguoi_khoi_kien'
+          // The plaintiff info is updated via the modal's save handler
+          if (oldValue !== newValue && changedCaseInFilteredData && prop !== 'thong_tin_nguoi_khoi_kien') {
             const caseId = changedCaseInFilteredData.id;
             await onUpdateCase(caseId, prop, newValue);
           }

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { HotTable } from '@handsontable/react';
 import { Loader2, AlertCircle, FileText, Plus } from 'lucide-react';
 import { Case } from '../../types/caseTypes';
 import { HotTableProps } from 'handsontable/plugins/contextMenu'; // Correct import for HotTableProps
+import Handsontable from 'handsontable'; // Import Handsontable for hooks
 
 interface CaseTableProps {
   data: Case[];
@@ -14,6 +15,7 @@ interface CaseTableProps {
   filteredCount: number;
   totalCount: number;
   onAddCase: () => void;
+  onCellClick: (caseId: string, prop: string, value: any) => void; // New prop for cell clicks
 }
 
 export default function CaseTable({
@@ -26,7 +28,36 @@ export default function CaseTable({
   filteredCount,
   totalCount,
   onAddCase,
+  onCellClick,
 }: CaseTableProps) {
+  const hotTableRef = useRef<HotTable>(null);
+
+  useEffect(() => {
+    if (hotTableRef.current) {
+      const hotInstance = hotTableRef.current.hotInstance;
+
+      const handleCellMouseDown = (event: MouseEvent, coords: Handsontable.CellCoords) => {
+        // Check if it's a left click and not a header
+        if (event.button === 0 && coords.row >= 0 && coords.col >= 0) {
+          const prop = hotInstance?.colToProp(coords.col);
+          const caseItem = data[coords.row];
+          
+          if (prop === 'thong_tin_nguoi_khoi_kien' && caseItem) {
+            onCellClick(caseItem.id, prop, caseItem[prop]);
+            event.preventDefault(); // Prevent Handsontable's default editor from opening
+            event.stopImmediatePropagation(); // Stop further propagation
+          }
+        }
+      };
+
+      hotInstance?.addHook('afterOnCellMouseDown', handleCellMouseDown);
+
+      return () => {
+        hotInstance?.removeHook('afterOnCellMouseDown', handleCellMouseDown);
+      };
+    }
+  }, [data, onCellClick]); // Re-run effect if data or onCellClick changes
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col">
       <div className="p-4 flex-1 overflow-y-auto">
@@ -62,6 +93,7 @@ export default function CaseTable({
         ) : (
           <div className="handsontable-container h-full">
             <HotTable
+              ref={hotTableRef} // Attach ref here
               data={data}
               columns={columns}
               settings={settings}

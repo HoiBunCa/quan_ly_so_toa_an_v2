@@ -12,7 +12,26 @@ interface GetHandsontableConfigArgs {
 
 // Custom renderer for multi-line text (like plaintiff info)
 function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col: number, prop: string, value: any, cellProperties: Handsontable.CellProperties) {
+  // Apply default text renderer first
   Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
+
+  // Custom formatting for 'thong_tin_nguoi_khoi_kien'
+  if (prop === 'thong_tin_nguoi_khoi_kien' && typeof value === 'string') {
+    const lines = value.split('\n');
+    let formattedValue = '';
+    if (lines.length >= 1 && lines[0]) {
+      formattedValue += `Họ tên: ${lines[0]}`;
+    }
+    if (lines.length >= 2 && lines[1]) {
+      formattedValue += `\nNăm sinh: ${lines[1]}`;
+    }
+    if (lines.length >= 3 && lines[2]) {
+      formattedValue += `\nĐịa chỉ: ${lines[2]}`;
+    }
+    // Update the innerHTML of the cell with the formatted value
+    td.innerHTML = formattedValue;
+  }
+
   td.style.whiteSpace = 'pre-wrap'; // Ensure text wraps
   td.style.wordBreak = 'break-word'; // Break long words
   td.style.verticalAlign = 'top'; // Align text to top

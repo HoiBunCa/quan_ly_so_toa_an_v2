@@ -11,7 +11,7 @@ interface GetHandsontableConfigArgs {
 }
 
 // Custom renderer for multi-line text (like plaintiff info)
-function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col: number, prop: string, value: any, cellProperties: Handsontable.CellProperties) {
+function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col: number, prop: string, value: any, cellProperties: Handsontontable.CellProperties) {
   // Apply default text renderer first
   Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
 
@@ -48,6 +48,18 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
   td.style.whiteSpace = 'pre-wrap'; // Ensure text wraps
   td.style.wordBreak = 'break-word'; // Break long words
   td.style.verticalAlign = 'top'; // Align text to top
+}
+
+// Custom renderer for date fields to display DD-MM-YYYY
+function dateDisplayRenderer(instance: any, td: HTMLElement, row: number, col: number, prop: string, value: any, cellProperties: Handsontable.CellProperties) {
+  Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
+
+  if (value && typeof value === 'string') {
+    const parts = value.split('-'); // Assuming value is YYYY-MM-DD
+    if (parts.length === 3) {
+      td.innerText = `${parts[2]}-${parts[1]}-${parts[0]}`; // Format to DD-MM-YYYY
+    }
+  }
 }
 
 export function getHandsontableConfig({
@@ -100,7 +112,10 @@ export function getHandsontableConfig({
         return {
           ...baseColumn,
           type: 'date',
-          dateFormat: 'DD-MM-YYYY' // Changed to DD-MM-YYYY
+          // Keep dateFormat as YYYY-MM-DD for internal data handling, or remove it to use default
+          dateFormat: 'YYYY-MM-DD', 
+          correctFormat: true, // Ensure Handsontable corrects format if user types incorrectly
+          renderer: dateDisplayRenderer // Use custom renderer for display
         };
       case 'number':
         return {

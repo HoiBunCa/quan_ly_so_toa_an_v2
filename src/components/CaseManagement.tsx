@@ -117,8 +117,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       return;
     }
 
-    console.log('Attempting to delete selected IDs:', selectedRows); // Log selected IDs
-
     if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} vụ án đã chọn? Hành động này không thể hoàn tác.`)) {
       return;
     }
@@ -127,13 +125,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     let successfulDeletions = 0;
     // Now selectedRows contains IDs, so we find the actual case objects from the main 'cases' array
     const casesToDelete = cases.filter(caseItem => selectedRows.includes(caseItem.id));
-    console.log('Cases identified for deletion:', casesToDelete.map(c => ({ id: c.id, caseNumber: c.caseNumber }))); // Log cases to delete
-
     const failedDeletions: string[] = [];
 
     for (const caseItem of casesToDelete) {
       if (caseItem && caseItem.id) {
-        console.log(`Sending DELETE request for case ID: ${caseItem.id}`); // Log the ID being sent
         try {
           const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseItem.id}/`, {
             method: 'DELETE',
@@ -341,7 +336,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         }
       }
       setSelectedRows(selectedCaseIds); // Now selectedRows holds IDs, not indices
-      console.log('Selected Case IDs in afterSelection:', selectedCaseIds); // Log selected IDs
+    },
+    afterRenderer: (TD, row, col, prop, value, cellProperties) => {
+      const caseItem = filteredCases[row];
+      if (caseItem && caseItem.id) {
+        TD.setAttribute('data-id', caseItem.id);
+      }
     }
   };
 

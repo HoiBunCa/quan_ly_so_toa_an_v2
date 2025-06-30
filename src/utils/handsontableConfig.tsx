@@ -63,48 +63,13 @@ function dateDisplayRenderer(instance: any, td: HTMLElement, row: number, col: n
   }
 }
 
-// New factory function to create the remove_row callback
-const createRemoveRowCallback = (deleteCasesFunc: (ids: string[]) => Promise<void>, casesData: Case[]) => {
-  return function(this: Handsontable, key: string, selection: any, clickEvent: any) {
-    const hot = this;
-    const selectedRange = hot.getSelectedLast();
-
-    if (selectedRange) {
-      const [startRow, , endRow, ] = selectedRange;
-      const rowIndicesToDelete: number[] = [];
-      for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
-        rowIndicesToDelete.push(i);
-      }
-
-      const idsFromSelection: string[] = [];
-      rowIndicesToDelete.forEach(rowIndex => {
-        const caseItem = casesData[rowIndex]; // Use casesData from the closure
-        if (caseItem && caseItem.id) {
-          idsFromSelection.push(caseItem.id);
-        }
-      });
-
-      if (typeof deleteCasesFunc === 'function') {
-        deleteCasesFunc(idsFromSelection);
-      } else {
-        console.error('deleteCasesFunc is not a function in createRemoveRowCallback!', deleteCasesFunc);
-        toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
-      }
-    }
-  };
-};
-
 export function getHandsontableConfig({
   caseType,
   filteredCases,
-  deleteCases: deleteCasesProp, // Renamed to avoid any potential conflict
+  deleteCases, // Directly use the prop name
   setSelectedRows,
   onUpdateCase,
 }: GetHandsontableConfigArgs): Pick<HotTableProps, 'columns' | 'settings'> {
-
-  // Capture deleteCases in a local constant to ensure it's available in the closure
-  const actualDeleteCases = deleteCasesProp; 
-  console.log('deleteCases received in getHandsontableConfig:', actualDeleteCases);
 
   const columns = caseType.attributes.map(attr => {
     const baseColumn: Handsontable.ColumnSettings = {
@@ -180,7 +145,34 @@ export function getHandsontableConfig({
         'hsep1': '---------',
         'remove_row': {
           name: 'Xóa hàng đã chọn',
-          callback: createRemoveRowCallback(actualDeleteCases, filteredCases) // Use the factory function here
+          callback: function(this: Handsontable, key: string, selection: any, clickEvent: any) {
+            const hot = this;
+            const selectedRange = hot.getSelectedLast();
+
+            if (selectedRange) {
+              const [startRow, , endRow, ] = selectedRange;
+              const rowIndicesToDelete: number[] = [];
+              for (let i = Math.min(startRow, endRow); i <= Math.max(startRow, endRow); i++) {
+                rowIndicesToDelete.push(i);
+              }
+
+              const idsFromSelection: string[] = [];
+              rowIndicesToDelete.forEach(rowIndex => {
+                const caseItem = filteredCases[rowIndex];
+                if (caseItem && caseItem.id) {
+                  idsFromSelection.push(caseItem.id);
+                }
+              });
+              
+              // Directly call deleteCases from the closure
+              if (typeof deleteCases === 'function') { // Safety check
+                deleteCases(idsFromSelection);
+              } else {
+                console.error('deleteCases is not a function when called in context menu callback!', deleteCases);
+                toast.error('Lỗi: Không thể xóa vụ án. Chức năng xóa không khả dụng.');
+              }
+            }
+          }
         },
         'hsep2': '---------',
         'undo': {},

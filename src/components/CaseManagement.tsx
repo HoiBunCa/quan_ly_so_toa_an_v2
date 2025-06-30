@@ -65,8 +65,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setCases, // Expose setCases for local updates
   } = useCasesData(book);
 
-  console.log('deleteCases in CaseManagement (from hook):', deleteCases); // Debug log
-
   // WebSocket connection for max numbers
   useEffect(() => {
     if (book.caseTypeId === 'HON_NHAN') {

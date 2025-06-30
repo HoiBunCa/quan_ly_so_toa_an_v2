@@ -22,8 +22,9 @@ interface CaseManagementProps {
 export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [showAddCaseModal, setShowAddCaseModal] = useState(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]); // State for selected row IDs
-  const [maxSoThuLy, setMaxSoThuLy] = useState<string | null>(null); // State to store max_so_thu_ly from WebSocket
-  const [isMaxSoThuLyLoading, setIsMaxSoThuLyLoading] = useState(true); // New state for loading max_so_thu_ly
+  // Changed maxSoThuLy to maxNumbersByField to store max numbers for different fields
+  const [maxNumbersByField, setMaxNumbersByField] = useState<Record<string, string | null>>({}); 
+  const [isMaxNumbersLoading, setIsMaxNumbersLoading] = useState(true); // Generic loading state for all max numbers
 
   // State for Plaintiff Info Modal
   const [showPlaintiffInfoModal, setShowPlaintiffInfoModal] = useState(false);
@@ -63,70 +64,78 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setCases, // Expose setCases for local updates
   } = useCasesData(book);
 
-  // WebSocket connection for max_so_thu_ly
+  // WebSocket connection for max numbers
   useEffect(() => {
     if (book.caseTypeId === 'HON_NHAN') {
-      setIsMaxSoThuLyLoading(true); // Set loading to true when starting connection
+      setIsMaxNumbersLoading(true); // Set loading to true when starting connection
       const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
 
       ws.onopen = () => {
-        console.log('WebSocket connected for max_so_thu_ly');
-        ws.send(JSON.stringify({ action: 'get_max_so_thu_ly', year: book.year }));
+        console.log('WebSocket connected for max numbers');
+        // Request all max numbers for the current year
+        ws.send(JSON.stringify({ action: 'get_all_max_numbers', year: book.year })); 
       };
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.so_thu_ly !== undefined && data.so_thu_ly !== null) {
-          setMaxSoThuLy(String(data.so_thu_ly)); // Ensure it's a string
-          console.log('WebSocket: Received max_so_thu_ly and setting state:', data.so_thu_ly);
+        // Assuming data is an object like { "so_thu_ly": "6", "so_chuyen_hoa_giai": "10", ... }
+        if (data) {
+          const formattedData: Record<string, string | null> = {};
+          for (const key in data) {
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+              formattedData[key] = String(data[key]); // Ensure all values are strings
+            }
+          }
+          setMaxNumbersByField(formattedData); 
+          console.log('WebSocket: Received max numbers map and setting state:', formattedData);
         } else {
-          setMaxSoThuLy(null); // Explicitly set to null if undefined/null
-          console.log('WebSocket: Received undefined/null max_so_thu_ly. Setting state to null.');
+          setMaxNumbersByField({}); // Explicitly set to empty object if undefined/null
+          console.log('WebSocket: Received empty/invalid max numbers data. Setting state to empty object.');
         }
-        setIsMaxSoThuLyLoading(false);
-        console.log('WebSocket: Setting isMaxSoThuLyLoading to false.');
+        setIsMaxNumbersLoading(false);
+        console.log('WebSocket: Setting isMaxNumbersLoading to false.');
       };
 
       ws.onclose = () => {
-        console.log('WebSocket disconnected for max_so_thu_ly');
-        setIsMaxSoThuLyLoading(false); // Set loading to false on close
+        console.log('WebSocket disconnected for max numbers');
+        setIsMaxNumbersLoading(false); // Set loading to false on close
       };
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        toast.error('Lỗi kết nối WebSocket để lấy số thụ lý tối đa.');
-        setIsMaxSoThuLyLoading(false); // Set loading to false on error
+        toast.error('Lỗi kết nối WebSocket để lấy số tối đa.');
+        setIsMaxNumbersLoading(false); // Set loading to false on error
       };
 
       return () => {
         ws.close();
       };
     } else {
-      // If not HON_NHAN, we don't need to load max_so_thu_ly, so it's not loading.
-      setIsMaxSoThuLyLoading(false);
-      setMaxSoThuLy(null); // Ensure it's null for non-HON_NHAN types
+      // If not HON_NHAN, we don't need to load max numbers, so it's not loading.
+      setIsMaxNumbersLoading(false);
+      setMaxNumbersByField({}); // Ensure it's empty for non-HON_NHAN types
     }
   }, [book.caseTypeId, book.year]); // Reconnect if book type or year changes
 
-  const getNextCaseNumber = useCallback(() => {
-    console.log('getNextCaseNumber called.');
-    console.log('Current maxSoThuLy from WebSocket:', maxSoThuLy, '(Type:', typeof maxSoThuLy, ')');
+  // Renamed to be more generic and accept a fieldKey
+  const getNextNumberForField = useCallback((fieldKey: string) => {
+    console.log(`getNextNumberForField called for: ${fieldKey}`);
+    const currentMax = maxNumbersByField[fieldKey];
+    console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
 
-    // The 'maxSoThuLy' state already holds the maximum 'so_thu_ly' value from the WebSocket.
-    // We need to ensure it's a valid number string before incrementing.
-    if (maxSoThuLy !== null && maxSoThuLy !== undefined && String(maxSoThuLy).trim() !== '') {
-      const currentSoThuLy = parseInt(String(maxSoThuLy), 10); // Ensure it's parsed as an integer
-      console.log('Parsed currentSoThuLy:', currentSoThuLy);
+    if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {
+      const parsedMax = parseInt(String(currentMax), 10); // Ensure it's parsed as an integer
+      console.log('Parsed currentMax:', parsedMax);
 
-      if (!isNaN(currentSoThuLy)) {
-        const nextSoThuLy = (currentSoThuLy + 1).toString();
-        console.log('Generated next so_thu_ly:', nextSoThuLy);
-        return nextSoThuLy;
+      if (!isNaN(parsedMax)) {
+        const nextNumber = (parsedMax + 1).toString();
+        console.log(`Generated next number for ${fieldKey}:`, nextNumber);
+        return nextNumber;
       }
     }
 
-    // Fallback logic if maxSoThuLy is not available or invalid
-    console.log('maxSoThuLy is not a valid number. Falling back to date-based generation.');
+    // Fallback logic if max number for this field is not available or invalid
+    console.log(`Max number for ${fieldKey} is not a valid number. Falling back to date-based generation.`);
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
@@ -134,7 +143,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     const fallbackNumber = `${dd}${mm}${yyyy}`;
     console.log('Fallback number:', fallbackNumber);
     return fallbackNumber;
-  }, [maxSoThuLy]); // Dependency on maxSoThuLy ensures this function updates when maxSoThuLy changes.
+  }, [maxNumbersByField]); // Dependency on maxNumbersByField ensures this function updates when max numbers change.
 
   const handleAddNewCaseClick = () => {
     setShowAddCaseModal(true);
@@ -389,8 +398,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookId={book.id}
           bookYear={book.year}
           caseTypeCode={caseType.code}
-          onGenerateCaseNumber={getNextCaseNumber}
-          isGeneratingCaseNumber={isMaxSoThuLyLoading}
+          onGenerateCaseNumber={() => getNextNumberForField('so_thu_ly')} // Pass specific field key
+          isGeneratingCaseNumber={isMaxNumbersLoading} // Use generic loading state
         />
       )}
 
@@ -420,8 +429,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveNumberDateInfo}
           onClose={() => setShowNumberDateInfoModal(false)}
           isSaving={isSavingNumberDateInfo}
-          onGenerateNumber={getNextCaseNumber} 
-          isGeneratingNumber={isMaxSoThuLyLoading}
+          // Derive the field key from currentNumberDateProp
+          onGenerateNumber={() => getNextNumberForField(currentNumberDateProp!.replace('thong_tin_', 'so_'))} 
+          isGeneratingNumber={isMaxNumbersLoading} // Use generic loading state
         />
       )}
     </div>

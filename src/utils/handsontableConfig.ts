@@ -100,7 +100,7 @@ export function getHandsontableConfig({
         return {
           ...baseColumn,
           type: 'date',
-          dateFormat: 'YYYY-MM-DD'
+          dateFormat: 'DD-MM-YYYY' // Changed to DD-MM-YYYY
         };
       case 'number':
         return {

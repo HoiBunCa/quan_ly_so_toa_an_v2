@@ -41,12 +41,18 @@ export const parseNumberDateString = (combinedString: string) => {
     number = lines[0].substring('Số: '.length);
   }
   if (lines[1]?.startsWith('Ngày: ')) {
-    // Convert DD-MM-YYYY back to YYYY-MM-DD for internal state/API
-    const dateParts = lines[1].substring('Ngày: '.length).split('-');
+    const extractedDateStr = lines[1].substring('Ngày: '.length);
+    const dateParts = extractedDateStr.split('-');
     if (dateParts.length === 3) {
-      date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+      // Check if it's already YYYY-MM-DD (e.g., '2024-01-01')
+      if (dateParts[0].length === 4) {
+        date = extractedDateStr; // Keep as YYYY-MM-DD
+      } else {
+        // Assume it's DD-MM-YYYY and convert to YYYY-MM-DD
+        date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+      }
     } else {
-      date = lines[1].substring('Ngày: '.length);
+      date = extractedDateStr; // If not 3 parts, keep as is (might be empty or malformed)
     }
   }
   return { number, date };

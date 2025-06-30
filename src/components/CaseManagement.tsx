@@ -72,7 +72,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
 
       ws.onopen = () => {
-        console.log('WebSocket connected for max numbers');
         // Request all max numbers for the current year
         ws.send(JSON.stringify({ action: 'get_all_max_numbers', year: book.year })); 
       };
@@ -88,10 +87,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             }
           }
           setMaxNumbersByField(formattedData); 
-          console.log('WebSocket: Received max numbers map and setting state:', formattedData);
+
         } else {
           setMaxNumbersByField({}); // Explicitly set to empty object if undefined/null
-          console.log('WebSocket: Received empty/invalid max numbers data. Setting state to empty object.');
+
         }
         setIsMaxNumbersLoading(false);
         console.log('WebSocket: Setting isMaxNumbersLoading to false.');
@@ -124,11 +123,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     const currentMax = maxNumbersByField[fieldKey];
     console.log("maxNumbersByField: ", maxNumbersByField);
     console.log("fieldKey: ", fieldKey);
-    console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
+
 
     if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {
       const parsedMax = parseInt(String(currentMax), 10); // Ensure it's parsed as an integer
-      console.log('Parsed currentMax:', parsedMax);
+
 
       if (!isNaN(parsedMax)) {
         const nextNumber = (parsedMax).toString();

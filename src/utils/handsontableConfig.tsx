@@ -192,7 +192,7 @@ export function getHandsontableConfig({
 
       const iconHtml = '<span style="margin-right:4px;">🗂️</span>'; // hoặc <img src="..." />
       return iconHtml + column.title;
-    }
+    },
     contextMenu: {
       items: {
         'row_above': {},

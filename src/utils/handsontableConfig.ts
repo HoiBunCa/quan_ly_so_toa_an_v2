@@ -15,7 +15,7 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
   // Apply default text renderer first
   Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
 
-  // Custom formatting for 'thong_tin_nguoi_khoi_kien' and 'thong_tin_nguoi_bi_kien'
+  // Custom formatting for 'thong_tin_nguoi_khoi_kien', 'thong_tin_nguoi_bi_kien', and other combined fields
   if (prop === 'thong_tin_nguoi_khoi_kien' || prop === 'thong_tin_nguoi_bi_kien') {
     if (typeof value === 'string') {
       const lines = value.split('\n');
@@ -32,6 +32,17 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       // Update the innerHTML of the cell with the formatted value
       td.innerHTML = formattedValue;
     }
+  } else if (prop.startsWith('thong_tin_') && typeof value === 'string') {
+    // For other combined number/date fields
+    const lines = value.split('\n');
+    let formattedValue = '';
+    if (lines.length >= 1 && lines[0]) {
+      formattedValue += `${lines[0]}`; // "Số: [number]"
+    }
+    if (lines.length >= 2 && lines[1]) {
+      formattedValue += `\n${lines[1]}`; // "Ngày: [date]"
+    }
+    td.innerHTML = formattedValue;
   }
 
   td.style.whiteSpace = 'pre-wrap'; // Ensure text wraps
@@ -52,7 +63,7 @@ export function getHandsontableConfig({
       data: attr.id,
       title: attr.name,
       width: attr.width || 120,
-      readOnly: attr.id === 'caseNumber' || attr.id === 'thong_tin_nguoi_khoi_kien' || attr.id === 'thong_tin_nguoi_bi_kien', // Make plaintiff and defendant info read-only
+      readOnly: attr.id === 'caseNumber' || attr.id.startsWith('thong_tin_'), // Make all combined info fields read-only
       className: attr.id === 'caseNumber' ? 'font-medium text-blue-600' : ''
     };
 
@@ -174,9 +185,8 @@ export function getHandsontableConfig({
         for (const [rowIndex, prop, oldValue, newValue] of changes) {
           const changedCaseInFilteredData = filteredCases[rowIndex];
           
-          // Only update if the property is NOT 'thong_tin_nguoi_khoi_kien' or 'thong_tin_nguoi_bi_kien'
-          // These infos are updated via their respective modal's save handler
-          if (oldValue !== newValue && changedCaseInFilteredData && prop !== 'thong_tin_nguoi_khoi_kien' && prop !== 'thong_tin_nguoi_bi_kien') {
+          // Only update if the property is NOT a combined info field
+          if (oldValue !== newValue && changedCaseInFilteredData && !String(prop).startsWith('thong_tin_')) {
             const caseId = changedCaseInFilteredData.id;
             await onUpdateCase(caseId, prop, newValue);
           }

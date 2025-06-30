@@ -3,8 +3,9 @@ import { CaseBook } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
-import PlaintiffInfoModal from './case-management/PlaintiffInfoModal'; // Import the new modal
-import DefendantInfoModal from './case-management/DefendantInfoModal'; // Import the new Defendant modal
+import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
+import DefendantInfoModal from './case-management/DefendantInfoModal';
+import NumberDateInfoModal from './case-management/NumberDateInfoModal'; // Import the new modal
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
@@ -33,6 +34,14 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentCaseIdForDefendantEdit, setCurrentCaseIdForDefendantEdit] = useState<string | null>(null);
   const [currentDefendantInfo, setCurrentDefendantInfo] = useState({ name: '', year: '', address: '' });
   const [isSavingDefendantInfo, setIsSavingDefendantInfo] = useState(false);
+
+  // State for generic Number/Date Info Modal
+  const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
+  const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
+  const [currentNumberDateProp, setCurrentNumberDateProp] = useState<string | null>(null);
+  const [currentNumberDateCaseId, setCurrentNumberDateCaseId] = useState<string | null>(null);
+  const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
+  const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
@@ -73,6 +82,26 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     fetchCases(); // Refresh data after a new case is added
   };
 
+  // Helper to parse combined "Số: [number]\nNgày: [date]" string
+  const parseNumberDateString = (combinedString: string) => {
+    const lines = combinedString.split('\n');
+    let number = '';
+    let date = '';
+    if (lines[0]?.startsWith('Số: ')) {
+      number = lines[0].substring('Số: '.length);
+    }
+    if (lines[1]?.startsWith('Ngày: ')) {
+      // Convert DD-MM-YYYY back to YYYY-MM-DD for internal state
+      const dateParts = lines[1].substring('Ngày: '.length).split('-');
+      if (dateParts.length === 3) {
+        date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+      } else {
+        date = lines[1].substring('Ngày: '.length);
+      }
+    }
+    return { number, date };
+  };
+
   const handleUpdateCase = useCallback(async (caseId: string, prop: string, newValue: any) => {
     const caseToUpdate = cases.find(c => c.id === caseId);
     if (!caseToUpdate) {
@@ -87,11 +116,16 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       payload.ho_ten_nguoi_khoi_kien = lines[0] || '';
       payload.nam_sinh_nguoi_khoi_kien = lines[1] || '';
       payload.dia_chi_nguoi_khoi_kien = lines[2] || '';
-    } else if (prop === 'thong_tin_nguoi_bi_kien') { // Handle defendant info
+    } else if (prop === 'thong_tin_nguoi_bi_kien') {
       const lines = String(newValue || '').split('\n');
       payload.ho_ten_nguoi_bi_kien = lines[0] || '';
       payload.nam_sinh_nguoi_bi_kien = lines[1] || '';
       payload.dia_chi_nguoi_bi_kien = lines[2] || '';
+    } else if (prop.startsWith('thong_tin_')) { // Handle combined number/date fields
+      const { number, date } = parseNumberDateString(newValue);
+      const originalPropName = prop.replace('thong_tin_', ''); // e.g., 'chuyen_hoa_giai'
+      payload[`so_${originalPropName}`] = number;
+      payload[`ngay_${originalPropName}`] = date;
     }
     else {
       payload[prop] = newValue;
@@ -106,13 +140,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC.ho_ten_nguoi_khoi_kien = lines[0] || '';
           updatedC.nam_sinh_nguoi_khoi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_khoi_kien = lines[2] || '';
-          updatedC.thong_tin_nguoi_khoi_kien = newValue; // Keep the combined value for display
-        } else if (prop === 'thong_tin_nguoi_bi_kien') { // Update local state for defendant info
+          updatedC.thong_tin_nguoi_khoi_kien = newValue;
+        } else if (prop === 'thong_tin_nguoi_bi_kien') {
           const lines = String(newValue || '').split('\n');
           updatedC.ho_ten_nguoi_bi_kien = lines[0] || '';
           updatedC.nam_sinh_nguoi_bi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_bi_kien = lines[2] || '';
-          updatedC.thong_tin_nguoi_bi_kien = newValue; // Keep the combined value for display
+          updatedC.thong_tin_nguoi_bi_kien = newValue;
+        } else if (prop.startsWith('thong_tin_')) {
+          const { number, date } = parseNumberDateString(newValue);
+          const originalPropName = prop.replace('thong_tin_', '');
+          updatedC[`so_${originalPropName}`] = number;
+          updatedC[`ngay_${originalPropName}`] = date;
+          updatedC[prop] = newValue; // Keep the combined value for display
         }
         else {
           updatedC[prop] = newValue;
@@ -144,56 +184,56 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   }, [cases, fetchCases, setCases, caseType.attributes]);
 
+  const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
+    if (!currentNumberDateCaseId || !currentNumberDateProp) return;
+
+    setIsSavingNumberDateInfo(true);
+    // Format date back to YYYY-MM-DD for API
+    const formattedDate = data.date.split('-').reverse().join('-');
+    const combinedValue = [
+      data.number ? `Số: ${data.number}` : '',
+      data.date ? `Ngày: ${data.date}` : ''
+    ].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentNumberDateCaseId, currentNumberDateProp, combinedValue);
+      setShowNumberDateInfoModal(false);
+    } finally {
+      setIsSavingNumberDateInfo(false);
+    }
+  };
+
   const handleCellClick = useCallback((caseId: string, prop: string, value: any) => {
+    const attribute = caseType.attributes.find(attr => attr.id === prop);
+    const title = attribute?.name || prop;
+
     if (prop === 'thong_tin_nguoi_khoi_kien') {
       setCurrentCaseIdForPlaintiffEdit(caseId);
-      // Parse the combined string back into individual fields
       const lines = String(value || '').split('\n');
       setCurrentPlaintiffInfo({
-        name: lines[0] || '',
-        year: lines[1] || '',
-        address: lines[2] || ''
+        name: lines[0]?.replace('Họ tên: ', '') || '',
+        year: lines[1]?.replace('Năm sinh: ', '') || '',
+        address: lines[2]?.replace('Địa chỉ: ', '') || ''
       });
       setShowPlaintiffInfoModal(true);
-    } else if (prop === 'thong_tin_nguoi_bi_kien') { // Handle click for defendant info
+    } else if (prop === 'thong_tin_nguoi_bi_kien') {
       setCurrentCaseIdForDefendantEdit(caseId);
       const lines = String(value || '').split('\n');
       setCurrentDefendantInfo({
-        name: lines[0] || '',
-        year: lines[1] || '',
-        address: lines[2] || ''
+        name: lines[0]?.replace('Họ tên: ', '') || '',
+        year: lines[1]?.replace('Năm sinh: ', '') || '',
+        address: lines[2]?.replace('Địa chỉ: ', '') || ''
       });
       setShowDefendantInfoModal(true);
+    } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
+      setCurrentNumberDateCaseId(caseId);
+      setCurrentNumberDateProp(prop);
+      setNumberDateModalTitle(`Chỉnh sửa ${title}`);
+      const { number, date } = parseNumberDateString(String(value || ''));
+      setCurrentNumberDateInfo({ number, date });
+      setShowNumberDateInfoModal(true);
     }
-  }, []);
-
-  const handleSavePlaintiffInfo = async (data: { name: string, year: string, address: string }) => {
-    if (!currentCaseIdForPlaintiffEdit) return;
-
-    setIsSavingPlaintiffInfo(true);
-    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
-    
-    try {
-      await handleUpdateCase(currentCaseIdForPlaintiffEdit, 'thong_tin_nguoi_khoi_kien', combinedValue);
-      setShowPlaintiffInfoModal(false);
-    } finally {
-      setIsSavingPlaintiffInfo(false);
-    }
-  };
-
-  const handleSaveDefendantInfo = async (data: { name: string, year: string, address: string }) => {
-    if (!currentCaseIdForDefendantEdit) return;
-
-    setIsSavingDefendantInfo(true);
-    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
-    
-    try {
-      await handleUpdateCase(currentCaseIdForDefendantEdit, 'thong_tin_nguoi_bi_kien', combinedValue);
-      setShowDefendantInfoModal(false);
-    } finally {
-      setIsSavingDefendantInfo(false);
-    }
-  };
+  }, [caseType.attributes]);
 
   const exportData = () => {
     const headers = caseType.attributes.map(attr => attr.name);
@@ -246,7 +286,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         filteredCount={filteredCases.length}
         totalCount={cases.length}
         onAddCase={handleAddNewCaseClick}
-        onCellClick={handleCellClick} // Pass the new click handler
+        onCellClick={handleCellClick}
       />
 
       <CaseInstructions />
@@ -277,6 +317,16 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveDefendantInfo}
           onClose={() => setShowDefendantInfoModal(false)}
           isSaving={isSavingDefendantInfo}
+        />
+      )}
+
+      {showNumberDateInfoModal && (
+        <NumberDateInfoModal
+          title={numberDateModalTitle}
+          initialData={currentNumberDateInfo}
+          onSave={handleSaveNumberDateInfo}
+          onClose={() => setShowNumberDateInfoModal(false)}
+          isSaving={isSavingNumberDateInfo}
         />
       )}
     </div>

@@ -15,6 +15,16 @@ interface UseCasesDataResult {
   setCases: React.Dispatch<React.SetStateAction<Case[]>>; // Expose setCases for local updates
 }
 
+// Helper to format date from YYYY-MM-DD to DD-MM-YYYY for display
+const formatDateForDisplay = (dateString: string | undefined) => {
+  if (!dateString) return '';
+  const parts = dateString.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return dateString;
+};
+
 export function useCasesData(book: CaseBook): UseCasesDataResult {
   const [cases, setCases] = useState<Case[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,6 +65,22 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
             item.nam_sinh_nguoi_bi_kien,
             item.dia_chi_nguoi_bi_kien
           ].filter(Boolean).join('\n');
+
+          // Combine "Số" and "Ngày" fields for display
+          const combineNumberAndDate = (num: string | undefined, date: string | undefined) => {
+            const parts = [];
+            if (num) parts.push(`Số: ${num}`);
+            if (date) parts.push(`Ngày: ${formatDateForDisplay(date)}`);
+            return parts.join('\n');
+          };
+
+          newCase.thong_tin_chuyen_hoa_giai = combineNumberAndDate(item.so_chuyen_hoa_giai, item.ngay_chuyen_hoa_giai);
+          newCase.thong_tin_tra_lai_don = combineNumberAndDate(item.so_tra_lai_don, item.ngay_tra_lai_don);
+          newCase.thong_tin_yeu_cau_sua_doi_bo_sung = combineNumberAndDate(item.so_yeu_cau_sua_doi_bo_sung_don_khoi_kien, item.ngay_yeu_cau_sua_doi_bo_sung_don_khoi_kien);
+          newCase.thong_tin_chuyen_don_khoi_kien = combineNumberAndDate(item.so_chuyen_don_khoi_kien, item.ngay_chuyen_don_khoi_kien);
+          newCase.thong_tin_thong_bao_nop_tam_ung_an_phi = combineNumberAndDate(item.so_thong_bao_nop_tam_ung_an_phi, item.ngay_thong_bao_nop_tam_ung_an_phi);
+          newCase.thong_tin_thu_ly_vu_an = combineNumberAndDate(item.so_thu_ly_vu_an, item.ngay_thu_ly_vu_an);
+          newCase.thong_tin_giu_nguyen_tra_lai_don = combineNumberAndDate(item.so_giu_nguyen_viec_tra_lai_don_khoi_kien, item.ngay_giu_nguyen_viec_tra_lai_don_khoi_kien);
 
           return newCase;
         });

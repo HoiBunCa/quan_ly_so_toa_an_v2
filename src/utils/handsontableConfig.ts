@@ -63,7 +63,8 @@ export function getHandsontableConfig({
       data: attr.id,
       title: attr.name,
       width: attr.width || 120,
-      readOnly: attr.id === 'caseNumber' || attr.id.startsWith('thong_tin_'), // Make all combined info fields read-only
+      // Only 'caseNumber' should be readOnly. All 'thong_tin_' fields are now editable via modal.
+      readOnly: attr.id === 'caseNumber', 
       className: attr.id === 'caseNumber' ? 'font-medium text-blue-600' : ''
     };
 

@@ -71,7 +71,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
             const parts = [];
             if (num) parts.push(`Số: ${num}`);
             if (date) parts.push(`Ngày: ${formatDateForDisplay(date)}`);
-            return parts.join('\n');
+            return parts.filter(Boolean).join('\n');
           };
 
           newCase.thong_tin_chuyen_hoa_giai = combineNumberAndDate(item.so_chuyen_hoa_giai, item.ngay_chuyen_hoa_giai);
@@ -81,6 +81,11 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           newCase.thong_tin_thong_bao_nop_tam_ung_an_phi = combineNumberAndDate(item.so_thong_bao_nop_tam_ung_an_phi, item.ngay_thong_bao_nop_tam_ung_an_phi);
           newCase.thong_tin_thu_ly_vu_an = combineNumberAndDate(item.so_thu_ly_vu_an, item.ngay_thu_ly_vu_an);
           newCase.thong_tin_giu_nguyen_tra_lai_don = combineNumberAndDate(item.so_giu_nguyen_viec_tra_lai_don_khoi_kien, item.ngay_giu_nguyen_viec_tra_lai_don_khoi_kien);
+          
+          // New combined fields
+          newCase.thong_tin_nhan_lai_don_khoi_kien_va_tai_lieu = combineNumberAndDate(item.so_nhan_lai_don_khoi_kien_va_tai_lieu, item.ngay_nhan_lai_don_khoi_kien_va_tai_lieu);
+          newCase.thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien = combineNumberAndDate(item.so_yeu_cau_toa_an_nhan_lai_don_khoi_kien, item.ngay_yeu_cau_toa_an_nhan_lai_don_khoi_kien);
+          newCase.thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi = combineNumberAndDate(item.so_ap_dung_bien_phap_khan_cap_tam_thoi, item.ngay_ap_dung_bien_phap_khan_cap_tam_thoi);
 
           return newCase;
         });

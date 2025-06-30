@@ -23,12 +23,11 @@ export const caseTypes: CaseType[] = [
       { id: 'ngay_nop_tien_tam_ung_an_phi', name: 'Ngày nộp tiền tạm ứng án phí', type: 'date', required: false, width: 260 },
       { id: 'thong_tin_thu_ly_vu_an', name: 'Thông tin thụ lý vụ án', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_giu_nguyen_tra_lai_don', name: 'Thông tin giữ nguyên trả lại đơn', type: 'textarea', required: false, width: 320 },
-      { id: 'so_nhan_lai_don_khoi_kien_va_tai_lieu', name: 'Số nhận lại đơn khởi kiện và tài liệu', type: 'text', required: false, width: 320 },
-      { id: 'ngay_nhan_lai_don_khoi_kien_va_tai_lieu', name: 'Ngày nhận lại đơn khởi kiện và tài liệu', type: 'date', required: false, width: 320 },
-      { id: 'so_yeu_cau_toa_an_nhan_lai_don_khoi_kien', name: 'Số yêu cầu toà án nhận lại đơn khởi kiện', type: 'text', required: false, width: 320 },
-      { id: 'ngay_yeu_cau_toa_an_nhan_lai_don_khoi_kien', name: 'Ngày yêu cầu toà án nhận lại đơn khởi kiện', type: 'date', required: false, width: 320 },
-      { id: 'so_ap_dung_bien_phap_khan_cap_tam_thoi', name: 'Số áp dụng biện pháp khẩn cấp tạm thời', type: 'text', required: false, width: 280 },
-      { id: 'ngay_ap_dung_bien_phap_khan_cap_tam_thoi', name: 'Ngày áp dụng biện pháp khẩn cấp tạm thời', type: 'date', required: false, width: 280 },
+      // New combined fields for editing
+      { id: 'thong_tin_nhan_lai_don_khoi_kien_va_tai_lieu', name: 'Số/Ngày nhận lại đơn khởi kiện và tài liệu', type: 'textarea', required: false, width: 320 },
+      { id: 'thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien', name: 'Số/Ngày yêu cầu toà án nhận lại đơn khởi kiện', type: 'textarea', required: false, width: 320 },
+      { id: 'thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi', name: 'Số/Ngày áp dụng biện pháp khẩn cấp tạm thời', type: 'textarea', required: false, width: 280 },
+      
       { id: 'tham_phan', name: 'Thẩm phán', type: 'text', required: false, width: 150 },
       { id: 'ghi_chu', name: 'Ghi chú', type: 'textarea', required: false, width: 300 }
     ]
@@ -86,7 +85,7 @@ export const caseTypes: CaseType[] = [
       { id: 'ticketNumber', name: 'Ticket Number', type: 'text', required: true, width: 120 },
       { id: 'violationDate', name: 'Violation Date', type: 'date', required: true, width: 120 },
       { id: 'filingDate', name: 'Filing Date', type: 'date', required: true, width: 120 },
-      { id: 'status', name: 'Status', type: 'dropdown', required: true, width: 120,
+      { id: 'status', type: 'dropdown', required: true, width: 120,
         options: ['Filed', 'Scheduled', 'Paid', 'Dismissed', 'Guilty', 'Not Guilty'] },
       { id: 'fineAmount', name: 'Fine Amount', type: 'number', required: false, width: 120 },
       { id: 'location', name: 'Violation Location', type: 'text', required: false, width: 180 },

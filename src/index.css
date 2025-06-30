@@ -26,6 +26,13 @@
   font-weight: 600;
   color: #374151;
   padding: 12px;
+  /* Add these for icon alignment */
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center content horizontally */
+  height: 100%; /* Ensure it takes full height */
+  overflow: visible; /* Ensure content is not clipped */
+  white-space: nowrap; /* Prevent text wrapping in header */
 }
 
 .handsontable .htCore .htDimmed {

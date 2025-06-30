@@ -146,9 +146,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       console.log('Parsed currentMax:', parsedMax);
 
       if (!isNaN(parsedMax)) {
-        // If backend sends 0, it means the next number should be 1.
-        // Otherwise, display the number sent by backend directly.
-        const nextNumber = parsedMax === 0 ? '1' : parsedMax.toString(); 
+        // User explicitly requested: "chỉ lấy ra hiển thị, không tự động + 1 vào nữa"
+        // This implies the backend sends the *next available* number directly.
+        const nextNumber = parsedMax.toString(); 
         console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }

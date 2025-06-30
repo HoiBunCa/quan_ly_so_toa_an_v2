@@ -38,7 +38,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const hotTableRef = useRef<HotTable>(null);
   const [cases, setCases] = useState<Case[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]); // Changed to store IDs
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAddCaseModal, setShowAddCaseModal] = useState(false);
@@ -64,7 +64,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         const data = await response.json();
         const fetchedCases: Case[] = data.results.map((item: any) => {
           const newCase: Case = {
-            id: item.id.toString(),
+            id: item.id.toString(), // Here, id is converted to string
             caseNumber: item.so_thu_ly || '',
             bookId: book.id,
             createdDate: item.ngay_thu_ly || item.ngay_nhan_don || '',
@@ -123,8 +123,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
     setIsLoading(true);
     let successfulDeletions = 0;
-    // Lấy các vụ án cần xóa từ filteredCases thay vì cases
-    const casesToDelete = selectedRows.map(rowIndex => filteredCases[rowIndex]); 
+    // Now selectedRows contains IDs, so we find the actual case objects from the main 'cases' array
+    const casesToDelete = cases.filter(caseItem => selectedRows.includes(caseItem.id));
     const failedDeletions: string[] = [];
 
     for (const caseItem of casesToDelete) {
@@ -154,7 +154,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     if (failedDeletions.length > 0) {
       toast.error(`Không thể xóa các vụ án: ${failedDeletions.join(', ')}. Vui lòng kiểm tra console để biết thêm chi tiết.`);
     }
-    setSelectedRows([]);
+    setSelectedRows([]); // Clear selected IDs
   };
 
   const refreshData = () => {
@@ -276,15 +276,26 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         return;
       }
       if (changes) {
-        const newCases = [...cases];
-        for (const [row, prop, oldValue, newValue] of changes) {
-          if (oldValue !== newValue && newCases[row]) {
-            const caseToUpdate = newCases[row];
-            const caseId = caseToUpdate.id;
+        for (const [rowIndex, prop, oldValue, newValue] of changes) {
+          // Get the case object from the currently displayed (filtered) data
+          const changedCaseInFilteredData = filteredCases[rowIndex];
+          
+          if (oldValue !== newValue && changedCaseInFilteredData) {
+            const caseId = changedCaseInFilteredData.id;
 
-            (caseToUpdate as any)[prop] = newValue;
-            caseToUpdate.lastModified = new Date().toISOString().split('T')[0];
-            setCases([...newCases]);
+            // Find the actual case object in the main 'cases' array using its ID
+            const caseToUpdate = cases.find(c => c.id === caseId);
+
+            if (!caseToUpdate) {
+              console.warn(`Case with ID ${caseId} not found in main cases array.`);
+              continue; // Skip if not found
+            }
+
+            // Create a new array with the updated case to trigger re-render
+            const updatedCases = cases.map(c => 
+              c.id === caseId ? { ...c, [prop]: newValue, lastModified: new Date().toISOString().split('T')[0] } : c
+            );
+            setCases(updatedCases); // Update the main cases state
 
             const payload: { [key: string]: any } = {
               [prop]: newValue,
@@ -308,17 +319,23 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             } catch (e: any) {
               console.error("Failed to update case:", e);
               toast.error(`Cập nhật thất bại: ${e.message}`);
+              // Optionally, revert the local change if update fails
+              // fetchCases(); 
             }
           }
         }
       }
     },
     afterSelection: (row: number, column: number, row2: number, column2: number) => {
-      const selectedRowsArray = [];
+      const selectedCaseIds: string[] = [];
       for (let i = Math.min(row, row2); i <= Math.max(row, row2); i++) {
-        selectedRowsArray.push(i);
+        // Get the ID from the filtered data, as the selection is based on the displayed data
+        const caseItem = filteredCases[i];
+        if (caseItem && caseItem.id) {
+          selectedCaseIds.push(caseItem.id);
+        }
       }
-      setSelectedRows(selectedRowsArray);
+      setSelectedRows(selectedCaseIds); // Now selectedRows holds IDs, not indices
     }
   };
 

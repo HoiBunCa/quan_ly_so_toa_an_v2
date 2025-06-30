@@ -186,13 +186,7 @@ export function getHandsontableConfig({
 
   const settings: Handsontable.GridSettings = {
     rowHeaders: false,
-    colHeaders: (index) => {
-      const column = columns[index];
-      if (!column) return '';
-
-      const iconHtml = '<span style="margin-right:4px;">🗂️</span>'; // hoặc <img src="..." />
-      return iconHtml + column.title;
-    },
+    colHeaders: true,
     contextMenu: {
       items: {
         'row_above': {},

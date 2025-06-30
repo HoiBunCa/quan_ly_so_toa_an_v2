@@ -79,19 +79,20 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         // Assuming data is an object like { "so_thu_ly": "6", "so_chuyen_hoa_giai": "10", ... }
-        // if (data) {
-        //   const formattedData: Record<string, string | null> = {};
-        //   for (const key in data) {
-        //     if (Object.prototype.hasOwnProperty.call(data, key)) {
-        //       formattedData[key] = String(data[key]); // Ensure all values are strings
-        //     }
-        //   }
-        //   setMaxNumbersByField(formattedData); 
+        if (data) {
+          const formattedData: Record<string, string | null> = {};
+          for (const key in data) {
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+              formattedData[key] = String(data[key]); // Ensure all values are strings
+            }
+          }
+          console.log("formattedData", formattedData);
+          setMaxNumbersByField(formattedData); 
 
-        // } else {
-        //   setMaxNumbersByField({}); // Explicitly set to empty object if undefined/null
+        } else {
+          setMaxNumbersByField({}); // Explicitly set to empty object if undefined/null
 
-        // }
+        }
         setIsMaxNumbersLoading(false);
 
       };
@@ -122,8 +123,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     console.log(`getNextNumberForField called for: ${fieldKey}`);
     const currentMax = maxNumbersByField[fieldKey];
     console.log("maxNumbersByField: ", maxNumbersByField);
-    console.log("fieldKey: ", fieldKey);
-
 
     if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {
       const parsedMax = parseInt(String(currentMax), 10); // Ensure it's parsed as an integer

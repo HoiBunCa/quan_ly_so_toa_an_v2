@@ -130,7 +130,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     } else {
       // If not HON_NHAN, we don't need to load max numbers, so it's not loading.
       setIsMaxNumbersLoading(false);
-      setMaxNumbersByField({}); // Ensure it's empty for non-HON_NHAN types
+      // setMaxNumbersByField({}); // Ensure it's empty for non-HON_NHAN types
     }
   }, [book.caseTypeId, book.year, requestMaxNumbersUpdate]); // Add requestMaxNumbersUpdate to dependencies
 

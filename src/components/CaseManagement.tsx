@@ -93,7 +93,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
         }
         setIsMaxNumbersLoading(false);
-        console.log('WebSocket: Setting isMaxNumbersLoading to false.');
+
       };
 
       ws.onclose = () => {

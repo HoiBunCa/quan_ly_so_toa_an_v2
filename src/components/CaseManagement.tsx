@@ -420,8 +420,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveNumberDateInfo}
           onClose={() => setShowNumberDateInfoModal(false)}
           isSaving={isSavingNumberDateInfo}
-          onGenerateNumber={getNextCaseNumber} {/* Pass the function here */}
-          isGeneratingNumber={isMaxSoThuLyLoading} {/* Pass the loading state here */}
+          onGenerateNumber={getNextCaseNumber} 
+          isGeneratingNumber={isMaxSoThuLyLoading}
         />
       )}
     </div>

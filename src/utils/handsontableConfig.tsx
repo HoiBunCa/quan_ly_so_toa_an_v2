@@ -113,10 +113,15 @@ export function getHandsontableConfig({
           <IconComponent className="w-4 h-4 mr-2 text-gray-500" />
         );
       }
-      TH.innerHTML = `<div class="flex items-center justify-center h-full">
-                        ${iconHtml}
-                        <span class="whitespace-nowrap">${headerText}</span>
-                      </div>`;
+      // Ensure the TH element has flex properties and overflow visible
+      TH.style.display = 'flex';
+      TH.style.alignItems = 'center';
+      TH.style.justifyContent = 'center';
+      TH.style.height = '100%';
+      TH.style.overflow = 'visible'; // Ensure content is not clipped
+      TH.style.whiteSpace = 'nowrap'; // Prevent text wrapping in header
+
+      TH.innerHTML = `${iconHtml}<span style="color: #374151; font-weight: 600;">${headerText}</span>`;
     };
 
     switch (attr.type) {

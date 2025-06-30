@@ -78,7 +78,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log("data", data);
+     
+        console.log(`data: ${data}`);
         // Assuming data is an object like { "so_thu_ly": "6", "so_chuyen_hoa_giai": "10", ... }
         if (data) {
           const formattedData: Record<string, string | null> = {};
@@ -131,7 +132,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       if (!isNaN(parsedMax)) {
         const nextNumber = (parsedMax).toString();
-        console.log(`Generated next number for ${fieldKey}:`, nextNumber);
+
         return nextNumber;
       }
     } else {

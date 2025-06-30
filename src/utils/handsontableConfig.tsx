@@ -182,7 +182,7 @@ export function getHandsontableConfig({
                 idsFromSelection.push(caseItem.id);
               }
             });
-            
+            console.logs(idsFromSelection);
             if (typeof onDeleteRows === 'function') { // Check the new prop
               onDeleteRows(idsFromSelection); // Call the new onDeleteRows callback
             } else {

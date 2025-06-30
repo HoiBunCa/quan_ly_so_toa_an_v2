@@ -146,24 +146,16 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       console.log('Parsed currentMax:', parsedMax);
 
       if (!isNaN(parsedMax)) {
-        const nextNumber = (parsedMax + 1).toString(); // Corrected: Increment by 1
+        // User explicitly requested: "chỉ lấy ra hiển thị, không tự động + 1 vào nữa"
+        // This implies the backend sends the *next available* number directly.
+        const nextNumber = parsedMax.toString(); 
         console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }
-    } else {
-      console.warn(`Max number for ${fieldKey} is not a valid number or is empty. Falling back to '1'.`);
-      return '1'; // Changed to string '1' for consistency
     }
-
-    // Fallback logic if max number for this field is not available or invalid
-    console.log(`Max number for ${fieldKey} is not a valid number. Falling back to date-based generation.`);
-    const today = new Date();
-    const dd = String(today.getDate()).padStart(2, '0');
-    const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
-    const yyyy = today.getFullYear();
-    const fallbackNumber = `${dd}${mm}${yyyy}`;
-    console.log('Fallback number:', fallbackNumber);
-    return fallbackNumber;
+    // Fallback to '1' if currentMax is invalid or empty.
+    console.warn(`Max number for ${fieldKey} is not a valid number or is empty. Falling back to '1'.`);
+    return '1';
   }, [maxNumbersByField]); // Dependency on maxNumbersByField ensures this function updates when max numbers change.
 
   const handleAddNewCaseClick = () => {

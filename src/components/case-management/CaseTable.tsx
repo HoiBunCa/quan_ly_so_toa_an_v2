@@ -73,12 +73,6 @@ export default function CaseTable({
 
       // Define the context menu hook here
       const handleBeforeContextMenuShow = (coords: Handsontable.CellCoords[], menuItems: Handsontable.contextMenu.MenuItemConfig[]) => {
-        // Add a check to ensure menuItems is an array
-        if (!Array.isArray(menuItems)) {
-          console.warn("Handsontable: menuItems is not an array in beforeContextMenuShow hook.", menuItems);
-          return; // Exit early if menuItems is not valid
-        }
-
         // Find and remove the default 'remove_row' item if it exists
         const defaultRemoveRowIndex = menuItems.findIndex(item => (item as any).key === 'remove_row');
         if (defaultRemoveRowIndex !== -1) {
@@ -131,7 +125,7 @@ export default function CaseTable({
   }, [handleCellMouseDown]); // Now useEffect depends on the stable handleCellMouseDown
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex-col">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col">
       <div className="p-4 flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center h-full text-gray-500">

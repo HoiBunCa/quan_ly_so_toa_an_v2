@@ -16,16 +16,17 @@ import {
   FileText,
   Calendar,
   User,
-  Loader2, // Import Loader2 for loading indicator
-  AlertCircle // Import AlertCircle for error indicator
+  Loader2,
+  AlertCircle,
+  ChevronDown, // Import ChevronDown icon
+  ChevronUp // Import ChevronUp icon
 } from 'lucide-react';
 import { CaseBook, Case } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
-import { mockCases } from '../data/mockCaseData'; // Keep for other case types or fallback
-import toast from 'react-hot-toast'; // Import toast
-import AddCaseModal from './AddCaseModal'; // Import the new modal
+import { mockCases } from '../data/mockCaseData';
+import toast from 'react-hot-toast';
+import AddCaseModal from './AddCaseModal';
 
-// Register Handsontable's modules
 registerAllModules();
 
 interface CaseManagementProps {
@@ -35,12 +36,13 @@ interface CaseManagementProps {
 
 export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const hotTableRef = useRef<HotTable>(null);
-  const [cases, setCases] = useState<Case[]>([]); // Initialize empty, will fetch from API
+  const [cases, setCases] = useState<Case[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showAddCaseModal, setShowAddCaseModal] = useState(false); // New state for modal
+  const [showAddCaseModal, setShowAddCaseModal] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true); // New state for instructions visibility
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
@@ -52,8 +54,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setIsLoading(true);
     setError(null);
     try {
-      if (book.caseTypeId === 'HON_NHAN') { // Only fetch from this API for 'HON_NHAN' type
-        // Construct the URL with the year parameter
+      if (book.caseTypeId === 'HON_NHAN') {
         const apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/?year=${book.year}`;
         const response = await fetch(apiUrl);
         if (!response.ok) {
@@ -63,18 +64,17 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         const data = await response.json();
         const fetchedCases: Case[] = data.results.map((item: any) => {
           const newCase: Case = {
-            id: item.id.toString(), // Ensure ID is string
-            caseNumber: item.so_thu_ly || '', // Use so_thu_ly as caseNumber
-            bookId: book.id, // Link to current book
-            createdDate: item.ngay_thu_ly || item.ngay_nhan_don || '', // Use relevant date from API
-            lastModified: new Date().toISOString().split('T')[0], // Set to current date for now
-            ...item // Spread all other properties from API response
+            id: item.id.toString(),
+            caseNumber: item.so_thu_ly || '',
+            bookId: book.id,
+            createdDate: item.ngay_thu_ly || item.ngay_nhan_don || '',
+            lastModified: new Date().toISOString().split('T')[0],
+            ...item
           };
           return newCase;
         });
         setCases(fetchedCases);
       } else {
-        // For other case types, continue using mock data or implement specific API calls
         setCases(mockCases[book.id] || []);
       }
     } catch (e: any) {
@@ -88,7 +88,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   useEffect(() => {
     fetchCases();
-  }, [book]); // Re-fetch when the selected book changes
+  }, [book]);
 
   const getNextCaseNumber = () => {
     const year = book.year;
@@ -108,7 +108,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   const handleCaseAdded = () => {
     setShowAddCaseModal(false);
-    fetchCases(); // Refresh the list of cases
+    fetchCases();
   };
 
   const deleteSelectedRows = () => {
@@ -120,7 +120,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   };
 
   const refreshData = () => {
-    fetchCases(); // Call the fetch function to refresh
+    fetchCases();
   };
 
   const exportData = () => {
@@ -152,7 +152,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       data: attr.id,
       title: attr.name,
       width: attr.width || 120,
-      readOnly: attr.id === 'caseNumber', // Keep caseNumber readOnly
+      readOnly: attr.id === 'caseNumber',
       className: attr.id === 'caseNumber' ? 'font-medium text-blue-600' : ''
     };
 
@@ -227,14 +227,14 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       indicators: true
     },
     licenseKey: 'non-commercial-and-evaluation',
-    height: 'auto', // Let Handsontable determine height based on content, but constrained by container
+    height: 'auto',
     maxRows: 1000,
     stretchH: 'all',
     autoWrapRow: true,
     autoWrapCol: true,
-    fixedColumnsStart: 2, // Cố định 2 cột đầu tiên
-    afterChange: async (changes: any, source: string) => { // Add 'source' parameter
-      if (source === 'loadData') { // Prevent API call on initial data load
+    fixedColumnsStart: 2,
+    afterChange: async (changes: any, source: string) => {
+      if (source === 'loadData') {
         return;
       }
       if (changes) {
@@ -242,17 +242,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         for (const [row, prop, oldValue, newValue] of changes) {
           if (oldValue !== newValue && newCases[row]) {
             const caseToUpdate = newCases[row];
-            const caseId = caseToUpdate.id; // Get the ID of the case
+            const caseId = caseToUpdate.id;
 
-            // Update local state optimistically
             (caseToUpdate as any)[prop] = newValue;
             caseToUpdate.lastModified = new Date().toISOString().split('T')[0];
-            setCases([...newCases]); // Trigger re-render with updated local state
+            setCases([...newCases]);
 
-            // Prepare payload for API
             const payload: { [key: string]: any } = {
               [prop]: newValue,
-              created_by: 1 // As per requirement
+              created_by: 1
             };
 
             try {
@@ -272,9 +270,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             } catch (e: any) {
               console.error("Failed to update case:", e);
               toast.error(`Cập nhật thất bại: ${e.message}`);
-              // Revert local state if API call fails (optional, but good for UX)
-              // This would require storing the original value and reverting.
-              // For now, we'll just show an error toast.
             }
           }
         }
@@ -290,7 +285,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   };
 
   return (
-    <div className="p-6 flex flex-col h-full"> {/* Added flex flex-col h-full */}
+    <div className="p-6 flex flex-col h-full">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -331,7 +326,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             </button>
             
             <button
-              onClick={handleAddNewCaseClick} // Changed to open modal
+              onClick={handleAddNewCaseClick}
               className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -346,7 +341,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-4 mb-6"> {/* Added mb-6 */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-4 mb-6">
           <div className="flex items-center space-x-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -377,7 +372,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col"> {/* Added flex-1 flex flex-col */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col">
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Cases Table</h3>
@@ -388,7 +383,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           </div>
         </div>
         
-        <div className="p-4 flex-1"> {/* Removed overflow-y-auto here */}
+        <div className="p-4 flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-full text-gray-500">
               <Loader2 className="w-8 h-8 animate-spin mr-3" />
@@ -410,7 +405,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
               </p>
               {!searchTerm && (
                 <button
-                  onClick={handleAddNewCaseClick} // Changed to open modal
+                  onClick={handleAddNewCaseClick}
                   className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -419,11 +414,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
               )}
             </div>
           ) : (
-            <div className="handsontable-container h-full"> {/* Added h-full */}
+            <div className="handsontable-container h-full">
               <HotTable
                 ref={hotTableRef}
                 settings={hotSettings}
-                height="100%" // Set height for HotTable to manage its own scroll
+                height="100%"
               />
             </div>
           )}
@@ -431,16 +426,33 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       </div>
 
       {/* Instructions */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-sm font-semibold text-blue-900 mb-2">Table Features:</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Click any cell to edit inline (except Case Number)</li>
-          <li>• Right-click for context menu with additional options</li>
-          <li>• Use column headers to sort and filter data</li>
-          <li>• Drag column borders to resize</li>
-          <li>• Select multiple rows and use "Delete Selected" button</li>
-          <li>• Case numbers are automatically generated</li>
-        </ul>
+      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg">
+        <div 
+          className="flex items-center justify-between p-4 cursor-pointer"
+          onClick={() => setShowInstructions(!showInstructions)}
+        >
+          <h4 className="text-sm font-semibold text-blue-900">Table Features:</h4>
+          {showInstructions ? (
+            <ChevronUp className="w-5 h-5 text-blue-700" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-blue-700" />
+          )}
+        </div>
+        
+        <div 
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            showInstructions ? 'max-h-96 opacity-100 p-4 pt-0' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• Click any cell to edit inline (except Case Number)</li>
+            <li>• Right-click for context menu with additional options</li>
+            <li>• Use column headers to sort and filter data</li>
+            <li>• Drag column borders to resize</li>
+            <li>• Select multiple rows and use "Delete Selected" button</li>
+            <li>• Case numbers are automatically generated</li>
+          </ul>
+        </div>
       </div>
 
       {/* Add Case Modal */}
@@ -451,7 +463,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookId={book.id}
           bookYear={book.year}
           caseTypeCode={caseType.code}
-          onGenerateCaseNumber={getNextCaseNumber} // Pass the function here
+          onGenerateCaseNumber={getNextCaseNumber}
         />
       )}
     </div>

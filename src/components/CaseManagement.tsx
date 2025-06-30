@@ -109,11 +109,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   }, [book.caseTypeId, book.year]); // Reconnect if book type or year changes
 
   const getNextCaseNumber = useCallback(() => {
-    console.log('getNextCaseNumber called.');
-    console.log('Current maxSoThuLy from WebSocket:', maxSoThuLy, '(Type:', typeof maxSoThuLy, ')');
-
-    // The 'maxSoThuLy' state already holds the maximum 'so_thu_ly' value from the WebSocket.
-    // We need to ensure it's a valid number string before incrementing.
     if (maxSoThuLy !== null && maxSoThuLy !== undefined && String(maxSoThuLy).trim() !== '') {
       const currentSoThuLy = parseInt(String(maxSoThuLy), 10); // Ensure it's parsed as an integer
       console.log('Parsed currentSoThuLy:', currentSoThuLy);

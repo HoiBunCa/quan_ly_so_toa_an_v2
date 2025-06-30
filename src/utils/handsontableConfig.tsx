@@ -66,7 +66,7 @@ function dateDisplayRenderer(instance: any, td: HTMLElement, row: number, col: n
 export function getHandsontableConfig({
   caseType,
   filteredCases,
-  deleteCases, // Directly use the prop name
+  deleteCases, // This is the prop we need to access
   setSelectedRows,
   onUpdateCase,
 }: GetHandsontableConfigArgs): Pick<HotTableProps, 'columns' | 'settings'> {
@@ -145,8 +145,11 @@ export function getHandsontableConfig({
         'hsep1': '---------',
         'remove_row': {
           name: 'Xóa hàng đã chọn',
-          callback: function(this: Handsontable, key: string, selection: any, clickEvent: any) {
-            const hot = this;
+          // Sử dụng hàm mũi tên để đảm bảo `deleteCases` và `filteredCases` được đóng gói đúng cách
+          callback: (key: string, selection: any, clickEvent: any) => {
+            const hot = Handsontable.getInstance(clickEvent.target); // Lấy instance từ event target
+            if (!hot) return; // Đảm bảo instance tồn tại
+
             const selectedRange = hot.getSelectedLast();
 
             if (selectedRange) {
@@ -158,14 +161,13 @@ export function getHandsontableConfig({
 
               const idsFromSelection: string[] = [];
               rowIndicesToDelete.forEach(rowIndex => {
-                const caseItem = filteredCases[rowIndex];
+                const caseItem = filteredCases[rowIndex]; // `filteredCases` được truy cập từ closure
                 if (caseItem && caseItem.id) {
                   idsFromSelection.push(caseItem.id);
                 }
               });
               
-              // Directly call deleteCases from the closure
-              if (typeof deleteCases === 'function') { // Safety check
+              if (typeof deleteCases === 'function') { // `deleteCases` được truy cập từ closure
                 deleteCases(idsFromSelection);
               } else {
                 console.error('deleteCases is not a function when called in context menu callback!', deleteCases);

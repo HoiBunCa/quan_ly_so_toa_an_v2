@@ -11,6 +11,10 @@ import CaseInstructions from './case-management/CaseInstructions';
 import { useCasesData } from '../hooks/useCasesData';
 import { getHandsontableConfig } from '../utils/handsontableConfig';
 
+// Removed: import { registerAllModules } from 'handsontable/registry';
+// Removed: import 'handsontable/dist/handsontable.full.min.css';
+// Removed: registerAllModules();
+
 interface CaseManagementProps {
   book: CaseBook;
   onBack: () => void;

@@ -5,33 +5,19 @@ import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
-import NumberDateInfoModal from './case-management/NumberDateInfoModal'; // Import the new modal
+import NumberDateInputModal from './common/NumberDateInputModal'; // Import the new generic modal
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
 import { useCasesData } from '../hooks/useCasesData';
-import { getHandsontableConfig } from '../utils/handsontableConfig';
+import { getHandsontableConfig } from '../utils/handsontableConfig'; // Updated import path
 
 interface CaseManagementProps {
   book: CaseBook;
   onBack: () => void;
 }
-
-// Mapping from combined 'thong_tin_' field names to their corresponding 'so_' API field names
-const combinedFieldToApiFieldMap: { [key: string]: string } = {
-  'thong_tin_chuyen_hoa_giai': 'so_chuyen_hoa_giai',
-  'thong_tin_tra_lai_don': 'so_tra_lai_don',
-  'thong_tin_yeu_cau_sua_doi_bo_sung': 'so_yeu_cau_sua_doi_bo_sung_don_khoi_kien',
-  'thong_tin_chuyen_don_khoi_kien': 'so_chuyen_don_khoi_kien',
-  'thong_tin_thong_bao_nop_tam_ung_an_phi': 'so_thong_bao_nop_tam_ung_an_phi',
-  'thong_tin_thu_ly_vu_an': 'so_thu_ly_vu_an',
-  'thong_tin_giu_nguyen_tra_lai_don': 'so_giu_nguyen_viec_tra_lai_don_khoi_kien',
-  'thong_tin_nhan_lai_don_khoi_kien_va_tai_lieu': 'so_nhan_lai_don_khoi_kien_va_tai_lieu',
-  'thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien': 'so_yeu_cau_toa_an_nhan_lai_don_khoi_kien',
-  'thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi': 'so_ap_dung_bien_phap_khan_cap_tam_thoi',
-};
 
 export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [showAddCaseModal, setShowAddCaseModal] = useState(false);
@@ -49,14 +35,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentDefendantInfo, setCurrentDefendantInfo] = useState({ name: '', year: '', address: '' });
   const [isSavingDefendantInfo, setIsSavingDefendantInfo] = useState(false);
 
-  // State for generic Number/Date Info Modal
-  const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
-  const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
-  const [currentNumberDateProp, setCurrentNumberDateProp] = useState<string | null>(null);
-  const [currentNumberDateCaseId, setCurrentNumberDateCaseId] = useState<string | null>(null);
-  const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
-  const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
-  const [currentApiFieldName, setCurrentApiFieldName] = useState<string>(''); // New state for API field name
+  // State for generic Number/Date Input Modal
+  const [showNumberDateInputModal, setShowNumberDateInputModal] = useState(false);
+  const [currentNumberDateInputInfo, setCurrentNumberDateInputInfo] = useState({ number: '', date: '' });
+  const [currentNumberDateInputProp, setCurrentNumberDateInputProp] = useState<string | null>(null);
+  const [currentNumberDateInputCaseId, setCurrentNumberDateInputCaseId] = useState<string | null>(null);
+  const [isSavingNumberDateInputInfo, setIsSavingNumberDateInputInfo] = useState(false);
+  const [numberDateInputModalTitle, setNumberDateInputModalTitle] = useState('');
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
@@ -235,10 +220,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   };
 
-  const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
-    if (!currentNumberDateCaseId || !currentNumberDateProp) return;
+  const handleSaveNumberDateInputInfo = async (data: { number: string, date: string }) => {
+    if (!currentNumberDateInputCaseId || !currentNumberDateInputProp) return;
 
-    setIsSavingNumberDateInfo(true);
+    setIsSavingNumberDateInputInfo(true);
     // The date from the modal is already YYYY-MM-DD, so no need to re-parse for API
     const combinedValue = [
       data.number ? `Số: ${data.number}` : '',
@@ -246,10 +231,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     ].filter(Boolean).join('\n');
     
     try {
-      await handleUpdateCase(currentNumberDateCaseId, currentNumberDateProp, combinedValue);
-      setShowNumberDateInfoModal(false);
+      await handleUpdateCase(currentNumberDateInputCaseId, currentNumberDateInputProp, combinedValue);
+      setShowNumberDateInputModal(false);
     } finally {
-      setIsSavingNumberDateInfo(false);
+      setIsSavingNumberDateInputInfo(false);
     }
   };
 
@@ -276,22 +261,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       });
       setShowDefendantInfoModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
-      setCurrentNumberDateCaseId(caseId);
-      setCurrentNumberDateProp(prop);
-      setNumberDateModalTitle(`Chỉnh sửa ${title}`);
+      setCurrentNumberDateInputCaseId(caseId);
+      setCurrentNumberDateInputProp(prop);
+      setNumberDateInputModalTitle(`Chỉnh sửa ${title}`);
       const { number, date } = parseNumberDateString(String(value || ''));
-      setCurrentNumberDateInfo({ number, date });
-      
-      // Determine the correct API field name for fetching max number
-      const apiFieldName = combinedFieldToApiFieldMap[prop];
-      if (apiFieldName) {
-        setCurrentApiFieldName(apiFieldName);
-      } else {
-        console.warn(`No API field name mapping found for prop: ${prop}`);
-        setCurrentApiFieldName(''); // Fallback
-      }
-
-      setShowNumberDateInfoModal(true);
+      setCurrentNumberDateInputInfo({ number, date });
+      setShowNumberDateInputModal(true);
     }
   }, [caseType.attributes]);
 
@@ -358,6 +333,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookId={book.id}
           bookYear={book.year}
           caseTypeCode={caseType.code}
+          onGenerateCaseNumber={getNextCaseNumber}
         />
       )}
 
@@ -379,15 +355,14 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         />
       )}
 
-      {showNumberDateInfoModal && (
-        <NumberDateInfoModal
-          title={numberDateModalTitle}
-          initialData={currentNumberDateInfo}
-          onSave={handleSaveNumberDateInfo}
-          onClose={() => setShowNumberDateInfoModal(false)}
-          isSaving={isSavingNumberDateInfo}
-          bookYear={book.year} // Pass book year
-          apiFieldName={currentApiFieldName} // Pass the specific API field name
+      {showNumberDateInputModal && (
+        <NumberDateInputModal
+          title={numberDateInputModalTitle}
+          initialNumber={currentNumberDateInputInfo.number}
+          initialDate={currentNumberDateInputInfo.date}
+          onSave={handleSaveNumberDateInputInfo}
+          onClose={() => setShowNumberDateInputModal(false)}
+          isSaving={isSavingNumberDateInputInfo}
         />
       )}
     </div>

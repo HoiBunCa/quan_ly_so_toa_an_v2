@@ -102,14 +102,14 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
               <label htmlFor="soThuLy" className="block text-sm font-medium text-gray-700 mb-2">
                 Số thụ lý
               </label>
-              <div className="relative flex items-center"> {/* Added flex items-center */}
+              <div className="relative flex items-center">
                 <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   id="soThuLy"
                   value={soThuLy}
                   onChange={(e) => setSoThuLy(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" {/* Changed to rounded-l-lg */}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nhập số thụ lý"
                   required
                   disabled={isSubmitting}
@@ -117,7 +117,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
                 <button
                   type="button"
                   onClick={handleGenerateNumber}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-r-lg hover:bg-gray-200 transition-colors h-full" {/* Added h-full */}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-r-lg hover:bg-gray-200 transition-colors h-full"
                   disabled={isSubmitting}
                 >
                   Tự động lấy số

@@ -342,18 +342,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       // When opening modal, get the raw number and date from the case object
       const caseItem = cases.find(c => c.id === caseId);
       const originalPropName = prop.replace('thong_tin_', '');
-      let number = caseItem?.[`so_${originalPropName}`] || '';
+      const number = caseItem?.[`so_${originalPropName}`] || '';
       const date = caseItem?.[`ngay_${originalPropName}`] || ''; // This date is YYYY-MM-DD from API
       
-      // Auto-fill if number is empty
-      if (!number) {
-        number = getNextNumberForField(`so_${originalPropName}`);
-      }
-
       setCurrentNumberDateInfo({ number, date });
       setShowNumberDateInfoModal(true);
     }
-  }, [caseType.attributes, cases, getNextNumberForField]); // Add getNextNumberForField to dependencies
+  }, [caseType.attributes, cases]); // Add 'cases' to dependencies
 
   const exportData = () => {
     const headers = caseType.attributes.map(attr => attr.name);
@@ -418,8 +413,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookId={book.id}
           bookYear={book.year}
           caseTypeCode={caseType.code}
-          initialSoThuLy={getNextNumberForField('so_thu_ly')} // Pass auto-generated number
-          onGenerateCaseNumber={() => getNextNumberForField('so_thu_ly')} // Still pass for manual re-gen
+          onGenerateCaseNumber={() => getNextNumberForField('so_thu_ly')} // Pass specific field key
           isGeneratingCaseNumber={isMaxNumbersLoading} // Use generic loading state
         />
       )}

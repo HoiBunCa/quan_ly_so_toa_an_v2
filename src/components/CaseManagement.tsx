@@ -96,6 +96,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         const message = JSON.parse(event.data); // Parse the incoming message
 
         // Check if the message has the expected structure for max numbers update
+        console.log("===========", message);
         if (message && message.type === 'so_thu_ly_changed' && message.record) {
           const rawMaxNumbers = message.record; // This is the object containing the max numbers
           const formattedData: Record<string, string | null> = {};

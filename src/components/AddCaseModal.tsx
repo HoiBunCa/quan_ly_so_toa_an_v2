@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDateForDisplay } from '../utils/dateUtils'; // Import new utility
@@ -9,15 +9,21 @@ interface AddCaseModalProps {
   bookId: string; // Pass the current book's ID
   bookYear: number; // Pass the current book's year for case number generation
   caseTypeCode: string; // Pass the case type code for case number generation
+  initialSoThuLy: string; // New prop for auto-generated initial number
   onGenerateCaseNumber: () => string; // Updated prop for auto-generating case number
   isGeneratingCaseNumber: boolean; // New prop to indicate if case number is being generated
 }
 
-export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber, isGeneratingCaseNumber }: AddCaseModalProps) {
-  const [soThuLy, setSoThuLy] = useState('');
+export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, initialSoThuLy, onGenerateCaseNumber, isGeneratingCaseNumber }: AddCaseModalProps) {
+  const [soThuLy, setSoThuLy] = useState(initialSoThuLy); // Initialize with prop
   const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update soThuLy if initialSoThuLy changes (e.g., due to WebSocket update in parent)
+  useEffect(() => {
+    setSoThuLy(initialSoThuLy);
+  }, [initialSoThuLy]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

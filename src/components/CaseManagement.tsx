@@ -96,17 +96,22 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         const message = JSON.parse(event.data); // Parse the incoming message
 
         // Check if the message has the expected structure for max numbers update
-        console.log("===========", message);
-
-        const formattedData: Record<string, string | null> = {};
-        for (const key in message) {
-          if (Object.prototype.hasOwnProperty.call(message, key)) {
-            formattedData[key] = String(message[key]); // Ensure all values are strings
+        if (message && message.type === 'so_thu_ly_changed' && message.record) {
+          const rawMaxNumbers = message.record; // This is the object containing the max numbers
+          const formattedData: Record<string, string | null> = {};
+          for (const key in rawMaxNumbers) {
+            if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
+              formattedData[key] = String(rawMaxNumbers[key]); // Ensure all values are strings
+            }
           }
+          setMaxNumbersByField(formattedData); 
+          console.log('WebSocket: Received max numbers map and setting state:', formattedData);
+        } else {
+          // Fallback for other message types or unexpected structure
+          console.warn('WebSocket: Received unexpected message format or type:', message);
+          // If it's not the expected max numbers update, we might want to keep current state
+          // or reset if it's a critical error. For now, just log and don't change state.
         }
-        setMaxNumbersByField(formattedData); 
-        console.log('WebSocket: Received max numbers map and setting state:', formattedData);
-        
         setIsMaxNumbersLoading(false);
         console.log('WebSocket: Setting isMaxNumbersLoading to false.');
         
@@ -337,13 +342,18 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       // When opening modal, get the raw number and date from the case object
       const caseItem = cases.find(c => c.id === caseId);
       const originalPropName = prop.replace('thong_tin_', '');
-      const number = caseItem?.[`so_${originalPropName}`] || '';
+      let number = caseItem?.[`so_${originalPropName}`] || '';
       const date = caseItem?.[`ngay_${originalPropName}`] || ''; // This date is YYYY-MM-DD from API
       
+      // Auto-fill if number is empty
+      if (!number) {
+        number = getNextNumberForField(`so_${originalPropName}`);
+      }
+
       setCurrentNumberDateInfo({ number, date });
       setShowNumberDateInfoModal(true);
     }
-  }, [caseType.attributes, cases]); // Add 'cases' to dependencies
+  }, [caseType.attributes, cases, getNextNumberForField]); // Add getNextNumberForField to dependencies
 
   const exportData = () => {
     const headers = caseType.attributes.map(attr => attr.name);
@@ -408,7 +418,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookId={book.id}
           bookYear={book.year}
           caseTypeCode={caseType.code}
-          onGenerateCaseNumber={() => getNextNumberForField('so_thu_ly')} // Pass specific field key
+          initialSoThuLy={getNextNumberForField('so_thu_ly')} // Pass auto-generated number
+          onGenerateCaseNumber={() => getNextNumberForField('so_thu_ly')} // Still pass for manual re-gen
           isGeneratingCaseNumber={isMaxNumbersLoading} // Use generic loading state
         />
       )}

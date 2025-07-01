@@ -97,12 +97,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
         // Check if the message has the expected structure for max numbers update
         console.log("===========", message);
-        
-        const rawMaxNumbers = message.record; // This is the object containing the max numbers
+
         const formattedData: Record<string, string | null> = {};
         for (const key in message) {
-          if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
-            formattedData[key] = String(rawMaxNumbers[key]); // Ensure all values are strings
+          if (Object.prototype.hasOwnProperty.call(message, key)) {
+            formattedData[key] = String(message[key]); // Ensure all values are strings
           }
         }
         setMaxNumbersByField(formattedData); 

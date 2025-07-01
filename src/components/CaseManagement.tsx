@@ -97,22 +97,17 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
         // Check if the message has the expected structure for max numbers update
         console.log("===========", message);
-        if (message && message.type === 'so_thu_ly_changed' && message.record) {
-          const rawMaxNumbers = message.record; // This is the object containing the max numbers
-          const formattedData: Record<string, string | null> = {};
-          for (const key in rawMaxNumbers) {
-            if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
-              formattedData[key] = String(rawMaxNumbers[key]); // Ensure all values are strings
-            }
+        
+        const rawMaxNumbers = message.record; // This is the object containing the max numbers
+        const formattedData: Record<string, string | null> = {};
+        for (const key in message) {
+          if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
+            formattedData[key] = String(rawMaxNumbers[key]); // Ensure all values are strings
           }
-          setMaxNumbersByField(formattedData); 
-          console.log('WebSocket: Received max numbers map and setting state:', formattedData);
-        } else {
-          // Fallback for other message types or unexpected structure
-          console.warn('WebSocket: Received unexpected message format or type:', message);
-          // If it's not the expected max numbers update, we might want to keep current state
-          // or reset if it's a critical error. For now, just log and don't change state.
         }
+        setMaxNumbersByField(formattedData); 
+        console.log('WebSocket: Received max numbers map and setting state:', formattedData);
+        
         setIsMaxNumbersLoading(false);
         console.log('WebSocket: Setting isMaxNumbersLoading to false.');
         

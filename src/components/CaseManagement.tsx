@@ -13,7 +13,7 @@ import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
 import { useCasesData } from '../hooks/useCasesData';
 import { getHandsontableConfig } from '../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate } from '../utils/dateUtils'; // Import new utilities
+import { parseNumberDateString, combineNumberAndDate } from '../utils/dateUtils';
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -22,24 +22,20 @@ interface CaseManagementProps {
 
 export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [showAddCaseModal, setShowAddCaseModal] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<string[]>([]); // State for selected row IDs
-  // Changed maxSoThuLy to maxNumbersByField to store max numbers for different fields
-  const [maxNumbersByField, setMaxNumbersByField] = useState<Record<string, string | null>>({}); 
-  const [isMaxNumbersLoading, setIsMaxNumbersLoading] = useState(true); // Generic loading state for all max numbers
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [maxNumbersByField, setMaxNumbersByField] = useState<Record<string, string | null>>({});
+  const [isMaxNumbersLoading, setIsMaxNumbersLoading] = useState(true);
 
-  // State for Plaintiff Info Modal
   const [showPlaintiffInfoModal, setShowPlaintiffInfoModal] = useState(false);
   const [currentCaseIdForPlaintiffEdit, setCurrentCaseIdForPlaintiffEdit] = useState<string | null>(null);
   const [currentPlaintiffInfo, setCurrentPlaintiffInfo] = useState({ name: '', year: '', address: '' });
   const [isSavingPlaintiffInfo, setIsSavingPlaintiffInfo] = useState(false);
 
-  // State for Defendant Info Modal
   const [showDefendantInfoModal, setShowDefendantInfoModal] = useState(false);
   const [currentCaseIdForDefendantEdit, setCurrentCaseIdForDefendantEdit] = useState<string | null>(null);
   const [currentDefendantInfo, setCurrentDefendantInfo] = useState({ name: '', year: '', address: '' });
   const [isSavingDefendantInfo, setIsSavingDefendantInfo] = useState(false);
 
-  // State for generic Number/Date Info Modal
   const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
   const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
   const [currentNumberDateProp, setCurrentNumberDateProp] = useState<string | null>(null);
@@ -49,7 +45,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
-  // Ref to store the WebSocket instance
   const wsRef = useRef<WebSocket | null>(null);
 
   if (!caseType) {
@@ -64,11 +59,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     searchTerm,
     setSearchTerm,
     fetchCases,
-    deleteCases, // Expose deleteCases from the hook
-    setCases, // Expose setCases for local updates
+    setCases,
   } = useCasesData(book);
 
-  // Function to request max numbers update via WebSocket
   const requestMaxNumbersUpdate = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       console.log('WebSocket: Requesting all max numbers update...');
@@ -78,30 +71,26 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   }, [book.year]);
 
-  // WebSocket connection for max numbers
   useEffect(() => {
     if (book.caseTypeId === 'HON_NHAN') {
-      setIsMaxNumbersLoading(true); // Set loading to true when starting connection
+      setIsMaxNumbersLoading(true);
       const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
-      wsRef.current = ws; // Store the WebSocket instance in the ref
+      wsRef.current = ws;
 
       ws.onopen = () => {
         console.log('WebSocket connected for max numbers');
-        // Request all max numbers for the current year on open
         requestMaxNumbersUpdate(); 
       };
 
       ws.onmessage = (event) => {
         console.log('WebSocket: Raw message received:', event.data);
-        const message = JSON.parse(event.data); // Parse the incoming message
-
-        // Check if the message has the expected structure for max numbers update
+        const message = JSON.parse(event.data);
         
-        const rawMaxNumbers = message; // This is the object containing the max numbers
+        const rawMaxNumbers = message;
         const formattedData: Record<string, string | null> = {};
         for (const key in rawMaxNumbers) {
           if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
-            formattedData[key] = String(rawMaxNumbers[key]); // Ensure all values are strings
+            formattedData[key] = String(rawMaxNumbers[key]);
           }
         }
         setMaxNumbersByField(formattedData); 
@@ -110,55 +99,49 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         setIsMaxNumbersLoading(false);
         console.log('WebSocket: Setting isMaxNumbersLoading to false.');
         
-        // NEW LOGIC: Reload case list on any WebSocket message
         fetchCases();
       };
 
       ws.onclose = () => {
         console.log('WebSocket disconnected for max numbers');
-        setIsMaxNumbersLoading(false); // Set loading to false on close
-        wsRef.current = null; // Clear the ref on close
+        setIsMaxNumbersLoading(false);
+        wsRef.current = null;
       };
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
         toast.error('Lỗi kết nối WebSocket để lấy số tối đa.');
-        setIsMaxNumbersLoading(false); // Set loading to false on error
+        setIsMaxNumbersLoading(false);
       };
 
       return () => {
         ws.close();
       };
     } else {
-      // If not HON_NHAN, we don't need to load max numbers, so it's not loading.
       setIsMaxNumbersLoading(false);
-      setMaxNumbersByField({}); // Ensure it's empty for non-HON_NHAN types
+      setMaxNumbersByField({});
     }
-  }, [book.caseTypeId, book.year, requestMaxNumbersUpdate, fetchCases]); // Add fetchCases to dependencies
+  }, [book.caseTypeId, book.year, requestMaxNumbersUpdate, fetchCases]);
 
-  // Renamed to be more generic and accept a fieldKey
   const getNextNumberForField = useCallback((fieldKey: string) => {
     console.log(`getNextNumberForField called for: ${fieldKey}`);
-    console.log('Current maxNumbersByField state:', maxNumbersByField); // Log the entire state
+    console.log('Current maxNumbersByField state:', maxNumbersByField);
     const currentMax = maxNumbersByField[fieldKey];
     console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
 
     if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {
-      const parsedMax = parseInt(String(currentMax), 10); // Ensure it's parsed as an integer
+      const parsedMax = parseInt(String(currentMax), 10);
       console.log('Parsed currentMax:', parsedMax);
 
       if (!isNaN(parsedMax)) {
-        // User explicitly requested: "chỉ lấy ra hiển thị, không tự động + 1 vào nữa"
-        // This implies the backend sends the *next available* number directly.
         const nextNumber = parsedMax.toString(); 
         console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }
     }
-    // Fallback to '1' if currentMax is invalid or empty.
     console.warn(`Max number for ${fieldKey} is not a valid number or is empty. Falling back to '1'.`);
     return '1';
-  }, [maxNumbersByField]); // Dependency on maxNumbersByField ensures this function updates when max numbers change.
+  }, [maxNumbersByField]);
 
   const handleAddNewCaseClick = () => {
     setShowAddCaseModal(true);
@@ -166,8 +149,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   const handleCaseAdded = () => {
     setShowAddCaseModal(false);
-    fetchCases(); // Refresh data after a new case is added
-    requestMaxNumbersUpdate(); // Request updated max numbers after a case is added
+    fetchCases();
+    requestMaxNumbersUpdate();
   };
 
   const handleUpdateCase = useCallback(async (caseId: string, prop: string, newValue: any) => {
@@ -178,7 +161,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
 
     let payload: { [key: string]: any } = { created_by: 1 };
-    let updatedDisplayValue: any = newValue; // Value to update in local state for display
+    let updatedDisplayValue: any = newValue;
 
     if (prop === 'thong_tin_nguoi_khoi_kien') {
       const lines = String(newValue || '').split('\n');
@@ -190,20 +173,18 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       payload.ho_ten_nguoi_bi_kien = lines[0] || '';
       payload.nam_sinh_nguoi_bi_kien = lines[1] || '';
       payload.dia_chi_nguoi_bi_kien = lines[2] || '';
-    } else if (prop.startsWith('thong_tin_')) { // Handle combined number/date fields
-      const { number, date } = parseNumberDateString(newValue); // date is YYYY-MM-DD from modal
-      const originalPropName = prop.replace('thong_tin_', ''); // e.g., 'chuyen_hoa_giai'
+    } else if (prop.startsWith('thong_tin_')) {
+      const { number, date } = parseNumberDateString(newValue);
+      const originalPropName = prop.replace('thong_tin_', '');
       payload[`so_${originalPropName}`] = number;
-      payload[`ngay_${originalPropName}`] = date; // Send YYYY-MM-DD to API
+      payload[`ngay_${originalPropName}`] = date;
 
-      // Reconstruct the display value using combineNumberAndDate for local state
       updatedDisplayValue = combineNumberAndDate(number, date);
     }
     else {
       payload[prop] = newValue;
     }
 
-    // Optimistic update: Update local state immediately
     setCases(prevCases => prevCases.map(c => {
       if (c.id === caseId) {
         const updatedC = { ...c, lastModified: new Date().toISOString().split('T')[0] };
@@ -212,19 +193,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC.ho_ten_nguoi_khoi_kien = lines[0] || '';
           updatedC.nam_sinh_nguoi_khoi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_khoi_kien = lines[2] || '';
-          updatedC.thong_tin_nguoi_khoi_kien = updatedDisplayValue; // Use updatedDisplayValue
+          updatedC.thong_tin_nguoi_khoi_kien = updatedDisplayValue;
         } else if (prop === 'thong_tin_nguoi_bi_kien') {
           const lines = String(newValue || '').split('\n');
           updatedC.ho_ten_nguoi_bi_kien = lines[0] || '';
           updatedC.nam_sinh_nguoi_bi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_bi_kien = lines[2] || '';
-          updatedC.thong_tin_nguoi_bi_kien = updatedDisplayValue; // Use updatedDisplayValue
+          updatedC.thong_tin_nguoi_bi_kien = updatedDisplayValue;
         } else if (prop.startsWith('thong_tin_')) {
           const { number, date } = parseNumberDateString(newValue);
           const originalPropName = prop.replace('thong_tin_', '');
           updatedC[`so_${originalPropName}`] = number;
           updatedC[`ngay_${originalPropName}`] = date;
-          updatedC[prop] = updatedDisplayValue; // Use the correctly formatted display value
+          updatedC[prop] = updatedDisplayValue;
         }
         else {
           updatedC[prop] = newValue;
@@ -251,7 +232,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     } catch (e: any) {
       console.error("Failed to update case:", e);
       toast.error(`Cập nhật thất bại: ${e.message}`);
-      // Revert if API call fails (optional, but good for robustness)
       fetchCases(); 
     }
   }, [cases, fetchCases, setCases, caseType.attributes]);
@@ -288,18 +268,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     if (!currentNumberDateCaseId || !currentNumberDateProp) return;
 
     setIsSavingNumberDateInfo(true);
-    // data.date is already YYYY-MM-DD from the modal input type="date"
-    const combinedValueForAPI = combineNumberAndDate(data.number, data.date); // This is for API, but we need to pass the raw number/date to handleUpdateCase
-    
-    try {
-      // Pass the raw number and date to handleUpdateCase, which will then format for API and display
-      // The `newValue` for `handleUpdateCase` should be the string that `parseNumberDateString` can understand.
-      // So, we reconstruct it here in the format expected by `parseNumberDateString`
-      const rawCombinedString = [
-        data.number ? `Số: ${data.number}` : '',
-        data.date ? `Ngày: ${data.date}` : '' // Keep YYYY-MM-DD here for parsing
-      ].filter(Boolean).join('\n');
+    const rawCombinedString = [
+      data.number ? `Số: ${data.number}` : '',
+      data.date ? `Ngày: ${data.date}` : ''
+    ].filter(Boolean).join('\n');
 
+    try {
       await handleUpdateCase(currentNumberDateCaseId, currentNumberDateProp, rawCombinedString);
       setShowNumberDateInfoModal(false);
     } finally {
@@ -313,7 +287,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
     if (prop === 'thong_tin_nguoi_khoi_kien') {
       setCurrentCaseIdForPlaintiffEdit(caseId);
-      // When opening modal, parse the combined display string back to individual fields
       const caseItem = cases.find(c => c.id === caseId);
       const name = caseItem?.ho_ten_nguoi_khoi_kien || '';
       const year = caseItem?.nam_sinh_nguoi_khoi_kien || '';
@@ -322,7 +295,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       setShowPlaintiffInfoModal(true);
     } else if (prop === 'thong_tin_nguoi_bi_kien') {
       setCurrentCaseIdForDefendantEdit(caseId);
-      // When opening modal, parse the combined display string back to individual fields
       const caseItem = cases.find(c => c.id === caseId);
       const name = caseItem?.ho_ten_nguoi_bi_kien || '';
       const year = caseItem?.nam_sinh_nguoi_bi_kien || '';
@@ -334,16 +306,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       setCurrentNumberDateProp(prop);
       setNumberDateModalTitle(`Chỉnh sửa ${title}`);
       
-      // When opening modal, get the raw number and date from the case object
       const caseItem = cases.find(c => c.id === caseId);
       const originalPropName = prop.replace('thong_tin_', '');
       const number = caseItem?.[`so_${originalPropName}`] || '';
-      const date = caseItem?.[`ngay_${originalPropName}`] || ''; // This date is YYYY-MM-DD from API
+      const date = caseItem?.[`ngay_${originalPropName}`] || '';
       
       setCurrentNumberDateInfo({ number, date });
       setShowNumberDateInfoModal(true);
     }
-  }, [caseType.attributes, cases]); // Add 'cases' to dependencies
+  }, [caseType.attributes, cases]);
 
   const exportData = () => {
     const headers = caseType.attributes.map(attr => attr.name);
@@ -366,7 +337,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const { columns, settings } = getHandsontableConfig({
     caseType,
     filteredCases,
-    refreshData: fetchCases, // Pass fetchCases as refreshData
+    refreshData: fetchCases,
     setSelectedRows,
     onUpdateCase: handleUpdateCase,
   });
@@ -379,11 +350,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         onRefresh={fetchCases}
         onExport={exportData}
         onAddCase={handleAddNewCaseClick}
-        onDeleteSelected={() => deleteCases(selectedRows)}
-        selectedCount={selectedRows.length}
         isLoading={isLoading}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        filteredCount={filteredCases.length}
+        totalCount={cases.length}
       />
 
       <CaseTable
@@ -408,8 +379,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookId={book.id}
           bookYear={book.year}
           caseTypeCode={caseType.code}
-          onGenerateCaseNumber={() => getNextNumberForField('so_thu_ly')} // Pass specific field key
-          isGeneratingCaseNumber={isMaxNumbersLoading} // Use generic loading state
+          onGenerateCaseNumber={() => getNextNumberForField('so_thu_ly')}
+          isGeneratingCaseNumber={isMaxNumbersLoading}
+          latestAutoNumber={maxNumbersByField.so_thu_ly}
         />
       )}
 
@@ -439,9 +411,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveNumberDateInfo}
           onClose={() => setShowNumberDateInfoModal(false)}
           isSaving={isSavingNumberDateInfo}
-          // Derive the field key from currentNumberDateProp
           onGenerateNumber={() => getNextNumberForField(currentNumberDateProp!.replace('thong_tin_', 'so_'))} 
-          isGeneratingNumber={isMaxNumbersLoading} // Use generic loading state
+          isGeneratingNumber={isMaxNumbersLoading}
+          latestAutoNumber={maxNumbersByField[currentNumberDateProp!.replace('thong_tin_', 'so_')] || null}
         />
       )}
     </div>

@@ -1,23 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatDateForDisplay } from '../utils/dateUtils'; // Import new utility
+import { formatDateForDisplay } from '../utils/dateUtils';
 
 interface AddCaseModalProps {
   onClose: () => void;
   onCaseAdded: () => void;
-  bookId: string; // Pass the current book's ID
-  bookYear: number; // Pass the current book's year for case number generation
-  caseTypeCode: string; // Pass the case type code for case number generation
-  onGenerateCaseNumber: () => string; // Updated prop for auto-generating case number
-  isGeneratingCaseNumber: boolean; // New prop to indicate if case number is being generated
+  bookId: string;
+  bookYear: number;
+  caseTypeCode: string;
+  onGenerateCaseNumber: () => string;
+  isGeneratingCaseNumber: boolean;
+  latestAutoNumber: string | null; // New prop for the latest auto-generated number
 }
 
-export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber, isGeneratingCaseNumber }: AddCaseModalProps) {
+export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber, isGeneratingCaseNumber, latestAutoNumber }: AddCaseModalProps) {
   const [soThuLy, setSoThuLy] = useState('');
-  const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
+  const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasUserEditedSoThuLy, setHasUserEditedSoThuLy] = useState(false); // New state
+
+  // Use a ref to store the initial latestAutoNumber to prevent immediate overwrite
+  const initialLatestAutoNumberRef = useRef(latestAutoNumber);
+
+  useEffect(() => {
+    // Only set soThuLy if the user hasn't edited it and a new auto number is available
+    // Or if it's the initial load and latestAutoNumber is present
+    if (!hasUserEditedSoThuLy && latestAutoNumber !== null && latestAutoNumber !== soThuLy) {
+      // On initial render, if latestAutoNumber is provided, set it.
+      // For subsequent updates, only update if the user hasn't typed.
+      if (soThuLy === '' || latestAutoNumber !== initialLatestAutoNumberRef.current) {
+        setSoThuLy(latestAutoNumber);
+        initialLatestAutoNumberRef.current = latestAutoNumber; // Update ref for subsequent comparisons
+      }
+    }
+  }, [latestAutoNumber, hasUserEditedSoThuLy, soThuLy]); // Add soThuLy to dependencies
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +50,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     try {
       const payload = {
         so_thu_ly: soThuLy,
-        ngay_thu_ly: ngayThuLy, // API still receives YYYY-MM-DD
+        ngay_thu_ly: ngayThuLy,
         created_by: 1,
       };
 
@@ -61,10 +79,16 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     }
   };
 
+  const handleSoThuLyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSoThuLy(e.target.value);
+    setHasUserEditedSoThuLy(true); // User has typed, so set this to true
+  };
+
   const handleGenerateNumber = () => {
     const generatedNumber = onGenerateCaseNumber();
     setSoThuLy(generatedNumber);
-    console.log('Generated Case Number:', generatedNumber); // Log the generated number
+    setHasUserEditedSoThuLy(false); // Reset when auto-generating
+    console.log('Generated Case Number:', generatedNumber);
     toast('Tự động lấy số thụ lý.');
   };
 
@@ -105,18 +129,18 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
                     type="text"
                     id="soThuLy"
                     value={soThuLy}
-                    onChange={(e) => setSoThuLy(e.target.value)}
+                    onChange={handleSoThuLyChange}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Nhập số thụ lý"
                     required
-                    disabled={isSubmitting || isGeneratingCaseNumber} // Vô hiệu hóa khi đang gửi form hoặc đang tải số
+                    disabled={isSubmitting || isGeneratingCaseNumber}
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleGenerateNumber}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isSubmitting || isGeneratingCaseNumber} // Vô hiệu hóa khi đang gửi form hoặc đang tải số
+                  disabled={isSubmitting || isGeneratingCaseNumber}
                 >
                   {isGeneratingCaseNumber ? (
                     <span className="flex items-center">
@@ -138,7 +162,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
                 <input
                   type="date"
                   id="ngayThuLy"
-                  value={ngayThuLy} // Value is YYYY-MM-DD for type="date"
+                  value={ngayThuLy}
                   onChange={(e) => setNgayThuLy(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required

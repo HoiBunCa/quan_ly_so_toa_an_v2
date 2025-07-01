@@ -1,32 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Hash, Calendar, AlertCircle, Loader2 } from 'lucide-react';
-import { formatDateForDisplay } from '../../utils/dateUtils'; // Import new utility
+import { formatDateForDisplay } from '../../utils/dateUtils';
 
 interface NumberDateInputModalProps {
   title: string;
   initialNumber: string;
-  initialDate: string; // YYYY-MM-DD format
+  initialDate: string;
   onSave: (data: { number: string; date: string }) => void;
   onClose: () => void;
   isSaving: boolean;
-  onGenerateNumber: () => string; // New prop for generating number
-  isGeneratingNumber: boolean; // New prop to indicate if number is being generated
+  onGenerateNumber: () => string;
+  isGeneratingNumber: boolean;
+  latestAutoNumber: string | null; // New prop for the latest auto-generated number
 }
 
-export default function NumberDateInputModal({ title, initialNumber, initialDate, onSave, onClose, isSaving, onGenerateNumber, isGeneratingNumber }: NumberDateInputModalProps) {
+export default function NumberDateInputModal({ title, initialNumber, initialDate, onSave, onClose, isSaving, onGenerateNumber, isGeneratingNumber, latestAutoNumber }: NumberDateInputModalProps) {
   const [number, setNumber] = useState(initialNumber);
-  const [date, setDate] = useState(initialDate); // State stores YYYY-MM-DD
+  const [date, setDate] = useState(initialDate);
   const [error, setError] = useState('');
+  const [hasUserEditedNumber, setHasUserEditedNumber] = useState(false); // New state
+
+  // Use a ref to store the initial latestAutoNumber to prevent immediate overwrite
+  const initialLatestAutoNumberRef = useRef(latestAutoNumber);
 
   useEffect(() => {
+    // Set initial values when modal opens or initialData changes
     setNumber(initialNumber);
     setDate(initialDate);
-  }, [initialNumber, initialDate]);
+    setHasUserEditedNumber(false); // Reset edit flag when initial data changes (e.g., modal re-opens for a different case)
+    initialLatestAutoNumberRef.current = latestAutoNumber; // Reset ref
+  }, [initialNumber, initialDate, latestAutoNumber]); // Add latestAutoNumber to dependencies
+
+  useEffect(() => {
+    // Only set number if the user hasn't edited it and a new auto number is available
+    // And if the new latestAutoNumber is different from the current number state
+    if (!hasUserEditedNumber && latestAutoNumber !== null && latestAutoNumber !== number) {
+      // This condition ensures it only updates if the current number is empty
+      // or if the latestAutoNumber has genuinely changed from the *initial* value
+      // that was set when the modal opened or last auto-generated.
+      if (number === '' || latestAutoNumber !== initialLatestAutoNumberRef.current) {
+        setNumber(latestAutoNumber);
+        initialLatestAutoNumberRef.current = latestAutoNumber; // Update ref for subsequent comparisons
+      }
+    }
+  }, [latestAutoNumber, hasUserEditedNumber, number]); // Add number to dependencies
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNumber(e.target.value);
+    setHasUserEditedNumber(true); // User has typed, so set this to true
+  };
 
   const handleGenerateNumber = () => {
-    const generatedNumber = onGenerateNumber(); // Use the passed function
+    const generatedNumber = onGenerateNumber();
     setNumber(generatedNumber);
-    // No toast here, as the parent (CaseManagement) might handle it or it's less critical for this modal.
+    setHasUserEditedNumber(false); // Reset when auto-generating
+    initialLatestAutoNumberRef.current = generatedNumber; // Update ref with newly generated number
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -38,7 +66,7 @@ export default function NumberDateInputModal({ title, initialNumber, initialDate
       return;
     }
 
-    onSave({ number, date }); // Pass YYYY-MM-DD for date
+    onSave({ number, date });
   };
 
   return (
@@ -78,7 +106,7 @@ export default function NumberDateInputModal({ title, initialNumber, initialDate
                     type="text"
                     id="number"
                     value={number}
-                    onChange={(e) => setNumber(e.target.value)}
+                    onChange={handleNumberChange}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Nhập số"
                     disabled={isSaving || isGeneratingNumber}
@@ -108,9 +136,9 @@ export default function NumberDateInputModal({ title, initialNumber, initialDate
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="date" // Changed to type="date"
+                  type="date"
                   id="date"
-                  value={date} // Value is YYYY-MM-DD for type="date"
+                  value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required

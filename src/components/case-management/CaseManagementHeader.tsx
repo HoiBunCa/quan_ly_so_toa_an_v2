@@ -4,9 +4,9 @@ import {
   Plus, 
   Download, 
   RefreshCw,
-  Trash2,
   Search,
-  FileText // Import FileText icon
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { CaseBook } from '../../types/caseTypes';
 
@@ -16,11 +16,11 @@ interface CaseManagementHeaderProps {
   onRefresh: () => void;
   onExport: () => void;
   onAddCase: () => void;
-  onDeleteSelected: () => void;
-  selectedCount: number;
   isLoading: boolean;
   searchTerm: string;
   onSearchChange: (term: string) => void;
+  filteredCount: number;
+  totalCount: number;
 }
 
 export default function CaseManagementHeader({
@@ -29,11 +29,11 @@ export default function CaseManagementHeader({
   onRefresh,
   onExport,
   onAddCase,
-  onDeleteSelected,
-  selectedCount,
   isLoading,
   searchTerm,
   onSearchChange,
+  filteredCount,
+  totalCount,
 }: CaseManagementHeaderProps) {
   return (
     <div className="mb-8">
@@ -57,8 +57,6 @@ export default function CaseManagementHeader({
         </div>
 
         <div className="flex items-center space-x-3">
-
-
           <button
             onClick={onExport}
             className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -77,7 +75,39 @@ export default function CaseManagementHeader({
         </div>
       </div>
 
-      
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search cases..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+          />
+        </div>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={onRefresh}
+            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <span className="flex items-center">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" /> Đang tải...
+              </span>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh Data</span>
+              </>
+            )}
+          </button>
+          <div className="text-sm text-gray-600">
+            Showing {filteredCount} of {totalCount} cases
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

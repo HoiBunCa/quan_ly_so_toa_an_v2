@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDateForDisplay } from '../utils/dateUtils'; // Import new utility
@@ -18,29 +18,6 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]); // State stores YYYY-MM-DD
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Effect to initialize soThuLy when modal opens or onGenerateCaseNumber changes
-  useEffect(() => {
-    const initialGeneratedNumber = onGenerateCaseNumber();
-    setSoThuLy(initialGeneratedNumber);
-  }, [onGenerateCaseNumber]); // Depend on the callback itself
-
-  // Effect to automatically update soThuLy if a higher number becomes available
-  useEffect(() => {
-    // This effect runs when onGenerateCaseNumber (or its dependencies in parent) changes.
-    // It means maxNumbersByField might have updated.
-    const latestGeneratedNumber = onGenerateCaseNumber();
-    
-    // Only update if the current soThuLy is empty or if the new generated number is higher
-    // and the user hasn't manually typed a higher number.
-    // We parse to int for comparison, but keep as string for state.
-    if (soThuLy === '' || (parseInt(latestGeneratedNumber) > parseInt(soThuLy || '0'))) {
-      setSoThuLy(latestGeneratedNumber);
-      if (soThuLy !== '') { // Only show toast if it actually changed from a non-empty value
-        toast(`Số thụ lý đã được cập nhật tự động thành ${latestGeneratedNumber}.`);
-      }
-    }
-  }, [onGenerateCaseNumber, soThuLy]); // Depend on onGenerateCaseNumber and soThuLy
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

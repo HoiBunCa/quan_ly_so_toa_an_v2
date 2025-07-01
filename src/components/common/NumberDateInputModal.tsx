@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Hash, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { formatDateForDisplay } from '../../utils/dateUtils'; // Import new utility
-import toast from 'react-hot-toast'; // Import toast
 
 interface NumberDateInputModalProps {
   title: string;
@@ -24,25 +23,10 @@ export default function NumberDateInputModal({ title, initialNumber, initialDate
     setDate(initialDate);
   }, [initialNumber, initialDate]);
 
-  // Effect to automatically update 'number' if a higher number becomes available
-  useEffect(() => {
-    // This effect runs when onGenerateNumber (or its dependencies in parent) changes.
-    const latestGeneratedNumber = onGenerateNumber();
-    
-    // Only update if the current 'number' is empty or if the new generated number is higher
-    // and the user hasn't manually typed a higher number.
-    if (number === '' || (parseInt(latestGeneratedNumber) > parseInt(number || '0'))) {
-      setNumber(latestGeneratedNumber);
-      if (number !== '') { // Only show toast if it actually changed from a non-empty value
-        toast(`Số đã được cập nhật tự động thành ${latestGeneratedNumber}.`);
-      }
-    }
-  }, [onGenerateNumber, number]); // Depend on onGenerateNumber and number
-
   const handleGenerateNumber = () => {
     const generatedNumber = onGenerateNumber(); // Use the passed function
     setNumber(generatedNumber);
-    toast('Tự động lấy số.');
+    // No toast here, as the parent (CaseManagement) might handle it or it's less critical for this modal.
   };
 
   const handleSubmit = (e: React.FormEvent) => {

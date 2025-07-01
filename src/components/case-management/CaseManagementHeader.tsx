@@ -57,14 +57,7 @@ export default function CaseManagementHeader({
         </div>
 
         <div className="flex items-center space-x-3">
-          <button
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </button>
+
 
           <button
             onClick={onExport}

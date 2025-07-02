@@ -231,7 +231,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       if (book.caseTypeId === 'HON_NHAN') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/${caseId}/`; // Corrected API for PUT
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; // Corrected API for PUT
       } else {
         console.warn(`Update not supported for case type: ${book.caseTypeId}`);
         toast.error(`Cập nhật thất bại: Loại sổ án không được hỗ trợ.`);

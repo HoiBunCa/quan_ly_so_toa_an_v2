@@ -37,7 +37,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
     setSelectedResultIds([]); // Clear previous selections
 
     try {
-      let apiUrl = '';
+      let apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`; // Always use this API for advanced search
       let queryParams = new URLSearchParams({ year: book.year.toString() });
 
       if (ngayNhanDon) {
@@ -48,16 +48,6 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
       }
       if (nguoiBiKien) {
         queryParams.append('ho_ten_nguoi_bi_kien', nguoiBiKien);
-      }
-
-      if (book.caseTypeId === 'HON_NHAN') {
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
-      } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/`;
-      } else {
-        setErrorResults('Loại sổ án không được hỗ trợ tìm kiếm nâng cao.');
-        setIsLoadingResults(false);
-        return;
       }
 
       const response = await fetch(`${apiUrl}?${queryParams.toString()}`);

@@ -3,9 +3,9 @@ import { X, Calendar, User, AlertCircle, Search as SearchIcon, Loader2, FileText
 import { formatDateForDisplay } from '../../utils/dateUtils';
 import { HotTable } from '@handsontable/react';
 import { getHandsontableConfig } from '../../utils/handsontableConfig';
-import { Case, CaseBook, CaseType } from '../../types/caseTypes'; // Import CaseType
+import { Case, CaseBook, CaseType } from '../../types/caseTypes';
 import toast from 'react-hot-toast';
-// import { caseTypes } from '../../data/caseTypesData'; // No longer needed here
+import { caseTypes } from '../../data/caseTypesData'; // Import caseTypes
 
 export interface AdvancedSearchCriteria {
   ngayNhanDon: string;
@@ -15,10 +15,10 @@ export interface AdvancedSearchCriteria {
 
 interface AdvancedSearchModalProps {
   onClose: () => void;
-  onApplySelection: (selectedCaseIds: string[]) => void; // Changed prop name
+  onApplySelection: (selectedCaseIds: string[]) => void;
   initialCriteria: AdvancedSearchCriteria;
-  book: CaseBook; // Pass the current book to fetch cases
-  caseType: CaseType; // New prop: receive the full caseType object
+  book: CaseBook;
+  caseType: CaseType; // Keep this prop, but we'll use a specific caseType for the table
 }
 
 export default function AdvancedSearchModal({ onClose, onApplySelection, initialCriteria, book, caseType }: AdvancedSearchModalProps) {
@@ -32,17 +32,18 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
   const [errorResults, setErrorResults] = useState<string | null>(null);
   const [selectedResultIds, setSelectedResultIds] = useState<string[]>([]);
 
-  // currentCaseType is now passed as a prop, no need to find it here
-  // const currentCaseType = caseTypes.find(type => type.id === book.caseTypeId);
+  // Explicitly get the HON_NHAN case type for column definitions in the search results table
+  const honNhanCaseType = caseTypes.find(type => type.id === 'HON_NHAN');
 
   const fetchSearchResults = useCallback(async () => {
     setIsLoadingResults(true);
     setErrorResults(null);
-    setSearchResults([]); // Clear previous results
-    setSelectedResultIds([]); // Clear previous selections
+    setSearchResults([]);
+    setSelectedResultIds([]);
 
     try {
-      let apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`; // Always use this API for advanced search
+      // Always use the API path for 'so-thu-ly-don-khoi-kien' for advanced search
+      let apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       let queryParams = new URLSearchParams({ year: book.year.toString() });
 
       if (ngayNhanDon) {
@@ -125,7 +126,6 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
   }, [ngayNhanDon, nguoiKhoiKien, nguoiBiKien, book]);
 
   useEffect(() => {
-    // Optionally trigger search on initial load if criteria are present
     if (initialCriteria.ngayNhanDon || initialCriteria.nguoiKhoiKien || initialCriteria.nguoiBiKien) {
       fetchSearchResults();
     }
@@ -151,38 +151,37 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
     onClose();
   };
 
-  // Pass the actual caseType prop to getHandsontableConfig
+  // Use honNhanCaseType for column definitions
   const { columns, settings } = getHandsontableConfig({
-    caseType: caseType, // Use the caseType prop directly
-    filteredCases: searchResults, // Pass search results for column generation
-    refreshData: fetchSearchResults, // Pass internal refresh for context menu (if needed)
-    setSelectedRows: setSelectedResultIds, // Update internal selection state
-    onUpdateCase: async () => {}, // Make it read-only, no update allowed from this modal
+    caseType: honNhanCaseType || { id: '', name: '', code: '', attributes: [] }, // Provide fallback
+    filteredCases: searchResults,
+    refreshData: fetchSearchResults,
+    setSelectedRows: setSelectedResultIds,
+    onUpdateCase: async () => {},
   });
 
   // Override settings to make the table read-only and adjust height for modal
   const modalTableSettings = {
     ...settings,
-    readOnly: true, // Make all cells read-only
-    contextMenu: false, // Disable context menu for simplicity in search results
-    height: '250px', // Fixed height for the table within the modal
+    readOnly: true,
+    contextMenu: false,
+    height: '250px',
     stretchH: 'all',
     manualColumnResize: true,
     manualRowResize: true,
-    // Ensure row headers are visible for selection
     rowHeaders: true,
   };
 
   // Filter columns to only show relevant ones for search results
+  // This filter should be applied to the columns generated from honNhanCaseType
   const relevantColumns = columns.filter(col => 
-    ['caseNumber', 'ngay_nhan_don', 'thong_tin_nguoi_khoi_kien', 'thong_tin_nguoi_bi_kien', 'noi_dung_don', 'tom_tat_noi_dung_don', 'ghi_chu'].includes(col.data as string) ||
-    (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' && ['thong_tin_chuyen_hoa_giai'].includes(col.data as string))
+    ['so_thu_ly', 'ngay_thu_ly', 'thong_tin_nguoi_khoi_kien', 'thong_tin_nguoi_bi_kien', 'noi_dung_don', 'ghi_chu'].includes(col.data as string)
   );
 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 flex flex-col max-h-[90vh]"> {/* Increased max-w and added flex-col */}
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center">
             <SearchIcon className="w-5 h-5 mr-2 text-blue-600" />
@@ -282,7 +281,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
           </div>
         </form>
 
-        <div className="flex-1 overflow-hidden p-6 pt-0"> {/* Added flex-1 and overflow-hidden */}
+        <div className="flex-1 overflow-hidden p-6 pt-0">
           <h3 className="text-md font-semibold text-gray-800 mb-3">Kết quả tìm kiếm ({searchResults.length} vụ án)</h3>
           {isLoadingResults ? (
             <div className="flex items-center justify-center h-full text-gray-500">
@@ -300,12 +299,12 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
               <p className="text-gray-600">Không có kết quả nào. Vui lòng nhập tiêu chí tìm kiếm và nhấn "Tìm kiếm".</p>
             </div>
           ) : (
-            <div className="handsontable-container h-full"> {/* Ensure this container has height */}
+            <div className="handsontable-container h-full">
               <HotTable
                 data={searchResults}
                 columns={relevantColumns}
                 settings={modalTableSettings}
-                height="100%" // Make Handsontable fill its container
+                height="100%"
               />
             </div>
           )}

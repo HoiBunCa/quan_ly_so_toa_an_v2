@@ -185,7 +185,7 @@ export default function AdvancedSearchModal({
     console.log('AdvancedSearchModal: isLoadingResults:', isLoadingResults);
 
     if (selectedResultIds.length === 0) {
-      toast.info('Vui lòng chọn ít nhất một vụ án để áp dụng.');
+      toast.error('Vui lòng chọn ít nhất một vụ án để áp dụng.');
       return;
     }
 
@@ -207,8 +207,8 @@ export default function AdvancedSearchModal({
           created_by: 1,
           so_chuyen_hoa_giai: nextSoChuyenHoaGiai,
           ngay_chuyen_hoa_giai: today,
-          ngay_nhan_don: caseItem.ngay_nhan_don || '',
-          tom_tat_noi_dung_don: caseItem.noi_dung_don || '', // Map noi_dung_don from HON_NHAN
+          ngay_thu_ly: caseItem.ngay_thu_ly || '',
+          noi_dung_don: caseItem.noi_dung_don || '', // Map noi_dung_don from HON_NHAN
           tai_lieu_kem_theo: caseItem.tai_lieu_kem_theo || '',
           ho_ten_nguoi_khoi_kien: caseItem.ho_ten_nguoi_khoi_kien || '',
           nam_sinh_nguoi_khoi_kien: caseItem.nam_sinh_nguoi_khoi_kien || '',

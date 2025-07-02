@@ -1,5 +1,6 @@
 import React from 'react';
-import { Plus, UserPlus } from 'lucide-react'; // Import UserPlus icon
+import { Plus, UserPlus, LogOut } from 'lucide-react'; // Import LogOut icon
+import { useAuth } from '../hooks/useAuth'; // Import useAuth hook
 
 interface HeaderProps {
   onCreateNewBook: () => void;
@@ -7,6 +8,8 @@ interface HeaderProps {
 }
 
 export default function Header({ onCreateNewBook, onAddUser }: HeaderProps) {
+  const { logout } = useAuth(); // Use the logout function from auth context
+
   return (
     <header className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
       <h2 className="text-xl font-semibold text-gray-800">Dashboard Overview</h2>
@@ -24,6 +27,13 @@ export default function Header({ onCreateNewBook, onAddUser }: HeaderProps) {
         >
           <UserPlus className="w-4 h-4" />
           <span>Add User</span>
+        </button>
+        <button
+          onClick={logout} // Call logout function on click
+          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Đăng xuất</span>
         </button>
       </div>
     </header>

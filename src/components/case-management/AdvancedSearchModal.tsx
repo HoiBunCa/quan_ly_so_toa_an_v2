@@ -6,7 +6,8 @@ import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { Case, CaseBook, CaseType } from '../../types/caseTypes';
 import toast from 'react-hot-toast';
 import { caseTypes } from '../../data/caseTypesData'; // Import caseTypes
-import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../../context/AuthContext'; // NEW: Import useAuth
+import { createAuthenticatedFetch } from '../../utils/api'; // Changed import
 
 export interface AdvancedSearchCriteria {
   ngayNhanDon: string;
@@ -45,6 +46,9 @@ export default function AdvancedSearchModal({
   const [errorResults, setErrorResults] = useState<string | null>(null);
   const [selectedResultIds, setSelectedResultIds] = useState<string[]>([]);
   const [isCopyingCases, setIsCopyingCases] = useState(false); // New state for copying process
+
+  const { accessToken, logout } = useAuth(); // NEW: Get accessToken and logout from context
+  const authenticatedFetch = createAuthenticatedFetch(accessToken, logout); // NEW: Create authenticatedFetch instance
 
   // Explicitly get the HON_NHAN case type for column definitions in the search results table
   const honNhanCaseType = caseTypes.find(type => type.id === 'HON_NHAN');
@@ -159,7 +163,7 @@ export default function AdvancedSearchModal({
     } finally {
       setIsLoadingResults(false);
     }
-  }, [ngayNhanDon, nguoiKhoiKien, nguoiBiKien, book]);
+  }, [ngayNhanDon, nguoiKhoiKien, nguoiBiKien, book, authenticatedFetch]); // Add authenticatedFetch to dependencies
 
   useEffect(() => {
     if (initialCriteria.ngayNhanDon || initialCriteria.nguoiKhoiKien || initialCriteria.nguoiBiKien) {
@@ -265,6 +269,7 @@ export default function AdvancedSearchModal({
       setSelectedResultIds(ids);
     },
     onUpdateCase: async () => {}, // No update allowed in this modal
+    authenticatedFetch: authenticatedFetch, // NEW: Pass authenticatedFetch
   });
 
   // Override settings to make the table read-only and adjust height for modal

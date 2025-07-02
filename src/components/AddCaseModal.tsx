@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDateForDisplay } from '../utils/dateUtils';
-import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../context/AuthContext'; // NEW: Import useAuth
+import { createAuthenticatedFetch } from '../utils/api'; // Changed import
 
 interface AddCaseModalProps {
   onClose: () => void;
@@ -21,6 +22,9 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasUserEditedPrimaryNumber, setHasUserEditedPrimaryNumber] = useState(false); // Renamed
+
+  const { accessToken, logout } = useAuth(); // NEW: Get accessToken and logout from context
+  const authenticatedFetch = createAuthenticatedFetch(accessToken, logout); // NEW: Create authenticatedFetch instance
 
   const initialLatestAutoNumberRef = useRef(latestAutoNumber);
 

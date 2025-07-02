@@ -3,7 +3,7 @@ import { HotTableProps } from '@handsontable/react';
 import Handsontable from 'handsontable';
 import { formatDateForDisplay } from './dateUtils'; // Import new utility
 import toast from 'react-hot-toast'; // Import toast for error messages
-import { authenticatedFetch } from './api'; // Import authenticatedFetch
+// REMOVED: import { authenticatedFetch } from './api'; // This will be passed as a prop
 
 interface GetHandsontableConfigArgs {
   caseType: CaseType;
@@ -11,6 +11,7 @@ interface GetHandsontableConfigArgs {
   refreshData: () => Promise<void>; // New prop to trigger data refresh
   setSelectedRows: (ids: string[]) => void;
   onUpdateCase: (caseId: string, prop: string, newValue: any) => Promise<void>;
+  authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>; // NEW: Add authenticatedFetch as a prop
 }
 
 // Custom renderer for multi-line text (like plaintiff info)
@@ -70,6 +71,7 @@ export function getHandsontableConfig({
   refreshData, // Now receiving refreshData callback
   setSelectedRows,
   onUpdateCase,
+  authenticatedFetch, // NEW: Destructure authenticatedFetch
 }: GetHandsontableConfigArgs): Pick<HotTableProps, 'columns' | 'settings'> {
 
   const columns = caseType.attributes.map(attr => {
@@ -203,7 +205,7 @@ export function getHandsontableConfig({
                         continue;
                     }
 
-                    const response = await authenticatedFetch(deleteUrl, {
+                    const response = await authenticatedFetch(deleteUrl, { // Use passed authenticatedFetch
                         method: 'DELETE',
                     });
 

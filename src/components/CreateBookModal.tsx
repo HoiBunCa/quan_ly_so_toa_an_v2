@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { X, BookOpen, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast'; // Import toast
-import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../context/AuthContext'; // NEW: Import useAuth
+import { createAuthenticatedFetch } from '../utils/api'; // Changed import
 
 interface CreateBookModalProps {
   onClose: () => void;
@@ -14,6 +15,9 @@ export default function CreateBookModal({ onClose, onBookCreated }: CreateBookMo
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false); // New state for loading
+
+  const { accessToken, logout } = useAuth(); // NEW: Get accessToken and logout from context
+  const authenticatedFetch = createAuthenticatedFetch(accessToken, logout); // NEW: Create authenticatedFetch instance
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear + i - 5);

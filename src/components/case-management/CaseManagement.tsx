@@ -16,7 +16,8 @@ import CaseInstructions from './CaseInstructions';
 import { useCasesData } from '../../hooks/useCasesData';
 import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { parseNumberDateString, combineNumberAndDate } from '../../utils/dateUtils';
-import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../../context/AuthContext'; // NEW: Import useAuth
+import { createAuthenticatedFetch } from '../../utils/api'; // Changed import
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -66,6 +67,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const caseType = caseTypes.find(type => type.id === book.caseTypeId); // This is correct
   
   const wsRef = useRef<WebSocket | null>(null);
+
+  const { accessToken, logout } = useAuth(); // NEW: Get accessToken and logout from context
+  const authenticatedFetch = createAuthenticatedFetch(accessToken, logout); // NEW: Create authenticatedFetch instance
 
   if (!caseType) {
     return <div>Case type not found</div>;
@@ -285,7 +289,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       toast.error(`Cập nhật thất bại: ${e.message}`);
       fetchCases(); 
     }
-  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId]);
+  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId, authenticatedFetch]); // Add authenticatedFetch to dependencies
 
   const handleSavePlaintiffInfo = async (data: { name: string; year: string; address: string }) => {
     if (!currentCaseIdForPlaintiffEdit) return;
@@ -438,6 +442,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     refreshData: fetchCases, // This will re-fetch all data, then the filter will re-apply
     setSelectedRows,
     onUpdateCase: handleUpdateCase,
+    authenticatedFetch: authenticatedFetch, // NEW: Pass authenticatedFetch
   });
 
   // Determine which field to generate/display for the AddCaseModal

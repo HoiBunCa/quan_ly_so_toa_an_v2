@@ -15,7 +15,8 @@ import {
 import { CaseBook } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast'; // Import toast
-import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../context/AuthContext'; // NEW: Import useAuth
+import { createAuthenticatedFetch } from '../utils/api'; // Changed import
 
 interface CaseBooksProps {
   onSelectBook: (book: CaseBook) => void;
@@ -30,6 +31,9 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
   const [selectedType, setSelectedType] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { accessToken, logout } = useAuth(); // NEW: Get accessToken and logout from context
+  const authenticatedFetch = createAuthenticatedFetch(accessToken, logout); // NEW: Create authenticatedFetch instance
 
   const years = Array.from(new Set(books.map(book => book.year))).sort((a, b) => b - a);
 
@@ -62,7 +66,7 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
     };
 
     fetchCaseBooks();
-  }, [refreshTrigger]); // Re-run effect when refreshTrigger changes
+  }, [refreshTrigger, authenticatedFetch]); // Add authenticatedFetch to dependencies
 
   const filteredBooks = books.filter(book => {
     const matchesSearch = book.caseTypeName.toLowerCase().includes(searchTerm.toLowerCase()) ||

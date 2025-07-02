@@ -11,50 +11,54 @@ interface AddCaseModalProps {
   caseTypeCode: string;
   onGenerateCaseNumber: () => string;
   isGeneratingCaseNumber: boolean;
-  latestAutoNumber: string | null; // New prop for the latest auto-generated number
+  latestAutoNumber: string | null;
 }
 
 export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, caseTypeCode, onGenerateCaseNumber, isGeneratingCaseNumber, latestAutoNumber }: AddCaseModalProps) {
-  const [soThuLy, setSoThuLy] = useState('');
-  const [ngayThuLy, setNgayThuLy] = useState(new Date().toISOString().split('T')[0]);
+  const [primaryNumber, setPrimaryNumber] = useState(''); // Renamed from soThuLy for generality
+  const [primaryDate, setPrimaryDate] = useState(new Date().toISOString().split('T')[0]); // Renamed from ngayThuLy for generality
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasUserEditedSoThuLy, setHasUserEditedSoThuLy] = useState(false); // New state
+  const [hasUserEditedPrimaryNumber, setHasUserEditedPrimaryNumber] = useState(false); // Renamed
 
-  // Use a ref to store the initial latestAutoNumber to prevent immediate overwrite
   const initialLatestAutoNumberRef = useRef(latestAutoNumber);
 
   useEffect(() => {
-    // Only set soThuLy if the user hasn't edited it and a new auto number is available
-    // Or if it's the initial load and latestAutoNumber is present
-    if (!hasUserEditedSoThuLy && latestAutoNumber !== null && latestAutoNumber !== soThuLy) {
-      // On initial render, if latestAutoNumber is provided, set it.
-      // For subsequent updates, only update if the user hasn't typed.
-      if (soThuLy === '' || latestAutoNumber !== initialLatestAutoNumberRef.current) {
-        setSoThuLy(latestAutoNumber);
-        initialLatestAutoNumberRef.current = latestAutoNumber; // Update ref for subsequent comparisons
+    // Only set primaryNumber if the user hasn't edited it and a new auto number is available
+    if (!hasUserEditedPrimaryNumber && latestAutoNumber !== null && latestAutoNumber !== primaryNumber) {
+      if (primaryNumber === '' || latestAutoNumber !== initialLatestAutoNumberRef.current) {
+        setPrimaryNumber(latestAutoNumber);
+        initialLatestAutoNumberRef.current = latestAutoNumber;
       }
     }
-  }, [latestAutoNumber, hasUserEditedSoThuLy, soThuLy]); // Add soThuLy to dependencies
+  }, [latestAutoNumber, hasUserEditedPrimaryNumber, primaryNumber]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!soThuLy || !ngayThuLy) {
-      setError('Vui lòng nhập đầy đủ Số thụ lý và Ngày thụ lý.');
+    if (!primaryNumber || !primaryDate) {
+      setError('Vui lòng nhập đầy đủ Số và Ngày.');
       return;
     }
 
     setIsSubmitting(true);
-    try {
-      const payload = {
-        so_thu_ly: soThuLy,
-        ngay_thu_ly: ngayThuLy,
-        created_by: 1,
-      };
+    let apiUrl = '';
+    let payload: { [key: string]: any } = { created_by: 1 };
 
-      const response = await fetch('http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/', {
+    if (caseTypeCode === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+      apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/';
+      payload.so_chuyen_hoa_giai = primaryNumber;
+      payload.ngay_chuyen_hoa_giai = primaryDate;
+    } else {
+      // Default for HON_NHAN and any other types
+      apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/';
+      payload.so_thu_ly = primaryNumber;
+      payload.ngay_thu_ly = primaryDate;
+    }
+
+    try {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,18 +83,23 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     }
   };
 
-  const handleSoThuLyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSoThuLy(e.target.value);
-    setHasUserEditedSoThuLy(true); // User has typed, so set this to true
+  const handlePrimaryNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPrimaryNumber(e.target.value);
+    setHasUserEditedPrimaryNumber(true);
   };
 
   const handleGenerateNumber = () => {
     const generatedNumber = onGenerateCaseNumber();
-    setSoThuLy(generatedNumber);
-    setHasUserEditedSoThuLy(false); // Reset when auto-generating
+    setPrimaryNumber(generatedNumber);
+    setHasUserEditedPrimaryNumber(false);
     console.log('Generated Case Number:', generatedNumber);
-    toast('Tự động lấy số thụ lý.');
+    toast('Tự động lấy số.');
   };
+
+  // Determine labels and placeholders based on case type
+  const numberLabel = caseTypeCode === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'Số chuyển hoà giải' : 'Số thụ lý';
+  const dateLabel = caseTypeCode === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'Ngày chuyển hoà giải' : 'Ngày thụ lý';
+  const placeholderText = caseTypeCode === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'Nhập số chuyển hoà giải' : 'Nhập số thụ lý';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
@@ -119,19 +128,19 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="soThuLy" className="block text-sm font-medium text-gray-700 mb-2">
-                Số thụ lý
+              <label htmlFor="primaryNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                {numberLabel}
               </label>
               <div className="flex">
                 <div className="relative flex-1">
                   <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    id="soThuLy"
-                    value={soThuLy}
-                    onChange={handleSoThuLyChange}
+                    id="primaryNumber"
+                    value={primaryNumber}
+                    onChange={handlePrimaryNumberChange}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Nhập số thụ lý"
+                    placeholder={placeholderText}
                     required
                     disabled={isSubmitting || isGeneratingCaseNumber}
                   />
@@ -154,24 +163,24 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
             </div>
 
             <div>
-              <label htmlFor="ngayThuLy" className="block text-sm font-medium text-gray-700 mb-2">
-                Ngày thụ lý
+              <label htmlFor="primaryDate" className="block text-sm font-medium text-gray-700 mb-2">
+                {dateLabel}
               </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="date"
-                  id="ngayThuLy"
-                  value={ngayThuLy}
-                  onChange={(e) => setNgayThuLy(e.target.value)}
+                  id="primaryDate"
+                  value={primaryDate}
+                  onChange={(e) => setPrimaryDate(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                   disabled={isSubmitting}
                 />
               </div>
-              {ngayThuLy && (
+              {primaryDate && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Định dạng hiển thị: {formatDateForDisplay(ngayThuLy)}
+                  Định dạng hiển thị: {formatDateForDisplay(primaryDate)}
                 </p>
               )}
             </div>

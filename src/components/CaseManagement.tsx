@@ -72,7 +72,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   }, [book.year]);
 
   useEffect(() => {
-    if (book.caseTypeId === 'HON_NHAN') {
+    // This WebSocket connection is specifically for 'HON_NHAN' case type's auto-numbering.
+    // If other case types also need auto-numbering, this logic might need to be generalized
+    // or separate WebSocket connections might be needed.
+    // For now, I'll keep it specific to 'HON_NHAN' as per existing code,
+    // but will ensure `isMaxNumbersLoading` is false for other types.
+    if (book.caseTypeId === 'HON_NHAN' || book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
       setIsMaxNumbersLoading(true);
       const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
       wsRef.current = ws;
@@ -216,7 +221,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }));
 
     try {
-      const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`, {
+      let updateUrl = '';
+      if (book.caseTypeId === 'HON_NHAN') {
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
+      } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
+      } else {
+        console.warn(`Update not supported for case type: ${book.caseTypeId}`);
+        toast.error(`Cập nhật thất bại: Loại sổ án không được hỗ trợ.`);
+        fetchCases();
+        return;
+      }
+
+      const response = await fetch(updateUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +251,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       toast.error(`Cập nhật thất bại: ${e.message}`);
       fetchCases(); 
     }
-  }, [cases, fetchCases, setCases, caseType.attributes]);
+  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId]);
 
   const handleSavePlaintiffInfo = async (data: { name: string; year: string; address: string }) => {
     if (!currentCaseIdForPlaintiffEdit) return;
@@ -342,6 +359,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     onUpdateCase: handleUpdateCase,
   });
 
+  // Determine which field to generate/display for the AddCaseModal
+  const primaryNumberFieldId = book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'so_chuyen_hoa_giai' : 'so_thu_ly';
+
   return (
     <div className="p-6 flex flex-col h-full">
       <CaseManagementHeader
@@ -379,9 +399,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           bookId={book.id}
           bookYear={book.year}
           caseTypeCode={caseType.code}
-          onGenerateCaseNumber={() => getNextNumberForField('so_thu_ly')}
+          onGenerateCaseNumber={() => getNextNumberForField(primaryNumberFieldId)}
           isGeneratingCaseNumber={isMaxNumbersLoading}
-          latestAutoNumber={maxNumbersByField.so_thu_ly}
+          latestAutoNumber={maxNumbersByField[primaryNumberFieldId]}
         />
       )}
 

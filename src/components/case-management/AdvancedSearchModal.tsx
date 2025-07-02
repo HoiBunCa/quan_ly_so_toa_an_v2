@@ -61,13 +61,13 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
       let queryParams = new URLSearchParams({ year: book.year.toString() });
 
       if (ngayNhanDon) {
-        queryParams.append('ngay_nhan_don', ngayNhanDon);
+        queryParams.append('search', ngayNhanDon);
       }
       if (nguoiKhoiKien) {
-        queryParams.append('ho_ten_nguoi_khoi_kien', nguoiKhoiKien);
+        queryParams.append('search', nguoiKhoiKien);
       }
       if (nguoiBiKien) {
-        queryParams.append('ho_ten_nguoi_bi_kien', nguoiBiKien);
+        queryParams.append('search', nguoiBiKien);
       }
 
       const response = await fetch(`${apiUrl}?${queryParams.toString()}`);
@@ -126,7 +126,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
       });
       setSearchResults(fetchedCases);
       if (fetchedCases.length === 0) {
-        toast.info('Không tìm thấy kết quả nào phù hợp.');
+        toast.success('Không tìm thấy kết quả nào phù hợp.');
       } else {
         toast.success(`Tìm thấy ${fetchedCases.length} kết quả.`);
       }

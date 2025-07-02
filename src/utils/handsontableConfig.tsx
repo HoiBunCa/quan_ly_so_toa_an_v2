@@ -191,7 +191,18 @@ export function getHandsontableConfig({
 
             for (const caseId of idsToDelete) {
                 try {
-                    const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`, {
+                    let deleteUrl = '';
+                    if (caseType.id === 'HON_NHAN') {
+                        deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
+                    } else if (caseType.id === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+                        deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
+                    } else {
+                        console.warn(`Deletion not supported for case type: ${caseType.id}`);
+                        failedDeletions.push(caseId);
+                        continue;
+                    }
+
+                    const response = await fetch(deleteUrl, {
                         method: 'DELETE',
                     });
 

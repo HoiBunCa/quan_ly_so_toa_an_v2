@@ -35,6 +35,20 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
   // Explicitly get the HON_NHAN case type for column definitions in the search results table
   const honNhanCaseType = caseTypes.find(type => type.id === 'HON_NHAN');
 
+  // Add a check for honNhanCaseType to ensure it's found
+  if (!honNhanCaseType) {
+    console.error("Lỗi: Không tìm thấy cấu hình loại án 'HON_NHAN' trong caseTypesData. Điều này rất quan trọng cho AdvancedSearchModal.");
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 text-center text-red-600">
+          <AlertCircle className="w-8 h-8 mx-auto mb-3" />
+          <p>Đã xảy ra lỗi nghiêm trọng: Không thể tải cấu hình loại án cần thiết cho tìm kiếm nâng cao.</p>
+          <button onClick={onClose} className="mt-4 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Đóng</button>
+        </div>
+      </div>
+    );
+  }
+
   const fetchSearchResults = useCallback(async () => {
     setIsLoadingResults(true);
     setErrorResults(null);
@@ -153,7 +167,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
 
   // Use honNhanCaseType for column definitions
   const { columns, settings } = getHandsontableConfig({
-    caseType: honNhanCaseType || { id: '', name: '', code: '', attributes: [] }, // Provide fallback
+    caseType: honNhanCaseType, // Use the found case type directly
     filteredCases: searchResults,
     refreshData: fetchSearchResults,
     setSelectedRows: setSelectedResultIds,
@@ -172,12 +186,8 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
     rowHeaders: true,
   };
 
-  // Filter columns to only show relevant ones for search results
-  // This filter should be applied to the columns generated from honNhanCaseType
-  const relevantColumns = columns.filter(col => 
-    ['so_thu_ly', 'ngay_thu_ly', 'ngay_nhan_don', 'thong_tin_nguoi_khoi_kien', 'thong_tin_nguoi_bi_kien', 'noi_dung_don', 'ghi_chu'].includes(col.data as string)
-  );
-
+  // For debugging: show all columns generated from honNhanCaseType
+  const relevantColumns = columns; 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
@@ -300,8 +310,11 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
             </div>
           ) : (
             <div className="handsontable-container h-full">
+              {console.log("HotTable data:", searchResults)}
+              {console.log("HotTable columns:", relevantColumns)}
+              {console.log("HotTable settings:", modalTableSettings)}
               <HotTable
-                key={searchResults.length} {/* Added key prop here */}
+                key={searchResults.length}
                 data={searchResults}
                 columns={relevantColumns}
                 settings={modalTableSettings}

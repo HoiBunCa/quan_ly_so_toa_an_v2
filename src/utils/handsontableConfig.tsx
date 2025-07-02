@@ -11,6 +11,8 @@ interface GetHandsontableConfigArgs {
   refreshData: () => Promise<void>; // New prop to trigger data refresh
   setSelectedRows: (ids: string[]) => void;
   onUpdateCase: (caseId: string, prop: string, newValue: any) => Promise<void>;
+  accessToken: string | null; // Add accessToken
+  logout: () => void; // Add logout
 }
 
 // Custom renderer for multi-line text (like plaintiff info)
@@ -70,6 +72,8 @@ export function getHandsontableConfig({
   refreshData, // Now receiving refreshData callback
   setSelectedRows,
   onUpdateCase,
+  accessToken, // Destructure accessToken
+  logout, // Destructure logout
 }: GetHandsontableConfigArgs): Pick<HotTableProps, 'columns' | 'settings'> {
 
   const columns = caseType.attributes.map(attr => {
@@ -203,7 +207,7 @@ export function getHandsontableConfig({
                         continue;
                     }
 
-                    const response = await authenticatedFetch(deleteUrl, {
+                    const response = await authenticatedFetch(deleteUrl, accessToken, logout, {
                         method: 'DELETE',
                     });
 

@@ -1,10 +1,8 @@
-import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
-// This function should be used within a React component or custom hook
-// that is wrapped by AuthProvider, as it uses useAuth.
-export const authenticatedFetch = async (url: string, options?: RequestInit) => {
-  const { accessToken, logout } = useAuth(); // Get accessToken and logout from context
-
+// This function no longer uses useAuth directly.
+// accessToken and logout must be passed as arguments.
+export const authenticatedFetch = async (url: string, accessToken: string | null, logout: () => void, options?: RequestInit) => {
   if (!accessToken) {
     // If no access token, it means the user is not authenticated.
     // We should log them out or redirect to login.

@@ -7,6 +7,7 @@ import { Case, CaseBook, CaseType } from '../../types/caseTypes';
 import toast from 'react-hot-toast';
 import { caseTypes } from '../../data/caseTypesData'; // Import caseTypes
 import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 export interface AdvancedSearchCriteria {
   ngayNhanDon: string;
@@ -45,6 +46,8 @@ export default function AdvancedSearchModal({
   const [errorResults, setErrorResults] = useState<string | null>(null);
   const [selectedResultIds, setSelectedResultIds] = useState<string[]>([]);
   const [isCopyingCases, setIsCopyingCases] = useState(false); // New state for copying process
+
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   // Explicitly get the HON_NHAN case type for column definitions in the search results table
   const honNhanCaseType = caseTypes.find(type => type.id === 'HON_NHAN');
@@ -86,7 +89,7 @@ export default function AdvancedSearchModal({
 
       console.log('AdvancedSearchModal: Fetching search results with params:', queryParams.toString());
 
-      const response = await authenticatedFetch(`${apiUrl}?${queryParams.toString()}`);
+      const response = await authenticatedFetch(`${apiUrl}?${queryParams.toString()}`, accessToken, logout);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
@@ -159,7 +162,7 @@ export default function AdvancedSearchModal({
     } finally {
       setIsLoadingResults(false);
     }
-  }, [ngayNhanDon, nguoiKhoiKien, nguoiBiKien, book]);
+  }, [ngayNhanDon, nguoiKhoiKien, nguoiBiKien, book, accessToken, logout]); // Add accessToken and logout to dependencies
 
   useEffect(() => {
     if (initialCriteria.ngayNhanDon || initialCriteria.nguoiKhoiKien || initialCriteria.nguoiBiKien) {
@@ -227,7 +230,7 @@ export default function AdvancedSearchModal({
 
         console.log('AdvancedSearchModal: Sending POST request for case:', caseItem.id, 'with payload:', payload);
 
-        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/', {
+        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/', accessToken, logout, {
           method: 'POST',
           body: JSON.stringify(payload),
         });
@@ -265,6 +268,8 @@ export default function AdvancedSearchModal({
       setSelectedResultIds(ids);
     },
     onUpdateCase: async () => {}, // No update allowed in this modal
+    accessToken, // Pass accessToken
+    logout, // Pass logout
   });
 
   // Override settings to make the table read-only and adjust height for modal

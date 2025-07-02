@@ -17,6 +17,7 @@ import { useCasesData } from '../../hooks/useCasesData';
 import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { parseNumberDateString, combineNumberAndDate } from '../../utils/dateUtils';
 import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -62,6 +63,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   // New state to hold the IDs of cases selected from the advanced search modal
   const [activeCaseIdsFilter, setActiveCaseIdsFilter] = useState<string[] | null>(null);
 
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId); // This is correct
   
@@ -270,7 +272,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         return;
       }
 
-      const response = await authenticatedFetch(updateUrl, {
+      const response = await authenticatedFetch(updateUrl, accessToken, logout, {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
@@ -285,7 +287,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       toast.error(`Cập nhật thất bại: ${e.message}`);
       fetchCases(); 
     }
-  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId]);
+  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId, accessToken, logout]); // Add accessToken and logout to dependencies
 
   const handleSavePlaintiffInfo = async (data: { name: string; year: string; address: string }) => {
     if (!currentCaseIdForPlaintiffEdit) return;
@@ -438,6 +440,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     refreshData: fetchCases, // This will re-fetch all data, then the filter will re-apply
     setSelectedRows,
     onUpdateCase: handleUpdateCase,
+    accessToken, // Pass accessToken
+    logout, // Pass logout
   });
 
   // Determine which field to generate/display for the AddCaseModal

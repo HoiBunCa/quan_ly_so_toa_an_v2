@@ -16,6 +16,7 @@ import { CaseBook } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast'; // Import toast
 import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface CaseBooksProps {
   onSelectBook: (book: CaseBook) => void;
@@ -31,6 +32,8 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
+
   const years = Array.from(new Set(books.map(book => book.year))).sort((a, b) => b - a);
 
   useEffect(() => {
@@ -38,7 +41,7 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
       setIsLoading(true);
       setError(null);
       try {
-        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/danh-sach-so/');
+        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/danh-sach-so/', accessToken, logout);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -62,7 +65,7 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
     };
 
     fetchCaseBooks();
-  }, [refreshTrigger]); // Re-run effect when refreshTrigger changes
+  }, [refreshTrigger, accessToken, logout]); // Re-run effect when refreshTrigger, accessToken, or logout changes
 
   const filteredBooks = books.filter(book => {
     const matchesSearch = book.caseTypeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,7 +79,7 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
   const handleDeleteBook = async (bookId: string) => {
     if (confirm('Are you sure you want to delete this case book? This action cannot be undone.')) {
       try {
-        const response = await authenticatedFetch(`http://localhost:8003/home/api/v1/danh-sach-so/${bookId}/`, {
+        const response = await authenticatedFetch(`http://localhost:8003/home/api/v1/danh-sach-so/${bookId}/`, accessToken, logout, {
           method: 'DELETE',
         });
 

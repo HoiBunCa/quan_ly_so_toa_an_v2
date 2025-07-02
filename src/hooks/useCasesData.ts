@@ -4,6 +4,7 @@ import { CaseBook, Case } from '../types/caseTypes';
 import { mockCases } from '../data/mockCaseData'; // For non-HON_NHAN types
 import { combineNumberAndDate, formatDateForDisplay } from '../utils/dateUtils'; // Import new utilities
 import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface UseCasesDataResult {
   cases: Case[];
@@ -21,6 +22,8 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   const fetchCases = useCallback(async () => {
     setIsLoading(true);
@@ -44,7 +47,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         return;
       }
 
-      const response = await authenticatedFetch(`${apiUrl}?${queryParams.toString()}`);
+      const response = await authenticatedFetch(`${apiUrl}?${queryParams.toString()}`, accessToken, logout);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
@@ -115,7 +118,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     } finally {
       setIsLoading(false);
     }
-  }, [book, searchTerm]); // Removed advancedFilters from dependencies
+  }, [book, searchTerm, accessToken, logout]); // Add accessToken and logout to dependencies
 
   const deleteCases = useCallback(async (idsToDelete: string[]) => {
     if (idsToDelete.length === 0) {
@@ -147,7 +150,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           continue;
         }
 
-        const response = await authenticatedFetch(deleteUrl, {
+        const response = await authenticatedFetch(deleteUrl, accessToken, logout, {
           method: 'DELETE',
         });
 
@@ -171,7 +174,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     if (failedDeletions.length > 0) {
       toast.error(`Không thể xóa các vụ án: ${failedDeletions.join(', ')}. Vui lòng kiểm tra console để biết thêm chi tiết.`);
     }
-  }, [cases, fetchCases, book.caseTypeId]); // Depend on cases to get correct failedCase info
+  }, [cases, fetchCases, book.caseTypeId, accessToken, logout]); // Add accessToken and logout to dependencies
 
   useEffect(() => {
     fetchCases();

@@ -3,6 +3,7 @@ import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDateForDisplay } from '../utils/dateUtils';
 import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface AddCaseModalProps {
   onClose: () => void;
@@ -21,6 +22,8 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasUserEditedPrimaryNumber, setHasUserEditedPrimaryNumber] = useState(false); // Renamed
+
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   const initialLatestAutoNumberRef = useRef(latestAutoNumber);
 
@@ -59,7 +62,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     }
 
     try {
-      const response = await authenticatedFetch(apiUrl, {
+      const response = await authenticatedFetch(apiUrl, accessToken, logout, {
         method: 'POST',
         body: JSON.stringify(payload),
       });

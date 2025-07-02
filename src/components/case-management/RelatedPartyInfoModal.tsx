@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Cake, Home, AlertCircle, Loader2 } from 'lucide-react';
+import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 interface RelatedPartyInfo {
   name: string;

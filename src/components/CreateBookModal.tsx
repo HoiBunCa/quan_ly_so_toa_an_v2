@@ -3,6 +3,7 @@ import { X, BookOpen, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast'; // Import toast
 import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface CreateBookModalProps {
   onClose: () => void;
@@ -14,6 +15,8 @@ export default function CreateBookModal({ onClose, onBookCreated }: CreateBookMo
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false); // New state for loading
+
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear + i - 5);
@@ -36,7 +39,7 @@ export default function CreateBookModal({ onClose, onBookCreated }: CreateBookMo
             return;
         }
 
-        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/danh-sach-so/', {
+        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/danh-sach-so/', accessToken, logout, {
             method: 'POST',
             body: JSON.stringify({
                 code: selectedCaseType, // Use selectedCaseType (e.g., 'HON_NHAN') as the 'code' for the API

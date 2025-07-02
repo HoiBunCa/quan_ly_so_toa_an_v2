@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Hash, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { formatDateForDisplay } from '../../utils/dateUtils';
+import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 interface NumberDateInputModalProps {
   title: string;
@@ -19,6 +21,8 @@ export default function NumberDateInputModal({ title, initialNumber, initialDate
   const [date, setDate] = useState(initialDate);
   const [error, setError] = useState('');
   const [hasUserEditedNumber, setHasUserEditedNumber] = useState(false); // New state
+
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   // Use a ref to store the initial latestAutoNumber to prevent immediate overwrite
   const initialLatestAutoNumberRef = useRef(latestAutoNumber);

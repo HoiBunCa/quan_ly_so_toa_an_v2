@@ -8,6 +8,7 @@ import CreateBookModal from './CreateBookModal';
 import UserFormModal from './UserFormModal';
 import { CaseBook } from '../types/caseTypes';
 import { mockUsers } from '../data/mockData';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -22,6 +23,8 @@ export default function Dashboard() {
   const [users, setUsers] = useState(mockUsers);
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState<typeof mockUsers[0] | null>(null);
+
+  const { user } = useAuth(); // Get user from AuthContext
 
   const handleBookCreated = () => { // Renamed from handleCreateBook
     setCaseBooksRefreshKey(prev => prev + 1); // Increment to trigger refresh in CaseBooks

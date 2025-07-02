@@ -6,6 +6,7 @@ import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { Case, CaseBook, CaseType } from '../../types/caseTypes';
 import toast from 'react-hot-toast';
 import { caseTypes } from '../../data/caseTypesData'; // Import caseTypes
+import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
 
 export interface AdvancedSearchCriteria {
   ngayNhanDon: string;
@@ -85,7 +86,7 @@ export default function AdvancedSearchModal({
 
       console.log('AdvancedSearchModal: Fetching search results with params:', queryParams.toString());
 
-      const response = await fetch(`${apiUrl}?${queryParams.toString()}`);
+      const response = await authenticatedFetch(`${apiUrl}?${queryParams.toString()}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
@@ -226,11 +227,8 @@ export default function AdvancedSearchModal({
 
         console.log('AdvancedSearchModal: Sending POST request for case:', caseItem.id, 'with payload:', payload);
 
-        const response = await fetch('http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/', {
+        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify(payload),
         });
 

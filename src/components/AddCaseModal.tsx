@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, FileText, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDateForDisplay } from '../utils/dateUtils';
+import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 
 interface AddCaseModalProps {
   onClose: () => void;
@@ -58,11 +59,8 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     }
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await authenticatedFetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
 

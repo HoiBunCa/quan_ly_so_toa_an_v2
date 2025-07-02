@@ -15,6 +15,7 @@ import {
 import { CaseBook } from '../types/caseTypes';
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast'; // Import toast
+import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 
 interface CaseBooksProps {
   onSelectBook: (book: CaseBook) => void;
@@ -37,7 +38,7 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch('http://localhost:8003/home/api/v1/danh-sach-so/');
+        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/danh-sach-so/');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -75,7 +76,7 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
   const handleDeleteBook = async (bookId: string) => {
     if (confirm('Are you sure you want to delete this case book? This action cannot be undone.')) {
       try {
-        const response = await fetch(`http://localhost:8003/home/api/v1/danh-sach-so/${bookId}/`, {
+        const response = await authenticatedFetch(`http://localhost:8003/home/api/v1/danh-sach-so/${bookId}/`, {
           method: 'DELETE',
         });
 

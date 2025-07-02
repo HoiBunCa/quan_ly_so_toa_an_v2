@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, UserPlus } from 'lucide-react'; // Import UserPlus icon
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface HeaderProps {
   onCreateNewBook: () => void;
@@ -7,9 +8,13 @@ interface HeaderProps {
 }
 
 export default function Header({ onCreateNewBook, onAddUser }: HeaderProps) {
+  const { user } = useAuth(); // Get user from AuthContext
+
   return (
     <header className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-      <h2 className="text-xl font-semibold text-gray-800">Dashboard Overview</h2>
+      <h2 className="text-xl font-semibold text-gray-800">
+        {user ? `Chào mừng, ${user.name}!` : 'Dashboard Overview'}
+      </h2>
       <div className="flex items-center space-x-3">
         <button
           onClick={onCreateNewBook}

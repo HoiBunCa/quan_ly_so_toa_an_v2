@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { CaseBook, Case } from '../types/caseTypes';
 import { mockCases } from '../data/mockCaseData'; // For non-HON_NHAN types
 import { combineNumberAndDate, formatDateForDisplay } from '../utils/dateUtils'; // Import new utilities
+import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 
 interface UseCasesDataResult {
   cases: Case[];
@@ -43,7 +44,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         return;
       }
 
-      const response = await fetch(`${apiUrl}?${queryParams.toString()}`);
+      const response = await authenticatedFetch(`${apiUrl}?${queryParams.toString()}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
@@ -146,7 +147,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           continue;
         }
 
-        const response = await fetch(deleteUrl, {
+        const response = await authenticatedFetch(deleteUrl, {
           method: 'DELETE',
         });
 

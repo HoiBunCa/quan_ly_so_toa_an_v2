@@ -4,9 +4,10 @@ import {
   Settings, 
   ChevronLeft,
   Scale,
-  Users // Import Users icon
+  Users, // Import Users icon
+  LogOut // Import LogOut icon
 } from 'lucide-react';
-import { currentUser } from '../data/mockData';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -24,6 +25,8 @@ const menuItems = [
 ];
 
 export default function Sidebar({ isCollapsed, onToggle, currentPage, onPageChange }: SidebarProps) {
+  const { user, logout } = useAuth(); // Get user and logout from AuthContext
+
   return (
     <div className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${
       isCollapsed ? 'w-16' : 'w-64'
@@ -77,25 +80,39 @@ export default function Sidebar({ isCollapsed, onToggle, currentPage, onPageChan
         </ul>
       </nav>
 
-      {/* User Profile */}
+      {/* User Profile and Logout */}
       <div className="p-4 border-t border-gray-200">
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
-          <img
-            src={currentUser.avatar}
-            alt={currentUser.name}
-            className="w-8 h-8 rounded-full object-cover"
-          />
+        {user && (
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} mb-4`}>
+            <img
+              src="https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400" // Placeholder avatar
+              alt={user.name}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {user.name}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {user.role}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        <button
+          onClick={logout}
+          className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors group ${
+            isCollapsed ? 'justify-center' : ''
+          } text-gray-700 hover:bg-red-50 hover:text-red-600`}
+          aria-label="Đăng xuất"
+        >
+          <LogOut className={`w-5 h-5 ${isCollapsed ? 'mx-auto' : 'mr-3'} text-gray-500 group-hover:text-red-600`} />
           {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {currentUser.name}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                Court Administrator
-              </p>
-            </div>
+            <span className="font-medium">Đăng xuất</span>
           )}
-        </div>
+        </button>
       </div>
     </div>
   );

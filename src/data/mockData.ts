@@ -32,13 +32,7 @@ export interface Event {
   type: 'meeting' | 'deadline' | 'event';
 }
 
-export const currentUser: User = {
-  id: '1',
-  name: 'Sarah Johnson',
-  email: 'sarah.johnson@company.com',
-  avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400',
-  role: 'Project Manager'
-};
+// Removed currentUser as it will be managed by AuthContext
 
 export const mockUsers: User[] = [
   {

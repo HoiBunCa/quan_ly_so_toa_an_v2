@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, BookOpen, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast'; // Import toast
+import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 
 interface CreateBookModalProps {
   onClose: () => void;
@@ -35,11 +36,8 @@ export default function CreateBookModal({ onClose, onBookCreated }: CreateBookMo
             return;
         }
 
-        const response = await fetch('http://localhost:8003/home/api/v1/danh-sach-so/', {
+        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/danh-sach-so/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({
                 code: selectedCaseType, // Use selectedCaseType (e.g., 'HON_NHAN') as the 'code' for the API
                 name: caseType.name, // Use the name from the found caseType

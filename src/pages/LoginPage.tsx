@@ -27,7 +27,7 @@ export default function LoginPage() {
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
           <LogIn className="w-12 h-12 text-blue-600 mb-3" />
-          <h2 className="text-2xl font-bold text-gray-900">Đăng nhập vào CourtFlow</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Phần mềm quản lý sổ toà án</h2>
           <p className="text-gray-600 text-sm mt-1">Quản lý sổ án của bạn một cách dễ dàng</p>
         </div>
 

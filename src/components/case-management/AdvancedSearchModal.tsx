@@ -19,18 +19,33 @@ interface AdvancedSearchModalProps {
   initialCriteria: AdvancedSearchCriteria;
   book: CaseBook;
   caseType: CaseType; // Keep this prop, but we'll use a specific caseType for the table
+  onGenerateNextNumber: (fieldKey: string) => string; // New prop for auto-increment number
+  isGeneratingNumber: boolean; // New prop for loading state of number generation
+  onCasesCreated: () => void; // New prop to signal parent to refresh
+  searchResults: Case[]; // Pass the full list of cases for mapping
 }
 
-export default function AdvancedSearchModal({ onClose, onApplySelection, initialCriteria, book, caseType }: AdvancedSearchModalProps) {
+export default function AdvancedSearchModal({ 
+  onClose, 
+  onApplySelection, 
+  initialCriteria, 
+  book, 
+  caseType,
+  onGenerateNextNumber,
+  isGeneratingNumber,
+  onCasesCreated,
+  searchResults: allSearchResults // Rename to avoid conflict with local state
+}: AdvancedSearchModalProps) {
   const [ngayNhanDon, setNgayNhanDon] = useState(initialCriteria.ngayNhanDon);
   const [nguoiKhoiKien, setNguoiKhoiKien] = useState(initialCriteria.nguoiKhoiKien);
   const [nguoiBiKien, setNguoiBiKien] = useState(initialCriteria.nguoiBiKien);
   const [error, setError] = useState('');
 
-  const [searchResults, setSearchResults] = useState<Case[]>([]);
+  const [currentSearchResults, setCurrentSearchResults] = useState<Case[]>([]); // Local state for search results
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [errorResults, setErrorResults] = useState<string | null>(null);
   const [selectedResultIds, setSelectedResultIds] = useState<string[]>([]);
+  const [isCopyingCases, setIsCopyingCases] = useState(false); // New state for copying process
 
   // Explicitly get the HON_NHAN case type for column definitions in the search results table
   const honNhanCaseType = caseTypes.find(type => type.id === 'HON_NHAN');
@@ -52,7 +67,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
   const fetchSearchResults = useCallback(async () => {
     setIsLoadingResults(true);
     setErrorResults(null);
-    setSearchResults([]);
+    setCurrentSearchResults([]);
     setSelectedResultIds([]);
 
     try {
@@ -98,6 +113,12 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
           item.dia_chi_nguoi_bi_kien
         ].filter(Boolean).join('\n');
 
+        newCase.thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = [
+          item.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan,
+          item.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan,
+          item.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan
+        ].filter(Boolean).join('\n');
+
         newCase.thong_tin_chuyen_hoa_giai = [
           item.so_chuyen_hoa_giai ? `Số: ${item.so_chuyen_hoa_giai}` : '',
           item.ngay_chuyen_hoa_giai ? `Ngày: ${formatDateForDisplay(item.ngay_chuyen_hoa_giai)}` : ''
@@ -124,7 +145,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
         }
         return newCase;
       });
-      setSearchResults(fetchedCases);
+      setCurrentSearchResults(fetchedCases);
       if (fetchedCases.length === 0) {
         toast.success('Không tìm thấy kết quả nào phù hợp.');
       } else {
@@ -156,22 +177,81 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
     fetchSearchResults();
   };
 
-  const handleApplySelection = () => {
+  const handleApplySelection = async () => {
     if (selectedResultIds.length === 0) {
       toast.info('Vui lòng chọn ít nhất một vụ án để áp dụng.');
       return;
     }
-    onApplySelection(selectedResultIds);
-    onClose();
+
+    setIsCopyingCases(true);
+    let successfulCopies = 0;
+    const failedCopies: string[] = [];
+    const today = new Date().toISOString().split('T')[0]; // Current date for ngay_chuyen_hoa_giai
+
+    const casesToCopy = allSearchResults.filter(c => selectedResultIds.includes(c.id));
+
+    for (const caseItem of casesToCopy) {
+      try {
+        const nextSoChuyenHoaGiai = onGenerateNextNumber('so_chuyen_hoa_giai'); // Get next auto-increment number
+
+        const payload = {
+          created_by: 1,
+          so_chuyen_hoa_giai: nextSoChuyenHoaGiai,
+          ngay_chuyen_hoa_giai: today,
+          ngay_nhan_don: caseItem.ngay_nhan_don || '',
+          tom_tat_noi_dung_don: caseItem.noi_dung_don || '', // Map noi_dung_don from HON_NHAN
+          tai_lieu_kem_theo: caseItem.tai_lieu_kem_theo || '',
+          ho_ten_nguoi_khoi_kien: caseItem.ho_ten_nguoi_khoi_kien || '',
+          nam_sinh_nguoi_khoi_kien: caseItem.nam_sinh_nguoi_khoi_kien || '',
+          dia_chi_nguoi_khoi_kien: caseItem.dia_chi_nguoi_khoi_kien || '',
+          ho_ten_nguoi_bi_kien: caseItem.ho_ten_nguoi_bi_kien || '',
+          nam_sinh_nguoi_bi_kien: caseItem.nam_sinh_nguoi_bi_kien || '',
+          dia_chi_nguoi_bi_kien: caseItem.dia_chi_nguoi_bi_kien || '',
+          ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
+          nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
+          dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
+          tham_phan: caseItem.tham_phan || '',
+          ghi_chu: caseItem.ghi_chu || '',
+          // Other fields specific to GIAI_QUYET_TRANH_CHAP_HOA_GIAI are omitted as per request
+        };
+
+        const response = await fetch('http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+        successfulCopies++;
+      } catch (e: any) {
+        console.error(`Failed to copy case ${caseItem.caseNumber || caseItem.id}:`, e);
+        failedCopies.push(caseItem.caseNumber || caseItem.id);
+      }
+    }
+
+    setIsCopyingCases(false);
+    if (successfulCopies > 0) {
+      toast.success(`Đã tạo thành công ${successfulCopies} vụ án mới trong sổ hoà giải.`);
+      onCasesCreated(); // Signal parent to refresh
+    }
+    if (failedCopies.length > 0) {
+      toast.error(`Không thể tạo các vụ án: ${failedCopies.join(', ')}. Vui lòng kiểm tra console để biết thêm chi tiết.`);
+    }
+    onClose(); // Close modal after processing
   };
 
   // Use honNhanCaseType for column definitions
   const { columns, settings } = getHandsontableConfig({
     caseType: honNhanCaseType, // Use the found case type directly
-    filteredCases: searchResults,
-    refreshData: fetchSearchResults,
+    filteredCases: currentSearchResults, // Use local search results
+    refreshData: fetchSearchResults, // Refresh local search results
     setSelectedRows: setSelectedResultIds,
-    onUpdateCase: async () => {},
+    onUpdateCase: async () => {}, // No update allowed in this modal
   });
 
   // Override settings to make the table read-only and adjust height for modal
@@ -201,7 +281,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
           <button
             onClick={onClose}
             className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-            disabled={isLoadingResults}
+            disabled={isLoadingResults || isCopyingCases}
           >
             <X className="w-5 h-5" />
           </button>
@@ -228,7 +308,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
                   value={ngayNhanDon}
                   onChange={(e) => setNgayNhanDon(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={isLoadingResults}
+                  disabled={isLoadingResults || isCopyingCases}
                 />
               </div>
               {ngayNhanDon && (
@@ -251,7 +331,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
                   onChange={(e) => setNguoiKhoiKien(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nhập tên người khởi kiện"
-                  disabled={isLoadingResults}
+                  disabled={isLoadingResults || isCopyingCases}
                 />
               </div>
             </div>
@@ -269,7 +349,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
                   onChange={(e) => setNguoiBiKien(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nhập tên người bị kiện"
-                  disabled={isLoadingResults}
+                  disabled={isLoadingResults || isCopyingCases}
                 />
               </div>
             </div>
@@ -279,7 +359,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
             <button
               type="submit"
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isLoadingResults}
+              disabled={isLoadingResults || isCopyingCases}
             >
               {isLoadingResults ? (
                 <span className="flex items-center">
@@ -293,7 +373,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
         </form>
 
         <div className="flex-1 overflow-hidden p-6 pt-0">
-          <h3 className="text-md font-semibold text-gray-800 mb-3">Kết quả tìm kiếm ({searchResults.length} vụ án)</h3>
+          <h3 className="text-md font-semibold text-gray-800 mb-3">Kết quả tìm kiếm ({currentSearchResults.length} vụ án)</h3>
           {isLoadingResults ? (
             <div className="flex items-center justify-center h-full text-gray-500">
               <Loader2 className="w-8 h-8 animate-spin mr-3" />
@@ -304,7 +384,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
               <AlertCircle className="w-6 h-6 mr-3" />
               <span>Lỗi: {errorResults}</span>
             </div>
-          ) : searchResults.length === 0 ? (
+          ) : currentSearchResults.length === 0 ? (
             <div className="text-center py-8 flex flex-col justify-center items-center h-full">
               <FileText className="w-10 h-10 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-600">Không có kết quả nào. Vui lòng nhập tiêu chí tìm kiếm và nhấn "Tìm kiếm".</p>
@@ -312,8 +392,8 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
           ) : (
             <div className="handsontable-container" style={{ height: '250px' }}>
               <HotTable
-                key={searchResults.length}
-                data={searchResults}
+                key={currentSearchResults.length}
+                data={currentSearchResults}
                 columns={relevantColumns}
                 settings={modalTableSettings}
               />
@@ -326,7 +406,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
             type="button"
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            disabled={isLoadingResults}
+            disabled={isLoadingResults || isCopyingCases}
           >
             Hủy
           </button>
@@ -334,9 +414,15 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
             type="button"
             onClick={handleApplySelection}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isLoadingResults || selectedResultIds.length === 0}
+            disabled={isLoadingResults || selectedResultIds.length === 0 || isCopyingCases || isGeneratingNumber}
           >
-            Chọn ({selectedResultIds.length})
+            {isCopyingCases ? (
+              <span className="flex items-center">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" /> Đang tạo...
+              </span>
+            ) : (
+              `Chọn (${selectedResultIds.length})`
+            )}
           </button>
         </div>
       </div>

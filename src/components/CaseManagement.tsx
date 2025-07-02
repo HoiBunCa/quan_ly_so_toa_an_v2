@@ -83,63 +83,64 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const requestMaxNumbersUpdate = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       console.log('WebSocket: Requesting all max numbers update...');
-      wsRef.current.send(JSON.stringify({ action: 'get_all_max_numbers', year: book.year }));
+      // Request max numbers for both HON_NHAN and GIAI_QUYET_TRANH_CHAP_HOA_GIAI
+      wsRef.current.send(JSON.stringify({ 
+        action: 'get_all_max_numbers', 
+        year: book.year,
+        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI'] // Request for specific types
+      }));
     } else {
       console.warn('WebSocket not open. Cannot request max numbers update.');
     }
   }, [book.year]);
 
   useEffect(() => {
-    if (book.caseTypeId === 'HON_NHAN' || book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-      setIsMaxNumbersLoading(true);
-      const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
-      wsRef.current = ws;
+    // Always connect WebSocket to get max numbers for relevant types
+    setIsMaxNumbersLoading(true);
+    const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
+    wsRef.current = ws;
 
-      ws.onopen = () => {
-        console.log('WebSocket connected for max numbers');
-        requestMaxNumbersUpdate(); 
-      };
+    ws.onopen = () => {
+      console.log('WebSocket connected for max numbers');
+      requestMaxNumbersUpdate(); 
+    };
 
-      ws.onmessage = (event) => {
-        console.log('WebSocket: Raw message received:', event.data);
-        const message = JSON.parse(event.data);
-        
-        const rawMaxNumbers = message;
-        const formattedData: Record<string, string | null> = {};
-        for (const key in rawMaxNumbers) {
-          if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
-            formattedData[key] = String(rawMaxNumbers[key]);
-          }
+    ws.onmessage = (event) => {
+      console.log('WebSocket: Raw message received:', event.data);
+      const message = JSON.parse(event.data);
+      
+      const rawMaxNumbers = message;
+      const formattedData: Record<string, string | null> = {};
+      for (const key in rawMaxNumbers) {
+        if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
+          formattedData[key] = String(rawMaxNumbers[key]);
         }
-        setMaxNumbersByField(formattedData); 
-        console.log('WebSocket: Received max numbers map and setting state:', formattedData);
-        
-        setIsMaxNumbersLoading(false);
-        console.log('WebSocket: Setting isMaxNumbersLoading to false.');
-        
-        fetchCases();
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket disconnected for max numbers');
-        setIsMaxNumbersLoading(false);
-        wsRef.current = null;
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        toast.error('Lỗi kết nối WebSocket để lấy số tối đa.');
-        setIsMaxNumbersLoading(false);
-      };
-
-      return () => {
-        ws.close();
-      };
-    } else {
+      }
+      setMaxNumbersByField(formattedData); 
+      console.log('WebSocket: Received max numbers map and setting state:', formattedData);
+      
       setIsMaxNumbersLoading(false);
-      setMaxNumbersByField({});
-    }
-  }, [book.caseTypeId, book.year, requestMaxNumbersUpdate, fetchCases]);
+      console.log('WebSocket: Setting isMaxNumbersLoading to false.');
+      
+      fetchCases(); // Refresh cases after max numbers are updated
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected for max numbers');
+      setIsMaxNumbersLoading(false);
+      wsRef.current = null;
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      toast.error('Lỗi kết nối WebSocket để lấy số tối đa.');
+      setIsMaxNumbersLoading(false);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [book.year, requestMaxNumbersUpdate, fetchCases]); // Depend on book.year and fetchCases
 
   const getNextNumberForField = useCallback((fieldKey: string) => {
     console.log(`getNextNumberForField called for: ${fieldKey}`);
@@ -152,7 +153,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       console.log('Parsed currentMax:', parsedMax);
 
       if (!isNaN(parsedMax)) {
-        const nextNumber = parsedMax.toString(); 
+        const nextNumber = (parsedMax + 1).toString(); // Increment the number
         console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }
@@ -169,6 +170,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setShowAddCaseModal(false);
     fetchCases();
     requestMaxNumbersUpdate();
+  };
+
+  const handleCasesCopiedFromSearch = () => {
+    setShowAdvancedSearchModal(false);
+    setActiveCaseIdsFilter(null); // Clear advanced filter
+    setSearchTerm(''); // Clear basic search
+    setAdvancedSearchInitialCriteria({ ngayNhanDon: '', nguoiKhoiKien: '', nguoiBiKien: '' }); // Clear modal's initial criteria
+    fetchCases(); // Re-fetch all cases for the current book
+    requestMaxNumbersUpdate(); // Request updated max numbers
   };
 
   const handleUpdateCase = useCallback(async (caseId: string, prop: string, newValue: any) => {
@@ -525,6 +535,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           initialCriteria={advancedSearchInitialCriteria}
           book={book} // Pass book to modal
           caseType={caseType} // Pass the full caseType object here
+          onGenerateNextNumber={getNextNumberForField} // Pass the function to generate next number
+          isGeneratingNumber={isMaxNumbersLoading} // Pass loading state
+          onCasesCreated={handleCasesCopiedFromSearch} // Pass the callback for successful creation
+          searchResults={cases} // Pass the full list of cases for mapping
         />
       )}
     </div>

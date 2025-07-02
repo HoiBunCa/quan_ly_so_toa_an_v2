@@ -107,7 +107,7 @@ export default function CreateBookModal({ onClose, onBookCreated }: CreateBookMo
                 <option value="">Select a case type</option>
                 {caseTypes.map(type => (
                   <option key={type.id} value={type.id}>
-                    {type.name} ({type.code})
+                    {type.name}
                   </option>
                 ))}
               </select>

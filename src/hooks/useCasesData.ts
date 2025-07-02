@@ -29,8 +29,8 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
       let apiUrl = '';
       if (book.caseTypeId === 'HON_NHAN') {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/?year=${book.year}`;
-      } else if (book.caseTypeId === 'GIA_QUYET_TRANH_CHAP_HOA_GIAI') {
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/?year=${book.year}`;
+      } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/?year=${book.year}`;
       } else {
         setCases(mockCases[book.id] || []);
         setIsLoading(false);

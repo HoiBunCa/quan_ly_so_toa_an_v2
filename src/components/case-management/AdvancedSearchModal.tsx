@@ -175,7 +175,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
   // Filter columns to only show relevant ones for search results
   // This filter should be applied to the columns generated from honNhanCaseType
   const relevantColumns = columns.filter(col => 
-    ['so_thu_ly', 'ngay_thu_ly', 'thong_tin_nguoi_khoi_kien', 'thong_tin_nguoi_bi_kien', 'noi_dung_don', 'ghi_chu'].includes(col.data as string)
+    ['so_thu_ly', 'ngay_thu_ly', 'ngay_nhan_don', 'thong_tin_nguoi_khoi_kien', 'thong_tin_nguoi_bi_kien', 'noi_dung_don', 'ghi_chu'].includes(col.data as string)
   );
 
 
@@ -301,6 +301,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
           ) : (
             <div className="handsontable-container h-full">
               <HotTable
+                key={searchResults.length} {/* Added key prop here */}
                 data={searchResults}
                 columns={relevantColumns}
                 settings={modalTableSettings}

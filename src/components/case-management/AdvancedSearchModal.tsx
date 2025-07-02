@@ -3,9 +3,9 @@ import { X, Calendar, User, AlertCircle, Search as SearchIcon, Loader2, FileText
 import { formatDateForDisplay } from '../../utils/dateUtils';
 import { HotTable } from '@handsontable/react';
 import { getHandsontableConfig } from '../../utils/handsontableConfig';
-import { Case, CaseBook } from '../../types/caseTypes';
+import { Case, CaseBook, CaseType } from '../../types/caseTypes'; // Import CaseType
 import toast from 'react-hot-toast';
-import { caseTypes } from '../../data/caseTypesData'; // Import caseTypes
+// import { caseTypes } from '../../data/caseTypesData'; // No longer needed here
 
 export interface AdvancedSearchCriteria {
   ngayNhanDon: string;
@@ -18,9 +18,10 @@ interface AdvancedSearchModalProps {
   onApplySelection: (selectedCaseIds: string[]) => void; // Changed prop name
   initialCriteria: AdvancedSearchCriteria;
   book: CaseBook; // Pass the current book to fetch cases
+  caseType: CaseType; // New prop: receive the full caseType object
 }
 
-export default function AdvancedSearchModal({ onClose, onApplySelection, initialCriteria, book }: AdvancedSearchModalProps) {
+export default function AdvancedSearchModal({ onClose, onApplySelection, initialCriteria, book, caseType }: AdvancedSearchModalProps) {
   const [ngayNhanDon, setNgayNhanDon] = useState(initialCriteria.ngayNhanDon);
   const [nguoiKhoiKien, setNguoiKhoiKien] = useState(initialCriteria.nguoiKhoiKien);
   const [nguoiBiKien, setNguoiBiKien] = useState(initialCriteria.nguoiBiKien);
@@ -31,8 +32,8 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
   const [errorResults, setErrorResults] = useState<string | null>(null);
   const [selectedResultIds, setSelectedResultIds] = useState<string[]>([]);
 
-  // Find the actual caseType object based on the book's caseTypeId
-  const currentCaseType = caseTypes.find(type => type.id === book.caseTypeId);
+  // currentCaseType is now passed as a prop, no need to find it here
+  // const currentCaseType = caseTypes.find(type => type.id === book.caseTypeId);
 
   const fetchSearchResults = useCallback(async () => {
     setIsLoadingResults(true);
@@ -150,9 +151,9 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
     onClose();
   };
 
-  // Pass the actual currentCaseType to getHandsontableConfig
+  // Pass the actual caseType prop to getHandsontableConfig
   const { columns, settings } = getHandsontableConfig({
-    caseType: currentCaseType || { id: '', name: '', code: '', attributes: [] }, // Provide a fallback empty caseType
+    caseType: caseType, // Use the caseType prop directly
     filteredCases: searchResults, // Pass search results for column generation
     refreshData: fetchSearchResults, // Pass internal refresh for context menu (if needed)
     setSelectedRows: setSelectedResultIds, // Update internal selection state

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CaseBook } from '../types/caseTypes';
+import { CaseBook, CaseType } from '../types/caseTypes'; // Import CaseType
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
@@ -55,7 +55,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [activeCaseIdsFilter, setActiveCaseIdsFilter] = useState<string[] | null>(null);
 
 
-  const caseType = caseTypes.find(type => type.id === book.caseTypeId);
+  const caseType = caseTypes.find(type => type.id === book.caseTypeId); // This is correct
   
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -475,6 +475,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onApplySelection={handleApplyAdvancedSearchSelection} // Changed prop name
           initialCriteria={advancedSearchInitialCriteria}
           book={book} // Pass book to modal
+          caseType={caseType} // Pass the full caseType object here
         />
       )}
     </div>

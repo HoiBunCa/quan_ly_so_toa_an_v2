@@ -47,7 +47,7 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     let payload: { [key: string]: any } = { created_by: 1 };
     console.log("caseTypeCode: ", caseTypeCode);
     if (caseTypeCode === 'SO_THU_LY_GIAI_QUYET_TRANH_CHAP_DUOC_HOA_GIAI_TAI_TOA_AN') {
-      apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/';
+      apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/';
       payload.so_chuyen_hoa_giai = primaryNumber;
       payload.ngay_chuyen_hoa_giai = primaryDate;
     } else {

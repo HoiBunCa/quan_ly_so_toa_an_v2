@@ -46,11 +46,14 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   // New state for advanced search
   const [showAdvancedSearchModal, setShowAdvancedSearchModal] = useState(false);
-  const [advancedSearchCriteria, setAdvancedSearchCriteria] = useState<AdvancedSearchCriteria>({
+  const [advancedSearchInitialCriteria, setAdvancedSearchInitialCriteria] = useState<AdvancedSearchCriteria>({
     ngayNhanDon: '',
     nguoiKhoiKien: '',
     nguoiBiKien: '',
   });
+  // New state to hold the IDs of cases selected from the advanced search modal
+  const [activeCaseIdsFilter, setActiveCaseIdsFilter] = useState<string[] | null>(null);
+
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
@@ -62,14 +65,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   const {
     cases,
-    filteredCases,
     isLoading,
     error,
     searchTerm,
     setSearchTerm,
     fetchCases,
     setCases,
-  } = useCasesData(book, advancedSearchCriteria); // Pass advancedSearchCriteria to hook
+  } = useCasesData(book); // Removed advancedSearchCriteria from hook call
 
   const requestMaxNumbersUpdate = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -337,11 +339,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   }, [caseType.attributes, cases]);
 
-  const handleAdvancedSearch = useCallback((criteria: AdvancedSearchCriteria) => {
-    setAdvancedSearchCriteria(criteria);
+  const handleApplyAdvancedSearchSelection = useCallback((selectedCaseIds: string[]) => {
+    setActiveCaseIdsFilter(selectedCaseIds);
     setShowAdvancedSearchModal(false);
     setSearchTerm(''); // Clear basic search term when advanced search is applied
+    toast.success(`Đã áp dụng bộ lọc nâng cao với ${selectedCaseIds.length} vụ án được chọn.`);
   }, []);
+
+  const handleRefreshData = useCallback(() => {
+    setActiveCaseIdsFilter(null); // Clear advanced filter
+    setSearchTerm(''); // Clear basic search
+    setAdvancedSearchInitialCriteria({ ngayNhanDon: '', nguoiKhoiKien: '', nguoiBiKien: '' }); // Clear modal's initial criteria
+    fetchCases(); // Re-fetch all cases
+  }, [fetchCases]);
 
   const exportData = () => {
     const headers = caseType.attributes.map(attr => attr.name);
@@ -361,10 +371,21 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     window.URL.revokeObjectURL(url);
   };
 
+  // Apply the activeCaseIdsFilter first, then the basic searchTerm
+  const casesToDisplay = activeCaseIdsFilter 
+    ? cases.filter(c => activeCaseIdsFilter.includes(c.id))
+    : cases;
+
+  const finalFilteredCases = casesToDisplay.filter(caseItem =>
+    Object.values(caseItem).some(value =>
+      value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
   const { columns, settings } = getHandsontableConfig({
     caseType,
-    filteredCases,
-    refreshData: fetchCases,
+    filteredCases: finalFilteredCases, // Pass the currently displayed cases to config
+    refreshData: fetchCases, // This will re-fetch all data, then the filter will re-apply
     setSelectedRows,
     onUpdateCase: handleUpdateCase,
   });
@@ -377,25 +398,25 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       <CaseManagementHeader
         book={book}
         onBack={onBack}
-        onRefresh={fetchCases}
+        onRefresh={handleRefreshData} // Use the new combined refresh handler
         onExport={exportData}
         onAddCase={handleAddNewCaseClick}
         isLoading={isLoading}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        filteredCount={filteredCases.length}
+        filteredCount={finalFilteredCases.length}
         totalCount={cases.length}
-        onAdvancedSearchClick={() => setShowAdvancedSearchModal(true)} // Pass handler
+        onAdvancedSearchClick={() => setShowAdvancedSearchModal(true)}
       />
 
       <CaseTable
-        data={filteredCases}
+        data={finalFilteredCases} // Use finalFilteredCases for the table
         columns={columns}
         settings={settings}
         isLoading={isLoading}
         error={error}
         searchTerm={searchTerm}
-        filteredCount={filteredCases.length}
+        filteredCount={finalFilteredCases.length}
         totalCount={cases.length}
         onAddCase={handleAddNewCaseClick}
         onCellClick={handleCellClick}
@@ -451,9 +472,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       {showAdvancedSearchModal && (
         <AdvancedSearchModal
           onClose={() => setShowAdvancedSearchModal(false)}
-          onSearch={handleAdvancedSearch}
-          initialCriteria={advancedSearchCriteria}
-          isSearching={isLoading} // Use isLoading from useCasesData for modal's loading state
+          onApplySelection={handleApplyAdvancedSearchSelection} // Changed prop name
+          initialCriteria={advancedSearchInitialCriteria}
+          book={book} // Pass book to modal
         />
       )}
     </div>

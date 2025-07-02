@@ -3,11 +3,9 @@ import toast from 'react-hot-toast';
 import { CaseBook, Case } from '../types/caseTypes';
 import { mockCases } from '../data/mockCaseData'; // For non-HON_NHAN types
 import { combineNumberAndDate, formatDateForDisplay } from '../utils/dateUtils'; // Import new utilities
-import { AdvancedSearchCriteria } from '../components/case-management/AdvancedSearchModal'; // Import AdvancedSearchCriteria
 
 interface UseCasesDataResult {
   cases: Case[];
-  filteredCases: Case[];
   isLoading: boolean;
   error: string | null;
   searchTerm: string;
@@ -17,7 +15,7 @@ interface UseCasesDataResult {
   setCases: React.Dispatch<React.SetStateAction<Case[]>>; // Expose setCases for local updates
 }
 
-export function useCasesData(book: CaseBook, advancedFilters: AdvancedSearchCriteria): UseCasesDataResult {
+export function useCasesData(book: CaseBook): UseCasesDataResult {
   const [cases, setCases] = useState<Case[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -33,17 +31,6 @@ export function useCasesData(book: CaseBook, advancedFilters: AdvancedSearchCrit
       // Add basic search term
       if (searchTerm) {
         queryParams.append('search', searchTerm);
-      }
-
-      // Add advanced search filters
-      if (advancedFilters.ngayNhanDon) {
-        queryParams.append('ngay_nhan_don', advancedFilters.ngayNhanDon);
-      }
-      if (advancedFilters.nguoiKhoiKien) {
-        queryParams.append('ho_ten_nguoi_khoi_kien', advancedFilters.nguoiKhoiKien);
-      }
-      if (advancedFilters.nguoiBiKien) {
-        queryParams.append('ho_ten_nguoi_bi_kien', advancedFilters.nguoiBiKien);
       }
 
       if (book.caseTypeId === 'HON_NHAN') {
@@ -65,7 +52,7 @@ export function useCasesData(book: CaseBook, advancedFilters: AdvancedSearchCrit
       const fetchedCases: Case[] = data.results.map((item: any) => {
         const newCase: Case = {
           id: item.id.toString(),
-          caseNumber: item.so_thu_ly || '', // Assuming 'so_thu_ly' is the main case number for both types
+          caseNumber: item.so_thu_ly || item.so_chuyen_hoa_giai || '', // Use so_chuyen_hoa_giai for this type
           bookId: book.id,
           createdDate: item.ngay_thu_ly || item.ngay_nhan_don || '',
           lastModified: new Date().toISOString().split('T')[0],
@@ -120,7 +107,7 @@ export function useCasesData(book: CaseBook, advancedFilters: AdvancedSearchCrit
     } finally {
       setIsLoading(false);
     }
-  }, [book, searchTerm, advancedFilters]); // Add advancedFilters to dependencies
+  }, [book, searchTerm]); // Removed advancedFilters from dependencies
 
   const deleteCases = useCallback(async (idsToDelete: string[]) => {
     if (idsToDelete.length === 0) {
@@ -142,7 +129,7 @@ export function useCasesData(book: CaseBook, advancedFilters: AdvancedSearchCrit
         let deleteUrl = '';
         if (book.caseTypeId === 'HON_NHAN') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
-        } else if (book.caseTypeId === 'GIA_QUYET_TRANH_CHAP_HOA_GIAI') {
+        } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/${caseId}/`; // Corrected API for DELETE
         } else {
           // Fallback for other types if needed, though currently not handled by API
@@ -179,25 +166,10 @@ export function useCasesData(book: CaseBook, advancedFilters: AdvancedSearchCrit
 
   useEffect(() => {
     fetchCases();
-  }, [book, fetchCases, searchTerm, advancedFilters]); // Re-fetch when advancedFilters change
-
-  // The filtering logic here is now redundant if the backend handles filtering.
-  // Keeping it as a fallback or for client-side only filtering if backend doesn't support it.
-  // However, since we're passing filters to the API, `cases` should already be filtered.
-  const filteredCases = cases.filter(caseItem => {
-    // If advanced filters are active, the backend should handle it.
-    // This client-side filter is primarily for the basic search term.
-    if (searchTerm) {
-      return Object.values(caseItem).some(value =>
-        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    return true; // If no basic search term, return all cases (which are already filtered by backend)
-  });
+  }, [book, fetchCases, searchTerm]); // Removed advancedFilters from dependencies
 
   return {
     cases,
-    filteredCases,
     isLoading,
     error,
     searchTerm,

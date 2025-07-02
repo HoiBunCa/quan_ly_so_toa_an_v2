@@ -1,22 +1,19 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { CaseBook, CaseType } from '../types/caseTypes';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { CaseBook, CaseType } from '../types/caseTypes'; // Import CaseType
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
-import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal';
+import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
+import DefendantInfoModal from './case-management/DefendantInfoModal';
+import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
+import NumberDateInputModal from './common/NumberDateInputModal';
+import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
 
-// Import new modular components and hooks
+// Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
-import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
-import DefendantInfoModal from './case-management/DefendantInfoModal';
-import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal';
-import NumberDateInputModal from './common/NumberDateInputModal';
-
 import { useCasesData } from '../hooks/useCasesData';
-import { useMaxNumbersWebSocket } from '../hooks/useMaxNumbersWebSocket';
-import { useCaseModals } from '../hooks/useCaseModals';
 import { getHandsontableConfig } from '../utils/handsontableConfig';
 import { parseNumberDateString, combineNumberAndDate } from '../utils/dateUtils';
 
@@ -28,7 +25,32 @@ interface CaseManagementProps {
 export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [showAddCaseModal, setShowAddCaseModal] = useState(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
-  
+  const [maxNumbersByField, setMaxNumbersByField] = useState<Record<string, string | null>>({});
+  const [isMaxNumbersLoading, setIsMaxNumbersLoading] = useState(true);
+
+  const [showPlaintiffInfoModal, setShowPlaintiffInfoModal] = useState(false);
+  const [currentCaseIdForPlaintiffEdit, setCurrentCaseIdForPlaintiffEdit] = useState<string | null>(null);
+  const [currentPlaintiffInfo, setCurrentPlaintiffInfo] = useState({ name: '', year: '', address: '' });
+  const [isSavingPlaintiffInfo, setIsSavingPlaintiffInfo] = useState(false);
+
+  const [showDefendantInfoModal, setShowDefendantInfoModal] = useState(false);
+  const [currentCaseIdForDefendantEdit, setCurrentCaseIdForDefendantEdit] = useState<string | null>(null);
+  const [currentDefendantInfo, setCurrentDefendantInfo] = useState({ name: '', year: '', address: '' });
+  const [isSavingDefendantInfo, setIsSavingDefendantInfo] = useState(false);
+
+  // New state for Related Party Info Modal
+  const [showRelatedPartyInfoModal, setShowRelatedPartyInfoModal] = useState(false);
+  const [currentCaseIdForRelatedPartyEdit, setCurrentCaseIdForRelatedPartyEdit] = useState<string | null>(null);
+  const [currentRelatedPartyInfo, setCurrentRelatedPartyInfo] = useState({ name: '', year: '', address: '' });
+  const [isSavingRelatedPartyInfo, setIsSavingRelatedPartyInfo] = useState(false);
+
+  const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
+  const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
+  const [currentNumberDateProp, setCurrentNumberDateProp] = useState<string | null>(null);
+  const [currentNumberDateCaseId, setCurrentNumberDateCaseId] = useState<string | null>(null);
+  const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
+  const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
+
   // New state for advanced search
   const [showAdvancedSearchModal, setShowAdvancedSearchModal] = useState(false);
   const [advancedSearchInitialCriteria, setAdvancedSearchInitialCriteria] = useState<AdvancedSearchCriteria>({
@@ -36,9 +58,14 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     nguoiKhoiKien: '',
     nguoiBiKien: '',
   });
+  // New state to hold the IDs of cases selected from the advanced search modal
   const [activeCaseIdsFilter, setActiveCaseIdsFilter] = useState<string[] | null>(null);
 
-  const caseType = caseTypes.find(type => type.id === book.caseTypeId);
+
+  const caseType = caseTypes.find(type => type.id === book.caseTypeId); // This is correct
+  
+  const wsRef = useRef<WebSocket | null>(null);
+
   if (!caseType) {
     return <div>Case type not found</div>;
   }
@@ -51,18 +78,98 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setSearchTerm,
     fetchCases,
     setCases,
-  } = useCasesData(book);
+  } = useCasesData(book); // Removed advancedSearchCriteria from hook call
 
-  const {
-    maxNumbersByField,
-    isMaxNumbersLoading,
-    requestMaxNumbersUpdate,
-    getNextNumberForField,
-  } = useMaxNumbersWebSocket({
-    bookYear: book.year,
-    caseTypeCode: caseType.code,
-    onNumbersUpdated: fetchCases, // Trigger case data refresh when max numbers are updated
-  });
+  const requestMaxNumbersUpdate = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('WebSocket: Requesting all max numbers update...');
+      wsRef.current.send(JSON.stringify({ action: 'get_all_max_numbers', year: book.year }));
+    } else {
+      console.warn('WebSocket not open. Cannot request max numbers update.');
+    }
+  }, [book.year]);
+
+  useEffect(() => {
+    if (book.caseTypeId === 'HON_NHAN' || book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+      setIsMaxNumbersLoading(true);
+      const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log('WebSocket connected for max numbers');
+        requestMaxNumbersUpdate(); 
+      };
+
+      ws.onmessage = (event) => {
+        console.log('WebSocket: Raw message received:', event.data);
+        const message = JSON.parse(event.data);
+        
+        const rawMaxNumbers = message;
+        const formattedData: Record<string, string | null> = {};
+        for (const key in rawMaxNumbers) {
+          if (Object.prototype.hasOwnProperty.call(rawMaxNumbers, key)) {
+            formattedData[key] = String(rawMaxNumbers[key]);
+          }
+        }
+        setMaxNumbersByField(formattedData); 
+        console.log('WebSocket: Received max numbers map and setting state:', formattedData);
+        
+        setIsMaxNumbersLoading(false);
+        console.log('WebSocket: Setting isMaxNumbersLoading to false.');
+        
+        fetchCases();
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected for max numbers');
+        setIsMaxNumbersLoading(false);
+        wsRef.current = null;
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        toast.error('Lỗi kết nối WebSocket để lấy số tối đa.');
+        setIsMaxNumbersLoading(false);
+      };
+
+      return () => {
+        ws.close();
+      };
+    } else {
+      setIsMaxNumbersLoading(false);
+      setMaxNumbersByField({});
+    }
+  }, [book.caseTypeId, book.year, requestMaxNumbersUpdate, fetchCases]);
+
+  const getNextNumberForField = useCallback((fieldKey: string) => {
+    console.log(`getNextNumberForField called for: ${fieldKey}`);
+    console.log('Current maxNumbersByField state:', maxNumbersByField);
+    const currentMax = maxNumbersByField[fieldKey];
+    console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
+
+    if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {
+      const parsedMax = parseInt(String(currentMax), 10);
+      console.log('Parsed currentMax:', parsedMax);
+
+      if (!isNaN(parsedMax)) {
+        const nextNumber = parsedMax.toString(); 
+        console.log(`Generated next number for ${fieldKey}:`, nextNumber);
+        return nextNumber;
+      }
+    }
+    console.warn(`Max number for ${fieldKey} is not a valid number or is empty. Falling back to '1'.`);
+    return '1';
+  }, [maxNumbersByField]);
+
+  const handleAddNewCaseClick = () => {
+    setShowAddCaseModal(true);
+  };
+
+  const handleCaseAdded = () => {
+    setShowAddCaseModal(false);
+    fetchCases();
+    requestMaxNumbersUpdate();
+  };
 
   const handleUpdateCase = useCallback(async (caseId: string, prop: string, newValue: any) => {
     const caseToUpdate = cases.find(c => c.id === caseId);
@@ -84,7 +191,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       payload.ho_ten_nguoi_bi_kien = lines[0] || '';
       payload.nam_sinh_nguoi_bi_kien = lines[1] || '';
       payload.dia_chi_nguoi_bi_kien = lines[2] || '';
-    } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') {
+    } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') { // New related party field
       const lines = String(newValue || '').split('\n');
       payload.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[0] || '';
       payload.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[1] || '';
@@ -94,8 +201,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       const originalPropName = prop.replace('thong_tin_', '');
       payload[`so_${originalPropName}`] = number;
       payload[`ngay_${originalPropName}`] = date;
+
       updatedDisplayValue = combineNumberAndDate(number, date);
-    } else {
+    }
+    else {
       payload[prop] = newValue;
     }
 
@@ -114,7 +223,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC.nam_sinh_nguoi_bi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_bi_kien = lines[2] || '';
           updatedC.thong_tin_nguoi_bi_kien = updatedDisplayValue;
-        } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') {
+        } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') { // New related party field
           const lines = String(newValue || '').split('\n');
           updatedC.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[0] || '';
           updatedC.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[1] || '';
@@ -126,7 +235,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC[`so_${originalPropName}`] = number;
           updatedC[`ngay_${originalPropName}`] = date;
           updatedC[prop] = updatedDisplayValue;
-        } else {
+        }
+        else {
           updatedC[prop] = newValue;
         }
         return updatedC;
@@ -139,7 +249,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       if (book.caseTypeId === 'HON_NHAN') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; // Corrected API for PUT
       } else {
         console.warn(`Update not supported for case type: ${book.caseTypeId}`);
         toast.error(`Cập nhật thất bại: Loại sổ án không được hỗ trợ.`);
@@ -163,46 +273,125 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     } catch (e: any) {
       console.error("Failed to update case:", e);
       toast.error(`Cập nhật thất bại: ${e.message}`);
-      fetchCases();
+      fetchCases(); 
     }
   }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId]);
 
-  const {
-    showPlaintiffInfoModal, setShowPlaintiffInfoModal,
-    currentPlaintiffInfo, isSavingPlaintiffInfo, handleSavePlaintiffInfo,
-    showDefendantInfoModal, setShowDefendantInfoModal,
-    currentDefendantInfo, isSavingDefendantInfo, handleSaveDefendantInfo,
-    showRelatedPartyInfoModal, setShowRelatedPartyInfoModal,
-    currentRelatedPartyInfo, isSavingRelatedPartyInfo, handleSaveRelatedPartyInfo,
-    showNumberDateInfoModal, setShowNumberDateInfoModal,
-    currentNumberDateInfo, currentNumberDateProp, currentNumberDateCaseId,
-    isSavingNumberDateInfo, numberDateModalTitle, handleSaveNumberDateInfo,
-    handleCellClick,
-  } = useCaseModals({ cases, caseType, onUpdateCase });
+  const handleSavePlaintiffInfo = async (data: { name: string; year: string; address: string }) => {
+    if (!currentCaseIdForPlaintiffEdit) return;
 
-  const handleAddNewCaseClick = () => {
-    setShowAddCaseModal(true);
+    setIsSavingPlaintiffInfo(true);
+    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForPlaintiffEdit, 'thong_tin_nguoi_khoi_kien', combinedValue);
+      setShowPlaintiffInfoModal(false);
+    } finally {
+      setIsSavingPlaintiffInfo(false);
+    }
   };
 
-  const handleCaseAdded = () => {
-    setShowAddCaseModal(false);
-    fetchCases();
-    requestMaxNumbersUpdate();
+  const handleSaveDefendantInfo = async (data: { name: string; year: string; address: string }) => {
+    if (!currentCaseIdForDefendantEdit) return;
+
+    setIsSavingDefendantInfo(true);
+    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForDefendantEdit, 'thong_tin_nguoi_bi_kien', combinedValue);
+      setShowDefendantInfoModal(false);
+    } finally {
+      setIsSavingDefendantInfo(false);
+    }
   };
+
+  const handleSaveRelatedPartyInfo = async (data: { name: string; year: string; address: string }) => {
+    if (!currentCaseIdForRelatedPartyEdit) return;
+
+    setIsSavingRelatedPartyInfo(true);
+    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForRelatedPartyEdit, 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan', combinedValue);
+      setShowRelatedPartyInfoModal(false);
+    } finally {
+      setIsSavingRelatedPartyInfo(false);
+    }
+  };
+
+  const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
+    if (!currentNumberDateCaseId || !currentNumberDateProp) return;
+
+    setIsSavingNumberDateInfo(true);
+    const rawCombinedString = [
+      data.number ? `Số: ${data.number}` : '',
+      data.date ? `Ngày: ${data.date}` : ''
+    ].filter(Boolean).join('\n');
+
+    try {
+      await handleUpdateCase(currentNumberDateCaseId, currentNumberDateProp, rawCombinedString);
+      setShowNumberDateInfoModal(false);
+    } finally {
+      setIsSavingNumberDateInfo(false);
+    }
+  };
+
+  const handleCellClick = useCallback((caseId: string, prop: string, value: any) => {
+    const attribute = caseType.attributes.find(attr => attr.id === prop);
+    const title = attribute?.name || prop;
+
+    if (prop === 'thong_tin_nguoi_khoi_kien') {
+      setCurrentCaseIdForPlaintiffEdit(caseId);
+      const caseItem = cases.find(c => c.id === caseId);
+      const name = caseItem?.ho_ten_nguoi_khoi_kien || '';
+      const year = caseItem?.nam_sinh_nguoi_khoi_kien || '';
+      const address = caseItem?.dia_chi_nguoi_khoi_kien || '';
+      setCurrentPlaintiffInfo({ name, year, address });
+      setShowPlaintiffInfoModal(true);
+    } else if (prop === 'thong_tin_nguoi_bi_kien') {
+      setCurrentCaseIdForDefendantEdit(caseId);
+      const caseItem = cases.find(c => c.id === caseId);
+      const name = caseItem?.ho_ten_nguoi_bi_kien || '';
+      const year = caseItem?.nam_sinh_nguoi_bi_kien || '';
+      const address = caseItem?.dia_chi_nguoi_bi_kien || '';
+      setCurrentDefendantInfo({ name, year, address });
+      setShowDefendantInfoModal(true);
+    } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') { // Handle new related party field
+      setCurrentCaseIdForRelatedPartyEdit(caseId);
+      const caseItem = cases.find(c => c.id === caseId);
+      const name = caseItem?.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '';
+      const year = caseItem?.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '';
+      const address = caseItem?.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '';
+      setCurrentRelatedPartyInfo({ name, year, address });
+      setShowRelatedPartyInfoModal(true);
+    } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
+      setCurrentNumberDateCaseId(caseId);
+      setCurrentNumberDateProp(prop);
+      setNumberDateModalTitle(`Chỉnh sửa ${title}`);
+      
+      const caseItem = cases.find(c => c.id === caseId);
+      const originalPropName = prop.replace('thong_tin_', '');
+      const number = caseItem?.[`so_${originalPropName}`] || '';
+      const date = caseItem?.[`ngay_${originalPropName}`] || '';
+      
+      setCurrentNumberDateInfo({ number, date });
+      setShowNumberDateInfoModal(true);
+    }
+  }, [caseType.attributes, cases]);
 
   const handleApplyAdvancedSearchSelection = useCallback((selectedCaseIds: string[]) => {
     setActiveCaseIdsFilter(selectedCaseIds);
     setShowAdvancedSearchModal(false);
     setSearchTerm(''); // Clear basic search term when advanced search is applied
     toast.success(`Đã áp dụng bộ lọc nâng cao với ${selectedCaseIds.length} vụ án được chọn.`);
-  }, [setSearchTerm]);
+  }, []);
 
   const handleRefreshData = useCallback(() => {
     setActiveCaseIdsFilter(null); // Clear advanced filter
     setSearchTerm(''); // Clear basic search
     setAdvancedSearchInitialCriteria({ ngayNhanDon: '', nguoiKhoiKien: '', nguoiBiKien: '' }); // Clear modal's initial criteria
     fetchCases(); // Re-fetch all cases
-  }, [fetchCases, setSearchTerm]);
+  }, [fetchCases]);
 
   const exportData = () => {
     const headers = caseType.attributes.map(attr => attr.name);
@@ -235,12 +424,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   const { columns, settings } = getHandsontableConfig({
     caseType,
-    filteredCases: finalFilteredCases,
-    refreshData: fetchCases,
+    filteredCases: finalFilteredCases, // Pass the currently displayed cases to config
+    refreshData: fetchCases, // This will re-fetch all data, then the filter will re-apply
     setSelectedRows,
     onUpdateCase: handleUpdateCase,
   });
 
+  // Determine which field to generate/display for the AddCaseModal
   const primaryNumberFieldId = book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'so_chuyen_hoa_giai' : 'so_thu_ly';
 
   return (
@@ -248,7 +438,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       <CaseManagementHeader
         book={book}
         onBack={onBack}
-        onRefresh={handleRefreshData}
+        onRefresh={handleRefreshData} // Use the new combined refresh handler
         onExport={exportData}
         onAddCase={handleAddNewCaseClick}
         isLoading={isLoading}
@@ -260,7 +450,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       />
 
       <CaseTable
-        data={finalFilteredCases}
+        data={finalFilteredCases} // Use finalFilteredCases for the table
         columns={columns}
         settings={settings}
         isLoading={isLoading}
@@ -331,10 +521,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       {showAdvancedSearchModal && (
         <AdvancedSearchModal
           onClose={() => setShowAdvancedSearchModal(false)}
-          onApplySelection={handleApplyAdvancedSearchSelection}
+          onApplySelection={handleApplyAdvancedSearchSelection} // Changed prop name
           initialCriteria={advancedSearchInitialCriteria}
-          book={book}
-          caseType={caseType}
+          book={book} // Pass book to modal
+          caseType={caseType} // Pass the full caseType object here
         />
       )}
     </div>

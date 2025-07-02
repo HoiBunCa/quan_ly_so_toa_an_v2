@@ -16,10 +16,11 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { icon: BookOpen, label: 'Case Books', page: 'case-books' },
-  { icon: Users, label: 'User Management', page: 'user-management' }, // New menu item
-  { icon: BarChart3, label: 'Reports', page: 'reports' },
-  { icon: Settings, label: 'Settings', page: 'settings' },
+  { icon: BookOpen, label: 'Án hôn nhân', page: 'case-books' },
+  // { icon: BookOpen, label: 'Án Hình sự', page: 'case-books' },
+  { icon: Users, label: 'Quản lý người dùng', page: 'user-management' }, // New menu item
+  { icon: BarChart3, label: 'Báo cáo', page: 'reports' },
+  { icon: Settings, label: 'Cài đặt', page: 'settings' },
 ];
 
 export default function Sidebar({ isCollapsed, onToggle, currentPage, onPageChange }: SidebarProps) {

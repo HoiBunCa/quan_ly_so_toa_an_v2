@@ -26,56 +26,74 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     setIsLoading(true);
     setError(null);
     try {
+      let apiUrl = '';
       if (book.caseTypeId === 'HON_NHAN') {
-        const apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/?year=${book.year}`;
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        const fetchedCases: Case[] = data.results.map((item: any) => {
-          const newCase: Case = {
-            id: item.id.toString(),
-            caseNumber: item.so_thu_ly || '',
-            bookId: book.id,
-            createdDate: item.ngay_thu_ly || item.ngay_nhan_don || '',
-            lastModified: new Date().toISOString().split('T')[0],
-            ...item
-          };
-          // Combine plaintiff info for display
-          newCase.thong_tin_nguoi_khoi_kien = [
-            item.ho_ten_nguoi_khoi_kien,
-            item.nam_sinh_nguoi_khoi_kien,
-            item.dia_chi_nguoi_khoi_kien
-          ].filter(Boolean).join('\n');
+        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/?year=${book.year}`;
+      } else if (book.caseTypeId === 'GIA_QUYET_TRANH_CHAP_HOA_GIAI') {
+        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/?year=${book.year}`;
+      } else {
+        setCases(mockCases[book.id] || []);
+        setIsLoading(false);
+        return;
+      }
 
-          // Combine defendant info for display
-          newCase.thong_tin_nguoi_bi_kien = [
-            item.ho_ten_nguoi_bi_kien,
-            item.nam_sinh_nguoi_bi_kien,
-            item.dia_chi_nguoi_bi_kien
-          ].filter(Boolean).join('\n');
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      const fetchedCases: Case[] = data.results.map((item: any) => {
+        const newCase: Case = {
+          id: item.id.toString(),
+          caseNumber: item.so_thu_ly || '', // Assuming 'so_thu_ly' is the main case number for both types
+          bookId: book.id,
+          createdDate: item.ngay_thu_ly || item.ngay_nhan_don || '',
+          lastModified: new Date().toISOString().split('T')[0],
+          ...item
+        };
 
-          newCase.thong_tin_chuyen_hoa_giai = combineNumberAndDate(item.so_chuyen_hoa_giai, item.ngay_chuyen_hoa_giai);
+        // Common combined fields for both HON_NHAN and GIAI_QUYET_TRANH_CHAP_HOA_GIAI
+        newCase.thong_tin_nguoi_khoi_kien = [
+          item.ho_ten_nguoi_khoi_kien,
+          item.nam_sinh_nguoi_khoi_kien,
+          item.dia_chi_nguoi_khoi_kien
+        ].filter(Boolean).join('\n');
+
+        newCase.thong_tin_nguoi_bi_kien = [
+          item.ho_ten_nguoi_bi_kien,
+          item.nam_sinh_nguoi_bi_kien,
+          item.dia_chi_nguoi_bi_kien
+        ].filter(Boolean).join('\n');
+
+        newCase.thong_tin_chuyen_hoa_giai = combineNumberAndDate(item.so_chuyen_hoa_giai, item.ngay_chuyen_hoa_giai);
+        
+        // Fields specific to HON_NHAN (already existing)
+        if (book.caseTypeId === 'HON_NHAN') {
           newCase.thong_tin_tra_lai_don = combineNumberAndDate(item.so_tra_lai_don, item.ngay_tra_lai_don);
           newCase.thong_tin_yeu_cau_sua_doi_bo_sung = combineNumberAndDate(item.so_yeu_cau_sua_doi_bo_sung_don_khoi_kien, item.ngay_yeu_cau_sua_doi_bo_sung_don_khoi_kien);
           newCase.thong_tin_chuyen_don_khoi_kien = combineNumberAndDate(item.so_chuyen_don_khoi_kien, item.ngay_chuyen_don_khoi_kien);
           newCase.thong_tin_thong_bao_nop_tam_ung_an_phi = combineNumberAndDate(item.so_thong_bao_nop_tam_ung_an_phi, item.ngay_thong_bao_nop_tam_ung_an_phi);
           newCase.thong_tin_thu_ly_vu_an = combineNumberAndDate(item.so_thu_ly_vu_an, item.ngay_thu_ly_vu_an);
           newCase.thong_tin_giu_nguyen_tra_lai_don = combineNumberAndDate(item.so_giu_nguyen_viec_tra_lai_don_khoi_kien, item.ngay_giu_nguyen_viec_tra_lai_don_khoi_kien);
-          
-          // New combined fields
           newCase.thong_tin_nhan_lai_don_khoi_kien_va_tai_lieu = combineNumberAndDate(item.so_nhan_lai_don_khoi_kien_va_tai_lieu, item.ngay_nhan_lai_don_khoi_kien_va_tai_lieu);
           newCase.thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien = combineNumberAndDate(item.so_yeu_cau_toa_an_nhan_lai_don_khoi_kien, item.ngay_yeu_cau_toa_an_nhan_lai_don_khoi_kien);
           newCase.thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi = combineNumberAndDate(item.so_ap_dung_bien_phap_khan_cap_tam_thoi, item.ngay_ap_dung_bien_phap_khan_cap_tam_thoi);
+        }
 
-          return newCase;
-        });
-        setCases(fetchedCases);
-      } else {
-        setCases(mockCases[book.id] || []);
-      }
+        // Fields specific to GIAI_QUYET_TRANH_CHAP_HOA_GIAI (newly added)
+        if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+          newCase.thong_tin_thong_bao_ve_quyen_lua_chon_hoa_giai = combineNumberAndDate(item.so_thong_bao_ve_quyen_lua_chon_hoa_giai, item.ngay_thong_bao_ve_quyen_lua_chon_hoa_giai);
+          newCase.thong_tin_quyet_dinh_cong_nhan_hoa_giai_thanh = combineNumberAndDate(item.so_quyet_dinh_cong_nhan_hoa_giai_thanh, item.ngay_quyet_dinh_cong_nhan_hoa_giai_thanh);
+          newCase.thong_tin_quyet_dinh_khong_cong_nhan_hoa_giai_thanh = combineNumberAndDate(item.so_quyet_dinh_khong_cong_nhan_hoa_giai_thanh, item.ngay_quyet_dinh_khong_cong_nhan_hoa_giai_thanh);
+          newCase.thong_tin_chuyen_don_giai_quyet_theo_thu_tuc_to_tung = combineNumberAndDate(item.so_chuyen_don_giai_quyet_theo_thu_tuc_to_tung, item.ngay_chuyen_don_giai_quyet_theo_thu_tuc_to_tung);
+          newCase.thong_tin_vien_kiem_sat_kien_nghi = combineNumberAndDate(item.so_vien_kiem_sat_kien_nghi, item.ngay_vien_kiem_sat_kien_nghi);
+          newCase.thong_tin_quyet_dinh_cua_toa_an_cap_tren_truc_tiep = combineNumberAndDate(item.so_quyet_dinh_cua_toa_an_cap_tren_truc_tiep, item.ngay_quyet_dinh_cua_toa_an_cap_tren_truc_tiep);
+        }
+
+        return newCase;
+      });
+      setCases(fetchedCases);
     } catch (e: any) {
       console.error("Failed to fetch cases:", e);
       setError(`Failed to load cases: ${e.message}`);
@@ -102,7 +120,19 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
 
     for (const caseId of idsToDelete) {
       try {
-        const response = await fetch(`http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`, {
+        let deleteUrl = '';
+        if (book.caseTypeId === 'HON_NHAN') {
+          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
+        } else if (book.caseTypeId === 'GIA_QUYET_TRANH_CHAP_HOA_GIAI') {
+          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
+        } else {
+          // Fallback for other types if needed, though currently not handled by API
+          console.warn(`Deletion not supported for case type: ${book.caseTypeId}`);
+          failedDeletions.push(caseId);
+          continue;
+        }
+
+        const response = await fetch(deleteUrl, {
           method: 'DELETE',
         });
 
@@ -126,7 +156,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     if (failedDeletions.length > 0) {
       toast.error(`Không thể xóa các vụ án: ${failedDeletions.join(', ')}. Vui lòng kiểm tra console để biết thêm chi tiết.`);
     }
-  }, [cases, fetchCases]); // Depend on cases to get correct failedCase info
+  }, [cases, fetchCases, book.caseTypeId]); // Depend on cases to get correct failedCase info
 
   useEffect(() => {
     fetchCases();

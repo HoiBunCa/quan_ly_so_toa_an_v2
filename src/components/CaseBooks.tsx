@@ -107,9 +107,9 @@ export default function CaseBooks({ onSelectBook, setShowCreateModal, refreshTri
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
               <BookOpen className="w-7 h-7 mr-3 text-blue-600" />
-              Case Books Management
+              Quản lý sổ án
             </h1>
-            <p className="text-gray-600 mt-1">Manage case books by type and year</p>
+            <p className="text-gray-600 mt-1">Quản lý danh sách sổ bằng loại và năm mở sổ</p>
           </div>
           
           <button

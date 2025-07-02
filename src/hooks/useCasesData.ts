@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { CaseBook, Case } from '../types/caseTypes';
 import { mockCases } from '../data/mockCaseData'; // For non-HON_NHAN types
 import { combineNumberAndDate, formatDateForDisplay } from '../utils/dateUtils'; // Import new utilities
+import { AdvancedSearchCriteria } from '../components/case-management/AdvancedSearchModal'; // Import AdvancedSearchCriteria
 
 interface UseCasesDataResult {
   cases: Case[];
@@ -16,7 +17,7 @@ interface UseCasesDataResult {
   setCases: React.Dispatch<React.SetStateAction<Case[]>>; // Expose setCases for local updates
 }
 
-export function useCasesData(book: CaseBook): UseCasesDataResult {
+export function useCasesData(book: CaseBook, advancedFilters: AdvancedSearchCriteria): UseCasesDataResult {
   const [cases, setCases] = useState<Case[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -27,17 +28,35 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     setError(null);
     try {
       let apiUrl = '';
+      let queryParams = new URLSearchParams({ year: book.year.toString() });
+
+      // Add basic search term
+      if (searchTerm) {
+        queryParams.append('search', searchTerm);
+      }
+
+      // Add advanced search filters
+      if (advancedFilters.ngayNhanDon) {
+        queryParams.append('ngay_nhan_don', advancedFilters.ngayNhanDon);
+      }
+      if (advancedFilters.nguoiKhoiKien) {
+        queryParams.append('ho_ten_nguoi_khoi_kien', advancedFilters.nguoiKhoiKien);
+      }
+      if (advancedFilters.nguoiBiKien) {
+        queryParams.append('ho_ten_nguoi_bi_kien', advancedFilters.nguoiBiKien);
+      }
+
       if (book.caseTypeId === 'HON_NHAN') {
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/?year=${book.year}`;
+        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/?year=${book.year}`;
+        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/`;
       } else {
         setCases(mockCases[book.id] || []);
         setIsLoading(false);
         return;
       }
 
-      const response = await fetch(apiUrl);
+      const response = await fetch(`${apiUrl}?${queryParams.toString()}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
@@ -101,7 +120,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     } finally {
       setIsLoading(false);
     }
-  }, [book]);
+  }, [book, searchTerm, advancedFilters]); // Add advancedFilters to dependencies
 
   const deleteCases = useCallback(async (idsToDelete: string[]) => {
     if (idsToDelete.length === 0) {
@@ -124,7 +143,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         if (book.caseTypeId === 'HON_NHAN') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
         } else if (book.caseTypeId === 'GIA_QUYET_TRANH_CHAP_HOA_GIAI') {
-          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
+          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/${caseId}/`; // Corrected API for DELETE
         } else {
           // Fallback for other types if needed, though currently not handled by API
           console.warn(`Deletion not supported for case type: ${book.caseTypeId}`);
@@ -160,13 +179,21 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
 
   useEffect(() => {
     fetchCases();
-  }, [book, fetchCases]);
+  }, [book, fetchCases, searchTerm, advancedFilters]); // Re-fetch when advancedFilters change
 
-  const filteredCases = cases.filter(caseItem =>
-    Object.values(caseItem).some(value =>
-      value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  // The filtering logic here is now redundant if the backend handles filtering.
+  // Keeping it as a fallback or for client-side only filtering if backend doesn't support it.
+  // However, since we're passing filters to the API, `cases` should already be filtered.
+  const filteredCases = cases.filter(caseItem => {
+    // If advanced filters are active, the backend should handle it.
+    // This client-side filter is primarily for the basic search term.
+    if (searchTerm) {
+      return Object.values(caseItem).some(value =>
+        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return true; // If no basic search term, return all cases (which are already filtered by backend)
+  });
 
   return {
     cases,

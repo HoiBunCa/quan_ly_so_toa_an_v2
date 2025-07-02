@@ -6,6 +6,7 @@ import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
 import NumberDateInputModal from './common/NumberDateInputModal';
+import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
@@ -43,6 +44,14 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
   const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
 
+  // New state for advanced search
+  const [showAdvancedSearchModal, setShowAdvancedSearchModal] = useState(false);
+  const [advancedSearchCriteria, setAdvancedSearchCriteria] = useState<AdvancedSearchCriteria>({
+    ngayNhanDon: '',
+    nguoiKhoiKien: '',
+    nguoiBiKien: '',
+  });
+
   const caseType = caseTypes.find(type => type.id === book.caseTypeId);
   
   const wsRef = useRef<WebSocket | null>(null);
@@ -60,7 +69,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setSearchTerm,
     fetchCases,
     setCases,
-  } = useCasesData(book);
+  } = useCasesData(book, advancedSearchCriteria); // Pass advancedSearchCriteria to hook
 
   const requestMaxNumbersUpdate = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -72,11 +81,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   }, [book.year]);
 
   useEffect(() => {
-    // This WebSocket connection is specifically for 'HON_NHAN' case type's auto-numbering.
-    // If other case types also need auto-numbering, this logic might need to be generalized
-    // or separate WebSocket connections might be needed.
-    // For now, I'll keep it specific to 'HON_NHAN' as per existing code,
-    // but will ensure `isMaxNumbersLoading` is false for other types.
     if (book.caseTypeId === 'HON_NHAN' || book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
       setIsMaxNumbersLoading(true);
       const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
@@ -225,7 +229,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       if (book.caseTypeId === 'HON_NHAN') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap/${caseId}/`; // Corrected API for PUT
       } else {
         console.warn(`Update not supported for case type: ${book.caseTypeId}`);
         toast.error(`Cập nhật thất bại: Loại sổ án không được hỗ trợ.`);
@@ -333,6 +337,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   }, [caseType.attributes, cases]);
 
+  const handleAdvancedSearch = useCallback((criteria: AdvancedSearchCriteria) => {
+    setAdvancedSearchCriteria(criteria);
+    setShowAdvancedSearchModal(false);
+    setSearchTerm(''); // Clear basic search term when advanced search is applied
+  }, []);
+
   const exportData = () => {
     const headers = caseType.attributes.map(attr => attr.name);
     const csv = [
@@ -375,6 +385,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         onSearchChange={setSearchTerm}
         filteredCount={filteredCases.length}
         totalCount={cases.length}
+        onAdvancedSearchClick={() => setShowAdvancedSearchModal(true)} // Pass handler
       />
 
       <CaseTable
@@ -434,6 +445,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onGenerateNumber={() => getNextNumberForField(currentNumberDateProp!.replace('thong_tin_', 'so_'))} 
           isGeneratingNumber={isMaxNumbersLoading}
           latestAutoNumber={maxNumbersByField[currentNumberDateProp!.replace('thong_tin_', 'so_')] || null}
+        />
+      )}
+
+      {showAdvancedSearchModal && (
+        <AdvancedSearchModal
+          onClose={() => setShowAdvancedSearchModal(false)}
+          onSearch={handleAdvancedSearch}
+          initialCriteria={advancedSearchCriteria}
+          isSearching={isLoading} // Use isLoading from useCasesData for modal's loading state
         />
       )}
     </div>

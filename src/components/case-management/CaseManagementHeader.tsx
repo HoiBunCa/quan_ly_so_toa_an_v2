@@ -6,7 +6,8 @@ import {
   RefreshCw,
   Search,
   FileText,
-  Loader2
+  Loader2,
+  Filter // Import Filter icon for advanced search
 } from 'lucide-react';
 import { CaseBook } from '../../types/caseTypes';
 
@@ -21,6 +22,7 @@ interface CaseManagementHeaderProps {
   onSearchChange: (term: string) => void;
   filteredCount: number;
   totalCount: number;
+  onAdvancedSearchClick: () => void; // New prop for advanced search button
 }
 
 export default function CaseManagementHeader({
@@ -34,6 +36,7 @@ export default function CaseManagementHeader({
   onSearchChange,
   filteredCount,
   totalCount,
+  onAdvancedSearchClick, // Destructure new prop
 }: CaseManagementHeaderProps) {
   return (
     <div className="mb-8">
@@ -76,15 +79,24 @@ export default function CaseManagementHeader({
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search cases..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
-          />
+        <div className="flex items-center space-x-3"> {/* Group search input and advanced search button */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search cases..."
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+            />
+          </div>
+          <button
+            onClick={onAdvancedSearchClick}
+            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Filter className="w-4 h-4" />
+            <span>Tìm kiếm nâng cao</span>
+          </button>
         </div>
         <div className="flex items-center space-x-3">
           <button

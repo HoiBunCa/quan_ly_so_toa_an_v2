@@ -61,13 +61,13 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
       let queryParams = new URLSearchParams({ year: book.year.toString() });
 
       if (ngayNhanDon) {
-        queryParams.append('search', ngayNhanDon);
+        queryParams.append('ngay_thu_ly', ngayNhanDon);
       }
       if (nguoiKhoiKien) {
-        queryParams.append('search', nguoiKhoiKien);
+        queryParams.append('nguoi_khoi_kien', nguoiKhoiKien);
       }
       if (nguoiBiKien) {
-        queryParams.append('search', nguoiBiKien);
+        queryParams.append('nguoi_bi_kien', nguoiBiKien);
       }
 
       const response = await fetch(`${apiUrl}?${queryParams.toString()}`);
@@ -184,7 +184,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
     stretchH: 'all',
     manualColumnResize: true,
     manualRowResize: true,
-    rowHeaders: true,
+    rowHeaders: false, // Changed to false to hide the serial number column
   };
 
   // For debugging: show all columns generated from honNhanCaseType
@@ -192,7 +192,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-lg shadow-xl w-full mx-4 flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center">
             <SearchIcon className="w-5 h-5 mr-2 text-blue-600" />
@@ -218,7 +218,7 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label htmlFor="ngayNhanDon" className="block text-sm font-medium text-gray-700 mb-2">
-                Ngày nhận đơn
+                Ngày thụ lý
               </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />

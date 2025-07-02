@@ -17,8 +17,8 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
   // Apply default text renderer first
   Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
 
-  // Custom formatting for 'thong_tin_nguoi_khoi_kien', 'thong_tin_nguoi_bi_kien', and other combined fields
-  if (prop === 'thong_tin_nguoi_khoi_kien' || prop === 'thong_tin_nguoi_bi_kien') {
+  // Custom formatting for 'thong_tin_nguoi_khoi_kien', 'thong_tin_nguoi_bi_kien', 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan' and other combined fields
+  if (prop === 'thong_tin_nguoi_khoi_kien' || prop === 'thong_tin_nguoi_bi_kien' || prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') {
     if (typeof value === 'string') {
       const lines = value.split('\n');
       let formattedValue = '';

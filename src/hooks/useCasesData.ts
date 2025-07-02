@@ -72,6 +72,13 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           item.dia_chi_nguoi_bi_kien
         ].filter(Boolean).join('\n');
 
+        // New combined field for related party
+        newCase.thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = [
+          item.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan,
+          item.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan,
+          item.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan
+        ].filter(Boolean).join('\n');
+
         newCase.thong_tin_chuyen_hoa_giai = combineNumberAndDate(item.so_chuyen_hoa_giai, item.ngay_chuyen_hoa_giai);
         
         // Fields specific to HON_NHAN (already existing)

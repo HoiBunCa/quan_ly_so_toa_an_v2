@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
+import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
 import NumberDateInputModal from './common/NumberDateInputModal';
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
 
@@ -36,6 +37,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentCaseIdForDefendantEdit, setCurrentCaseIdForDefendantEdit] = useState<string | null>(null);
   const [currentDefendantInfo, setCurrentDefendantInfo] = useState({ name: '', year: '', address: '' });
   const [isSavingDefendantInfo, setIsSavingDefendantInfo] = useState(false);
+
+  // New state for Related Party Info Modal
+  const [showRelatedPartyInfoModal, setShowRelatedPartyInfoModal] = useState(false);
+  const [currentCaseIdForRelatedPartyEdit, setCurrentCaseIdForRelatedPartyEdit] = useState<string | null>(null);
+  const [currentRelatedPartyInfo, setCurrentRelatedPartyInfo] = useState({ name: '', year: '', address: '' });
+  const [isSavingRelatedPartyInfo, setIsSavingRelatedPartyInfo] = useState(false);
 
   const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
   const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
@@ -184,6 +191,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       payload.ho_ten_nguoi_bi_kien = lines[0] || '';
       payload.nam_sinh_nguoi_bi_kien = lines[1] || '';
       payload.dia_chi_nguoi_bi_kien = lines[2] || '';
+    } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') { // New related party field
+      const lines = String(newValue || '').split('\n');
+      payload.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[0] || '';
+      payload.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[1] || '';
+      payload.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[2] || '';
     } else if (prop.startsWith('thong_tin_')) {
       const { number, date } = parseNumberDateString(newValue);
       const originalPropName = prop.replace('thong_tin_', '');
@@ -211,6 +223,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC.nam_sinh_nguoi_bi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_bi_kien = lines[2] || '';
           updatedC.thong_tin_nguoi_bi_kien = updatedDisplayValue;
+        } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') { // New related party field
+          const lines = String(newValue || '').split('\n');
+          updatedC.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[0] || '';
+          updatedC.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[1] || '';
+          updatedC.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[2] || '';
+          updatedC.thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = updatedDisplayValue;
         } else if (prop.startsWith('thong_tin_')) {
           const { number, date } = parseNumberDateString(newValue);
           const originalPropName = prop.replace('thong_tin_', '');
@@ -287,6 +305,20 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   };
 
+  const handleSaveRelatedPartyInfo = async (data: { name: string; year: string; address: string }) => {
+    if (!currentCaseIdForRelatedPartyEdit) return;
+
+    setIsSavingRelatedPartyInfo(true);
+    const combinedValue = [data.name, data.year, data.address].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForRelatedPartyEdit, 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan', combinedValue);
+      setShowRelatedPartyInfoModal(false);
+    } finally {
+      setIsSavingRelatedPartyInfo(false);
+    }
+  };
+
   const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
     if (!currentNumberDateCaseId || !currentNumberDateProp) return;
 
@@ -324,6 +356,14 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       const address = caseItem?.dia_chi_nguoi_bi_kien || '';
       setCurrentDefendantInfo({ name, year, address });
       setShowDefendantInfoModal(true);
+    } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') { // Handle new related party field
+      setCurrentCaseIdForRelatedPartyEdit(caseId);
+      const caseItem = cases.find(c => c.id === caseId);
+      const name = caseItem?.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '';
+      const year = caseItem?.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '';
+      const address = caseItem?.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '';
+      setCurrentRelatedPartyInfo({ name, year, address });
+      setShowRelatedPartyInfoModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
       setCurrentNumberDateCaseId(caseId);
       setCurrentNumberDateProp(prop);
@@ -452,6 +492,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveDefendantInfo}
           onClose={() => setShowDefendantInfoModal(false)}
           isSaving={isSavingDefendantInfo}
+        />
+      )}
+
+      {showRelatedPartyInfoModal && (
+        <RelatedPartyInfoModal
+          initialData={currentRelatedPartyInfo}
+          onSave={handleSaveRelatedPartyInfo}
+          onClose={() => setShowRelatedPartyInfoModal(false)}
+          isSaving={isSavingRelatedPartyInfo}
         />
       )}
 

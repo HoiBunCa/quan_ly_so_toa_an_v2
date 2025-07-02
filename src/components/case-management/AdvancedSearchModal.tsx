@@ -68,7 +68,7 @@ export default function AdvancedSearchModal({
     setIsLoadingResults(true);
     setErrorResults(null);
     setCurrentSearchResults([]);
-    setSelectedResultIds([]);
+    setSelectedResultIds([]); // Clear selection on new search
 
     try {
       // Always use the API path for 'so-thu-ly-don-khoi-kien' for advanced search
@@ -84,6 +84,8 @@ export default function AdvancedSearchModal({
       if (nguoiBiKien) {
         queryParams.append('nguoi_bi_kien', nguoiBiKien);
       }
+
+      console.log('AdvancedSearchModal: Fetching search results with params:', queryParams.toString());
 
       const response = await fetch(`${apiUrl}?${queryParams.toString()}`);
       if (!response.ok) {
@@ -178,6 +180,12 @@ export default function AdvancedSearchModal({
   };
 
   const handleApplySelection = async () => {
+    console.log('AdvancedSearchModal: handleApplySelection called.');
+    console.log('AdvancedSearchModal: selectedResultIds.length:', selectedResultIds.length);
+    console.log('AdvancedSearchModal: isGeneratingNumber:', isGeneratingNumber);
+    console.log('AdvancedSearchModal: isCopyingCases:', isCopyingCases);
+    console.log('AdvancedSearchModal: isLoadingResults:', isLoadingResults);
+
     if (selectedResultIds.length === 0) {
       toast.info('Vui lòng chọn ít nhất một vụ án để áp dụng.');
       return;
@@ -188,11 +196,14 @@ export default function AdvancedSearchModal({
     const failedCopies: string[] = [];
     const today = new Date().toISOString().split('T')[0]; // Current date for ngay_chuyen_hoa_giai
 
+    // Filter from the original allSearchResults to get full data, not just what's displayed in modal table
     const casesToCopy = allSearchResults.filter(c => selectedResultIds.includes(c.id));
+    console.log('AdvancedSearchModal: Cases to copy:', casesToCopy.length);
 
     for (const caseItem of casesToCopy) {
       try {
         const nextSoChuyenHoaGiai = onGenerateNextNumber('so_chuyen_hoa_giai'); // Get next auto-increment number
+        console.log(`AdvancedSearchModal: Generating next so_chuyen_hoa_giai: ${nextSoChuyenHoaGiai} for case ${caseItem.id}`);
 
         const payload = {
           created_by: 1,
@@ -215,6 +226,8 @@ export default function AdvancedSearchModal({
           // Other fields specific to GIAI_QUYET_TRANH_CHAP_HOA_GIAI are omitted as per request
         };
 
+        console.log('AdvancedSearchModal: Sending POST request for case:', caseItem.id, 'with payload:', payload);
+
         const response = await fetch('http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/', {
           method: 'POST',
           headers: {
@@ -228,8 +241,9 @@ export default function AdvancedSearchModal({
           throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
         successfulCopies++;
+        console.log(`AdvancedSearchModal: Successfully copied case ${caseItem.id}.`);
       } catch (e: any) {
-        console.error(`Failed to copy case ${caseItem.caseNumber || caseItem.id}:`, e);
+        console.error(`AdvancedSearchModal: Failed to copy case ${caseItem.caseNumber || caseItem.id}:`, e);
         failedCopies.push(caseItem.caseNumber || caseItem.id);
       }
     }
@@ -250,7 +264,10 @@ export default function AdvancedSearchModal({
     caseType: honNhanCaseType, // Use the found case type directly
     filteredCases: currentSearchResults, // Use local search results
     refreshData: fetchSearchResults, // Refresh local search results
-    setSelectedRows: setSelectedResultIds,
+    setSelectedRows: (ids) => {
+      console.log('AdvancedSearchModal: Selected row IDs:', ids);
+      setSelectedResultIds(ids);
+    },
     onUpdateCase: async () => {}, // No update allowed in this modal
   });
 
@@ -269,6 +286,13 @@ export default function AdvancedSearchModal({
 
   // For debugging: show all columns generated from honNhanCaseType
   const relevantColumns = columns; 
+
+  console.log('AdvancedSearchModal: Button disabled state components:', {
+    isLoadingResults,
+    selectedResultIdsLength: selectedResultIds.length,
+    isCopyingCases,
+    isGeneratingNumber
+  });
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">

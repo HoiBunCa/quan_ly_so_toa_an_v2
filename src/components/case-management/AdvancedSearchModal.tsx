@@ -5,6 +5,7 @@ import { HotTable } from '@handsontable/react';
 import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { Case, CaseBook } from '../../types/caseTypes';
 import toast from 'react-hot-toast';
+import { caseTypes } from '../../data/caseTypesData'; // Import caseTypes
 
 export interface AdvancedSearchCriteria {
   ngayNhanDon: string;
@@ -29,6 +30,9 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [errorResults, setErrorResults] = useState<string | null>(null);
   const [selectedResultIds, setSelectedResultIds] = useState<string[]>([]);
+
+  // Find the actual caseType object based on the book's caseTypeId
+  const currentCaseType = caseTypes.find(type => type.id === book.caseTypeId);
 
   const fetchSearchResults = useCallback(async () => {
     setIsLoadingResults(true);
@@ -146,8 +150,9 @@ export default function AdvancedSearchModal({ onClose, onApplySelection, initial
     onClose();
   };
 
+  // Pass the actual currentCaseType to getHandsontableConfig
   const { columns, settings } = getHandsontableConfig({
-    caseType: { id: book.caseTypeId, name: book.caseTypeName, code: book.caseTypeId, attributes: [] }, // Minimal caseType for columns
+    caseType: currentCaseType || { id: '', name: '', code: '', attributes: [] }, // Provide a fallback empty caseType
     filteredCases: searchResults, // Pass search results for column generation
     refreshData: fetchSearchResults, // Pass internal refresh for context menu (if needed)
     setSelectedRows: setSelectedResultIds, // Update internal selection state

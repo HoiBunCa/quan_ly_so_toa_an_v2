@@ -538,7 +538,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onGenerateNextNumber={getNextNumberForField} // Pass the function to generate next number
           isGeneratingNumber={isMaxNumbersLoading} // Pass loading state
           onCasesCreated={handleCasesCopiedFromSearch} // Pass the callback for successful creation
-          searchResults={cases} // Pass the full list of cases for mapping
         />
       )}
     </div>

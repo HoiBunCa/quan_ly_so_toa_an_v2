@@ -22,7 +22,6 @@ interface AdvancedSearchModalProps {
   onGenerateNextNumber: (fieldKey: string) => string; // New prop for auto-increment number
   isGeneratingNumber: boolean; // New prop for loading state of number generation
   onCasesCreated: () => void; // New prop to signal parent to refresh
-  searchResults: Case[]; // Pass the full list of cases for mapping
 }
 
 export default function AdvancedSearchModal({ 
@@ -34,7 +33,6 @@ export default function AdvancedSearchModal({
   onGenerateNextNumber,
   isGeneratingNumber,
   onCasesCreated,
-  searchResults: allSearchResults // Rename to avoid conflict with local state
 }: AdvancedSearchModalProps) {
   const [ngayNhanDon, setNgayNhanDon] = useState(initialCriteria.ngayNhanDon);
   const [nguoiKhoiKien, setNguoiKhoiKien] = useState(initialCriteria.nguoiKhoiKien);
@@ -196,8 +194,8 @@ export default function AdvancedSearchModal({
     const failedCopies: string[] = [];
     const today = new Date().toISOString().split('T')[0]; // Current date for ngay_chuyen_hoa_giai
 
-    // Filter from the original allSearchResults to get full data, not just what's displayed in modal table
-    const casesToCopy = allSearchResults.filter(c => selectedResultIds.includes(c.id));
+    // Filter from the currentSearchResults (local state) to get full data
+    const casesToCopy = currentSearchResults.filter(c => selectedResultIds.includes(c.id));
     console.log('AdvancedSearchModal: Cases to copy:', casesToCopy.length);
 
     for (const caseItem of casesToCopy) {

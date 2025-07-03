@@ -41,7 +41,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/`;
-      } else if (book.caseTypeId === 'TO_TUNG') { // New case type
+      } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { 
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/`;
       }
       else {
@@ -159,11 +159,12 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     for (const caseId of idsToDelete) {
       try {
         let deleteUrl = '';
+        console.log("book.caseTypeId: ", book.caseTypeId);
         if (book.caseTypeId === 'HON_NHAN') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
         } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; 
-        } else if (book.caseTypeId === 'TO_TUNG') { // New case type
+        } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { // New case type
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
         }
         else {

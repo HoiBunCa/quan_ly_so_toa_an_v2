@@ -274,7 +274,7 @@ export default function AdvancedSearchModal({
 
     setIsCopyingCases(false);
     if (successfulCopies > 0) {
-      toast.success(`${successMessage.replace('vụ án mới', `${successfulCopies} vụ án mới`)}`);
+      // toast.success(`${successMessage.replace('vụ án mới', `${successfulCopies} vụ án mới`)}`);
       onCasesCreated(); // Signal parent to refresh
     }
     if (failedCopies.length > 0) {

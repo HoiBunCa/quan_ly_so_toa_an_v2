@@ -2,12 +2,12 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { CaseBook, CaseType } from '../types/caseTypes'; // Import CaseType
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
-import AddCaseModal from '../AddCaseModal';
+import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
 import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
-import NumberDateInputModal from '../common/NumberDateInputModal';
-import CombinedNumberDateTextModal from '../common/CombinedNumberDateTextModal'; // Import new modal
+import NumberDateInputModal from './common/NumberDateInputModal';
+import CombinedNumberDateTextModal from './common/CombinedNumberDateTextModal'; // Import new modal
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
 import ParticipantInfoModal from './case-management/ParticipantInfoModal'; // NEW: Import ParticipantInfoModal
 import PartyAndCourtInfoModal from './case-management/PartyAndCourtInfoModal'; // NEW: Import PartyAndCourtInfoModal

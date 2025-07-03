@@ -61,8 +61,7 @@ export const caseTypes: CaseType[] = [
       { id: 'thong_tin_quyet_dinh_khong_cong_nhan_hoa_giai_thanh', name: '❌ Số/Ngày QĐ không công nhận hoà giải thành', type: 'textarea', required: false, width: 320 },
       { id: 'thong_tin_chuyen_don_giai_quyet_theo_thu_tuc_to_tung', name: '➡️ Số/Ngày chuyển đơn giải quyết theo thủ tục tố tụng', type: 'textarea', required: false, width: 350 },
       { id: 'ly_do_chuyen_don_giai_quyet_theo_thu_tuc_to_tung', name: '📝 Lý do chuyển đơn giải quyết theo thủ tục tố tụng', type: 'textarea', required: false, width: 350 },
-      { id: 'ho_ten_nguoi_de_nghi_giai_quyet', name: '👤 Họ tên người đề nghị giải quyết', type: 'text', required: false, width: 250 },
-      { id: 'ngay_nguoi_de_nghi_giai_quyet', name: '📅 Ngày người đề nghị giải quyết', type: 'date', required: false, width: 250 },
+      { id: 'thong_tin_nguoi_de_nghi_giai_quyet', name: '👤 Thông tin người đề nghị giải quyết', type: 'textarea', required: false, width: 280 }, // NEW combined field
       { id: 'thong_tin_vien_kiem_sat_kien_nghi', name: '⚖️ Số/Ngày Viện kiểm sát kiến nghị', type: 'textarea', required: false, width: 280 },
       { id: 'ngay_chuyen_ho_so_cho_toa_an_cap_tren_tru_tiep', name: '⬆️ Ngày chuyển hồ sơ cho toà án cấp trên trực tiếp', type: 'date', required: false, width: 300 },
       { id: 'thong_tin_quyet_dinh_cua_toa_an_cap_tren_truc_tiep', name: '📜 Số/Ngày QĐ của toà án cấp trên trực tiếp', type: 'textarea', required: false, width: 320 },

@@ -276,6 +276,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         const { date, text } = parseDateAndTextString(newValue);
         payload.ngay_yeu_cau_cua_duong_su = date;
         payload.tom_tat_noi_dung_yeu_cau_cua_duong_su = text;
+      } else if (prop === 'thong_tin_nguoi_de_nghi_giai_quyet') { // NEW: Handle combined name/date for 'thong_tin_nguoi_de_nghi_giai_quyet'
+        const lines = String(newValue || '').split('\n');
+        payload.ho_ten_nguoi_de_nghi_giai_quyet = lines[0]?.replace('Họ tên: ', '') || '';
+        payload.ngay_nguoi_de_nghi_giai_quyet = lines[1]?.replace('Ngày: ', '') || '';
       } else if (prop === 'thong_tin_so_ngay_don') {
         const { number, date } = parseNumberDateString(newValue);
         payload.so_thu_ly = number;
@@ -356,6 +360,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             const { date, text } = parseDateAndTextString(newValue);
             updatedC.ngay_yeu_cau_cua_duong_su = date;
             updatedC.tom_tat_noi_dung_yeu_cau_cua_duong_su = text;
+          } else if (prop === 'thong_tin_nguoi_de_nghi_giai_quyet') { // NEW: Handle combined name/date for 'thong_tin_nguoi_de_nghi_giai_quyet'
+            const lines = String(newValue || '').split('\n');
+            updatedC.ho_ten_nguoi_de_nghi_giai_quyet = lines[0]?.replace('Họ tên: ', '') || '';
+            updatedC.ngay_nguoi_de_nghi_giai_quyet = lines[1]?.replace('Ngày: ', '') || '';
           } else if (prop === 'thong_tin_so_ngay_thu_ly') { // NEW: For HON_NHAN's combined so_thu_ly/ngay_thu_ly
             const { number, date } = parseNumberDateString(newValue);
             updatedC.so_thu_ly = number;
@@ -534,6 +542,24 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   };
 
+  // NEW: Handler for saving name/date combined info
+  const handleSaveNameDateInfo = async (data: { name: string, date: string }) => {
+    if (!currentCombinedNumberDateTextCaseId || !currentCombinedNumberDateTextProp) return; // Reusing state for simplicity
+
+    setIsSavingCombinedNumberDateTextInfo(true); // Reusing loading state
+    const combinedValue = [
+      data.name ? `Họ tên: ${data.name}` : '',
+      data.date ? `Ngày: ${data.date}` : ''
+    ].filter(Boolean).join('\n');
+
+    try {
+      await handleUpdateCase(currentCombinedNumberDateTextCaseId, currentCombinedNumberDateTextProp, combinedValue);
+      setShowCombinedNumberDateTextModal(false); // Reusing modal state
+    } finally {
+      setIsSavingCombinedNumberDateTextInfo(false);
+    }
+  };
+
   const handleCellClick = useCallback((caseId: string, prop: string, value: any) => {
     const attribute = caseType.attributes.find(attr => attr.id === prop);
     const title = attribute?.name || prop;
@@ -576,6 +602,30 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       const courtAddress = caseItem?.toa_an_noi_quan_ly_hoa_giai_vien_lam_viec || '';
       setCurrentPartyAndCourtInfo({ partyName, courtAddress });
       setShowPartyAndCourtInfoModal(true);
+    } else if (prop === 'thong_tin_yeu_cau_cua_duong_su') { // NEW: Handle combined date/text for 'thong_tin_yeu_cau_cua_duong_su'
+      setCurrentDateTextCaseId(caseId);
+      setCurrentDateTextProp(prop);
+      setDateTextModalTitle(`Chỉnh sửa ${title}`);
+
+      const caseItem = cases.find(c => c.id === caseId);
+      const date = caseItem?.ngay_yeu_cau_cua_duong_su || '';
+      const text = caseItem?.tom_tat_noi_dung_yeu_cau_cua_duong_su || '';
+      
+      setCurrentDateTextInfo({ date, text });
+      setDateTextModalLabels({ date: 'Ngày yêu cầu', text: 'Tóm tắt nội dung yêu cầu' });
+      setShowDateTextModal(true);
+    } else if (prop === 'thong_tin_nguoi_de_nghi_giai_quyet') { // NEW: Handle combined name/date for 'thong_tin_nguoi_de_nghi_giai_quyet'
+      setCurrentCombinedNumberDateTextCaseId(caseId); // Reusing state for simplicity
+      setCurrentCombinedNumberDateTextProp(prop); // Reusing state for simplicity
+      setCombinedNumberDateTextModalTitle(`Chỉnh sửa ${title}`);
+
+      const caseItem = cases.find(c => c.id === caseId);
+      const name = caseItem?.ho_ten_nguoi_de_nghi_giai_quyet || '';
+      const date = caseItem?.ngay_nguoi_de_nghi_giai_quyet || '';
+      
+      setCurrentCombinedNumberDateTextInfo({ number: '', date: date, text: name }); // Map name to text, number empty
+      setCombinedNumberDateTextModalLabels({ number: '', date: 'Ngày', text: 'Họ tên' }); // Adjust labels
+      setShowCombinedNumberDateTextModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
       // Handle new combined number/date/text fields for TO_TUNG
       if (prop === 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan' || prop === 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet') {
@@ -607,19 +657,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         setCurrentCombinedNumberDateTextInfo({ number, date, text });
         setCombinedNumberDateTextModalLabels({ number: 'Số', date: 'Ngày', text: textLabel });
         setShowCombinedNumberDateTextModal(true);
-
-      } else if (prop === 'thong_tin_yeu_cau_cua_duong_su') { // NEW: Handle combined date/text for 'thong_tin_yeu_cau_cua_duong_su'
-        setCurrentDateTextCaseId(caseId);
-        setCurrentDateTextProp(prop);
-        setDateTextModalTitle(`Chỉnh sửa ${title}`);
-
-        const caseItem = cases.find(c => c.id === caseId);
-        const date = caseItem?.ngay_yeu_cau_cua_duong_su || '';
-        const text = caseItem?.tom_tat_noi_dung_yeu_cau_cua_duong_su || '';
-        
-        setCurrentDateTextInfo({ date, text });
-        setDateTextModalLabels({ date: 'Ngày yêu cầu', text: 'Tóm tắt nội dung yêu cầu' });
-        setShowDateTextModal(true);
 
       } else { // Existing number/date combined fields
         setCurrentNumberDateCaseId(caseId);
@@ -823,10 +860,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveCombinedNumberDateTextInfo}
           onClose={() => setShowCombinedNumberDateTextModal(false)}
           isSaving={isSavingCombinedNumberDateTextInfo}
-          onGenerateNumber={getNextNumberForField}
+          onGenerateNumber={combinedNumberDateTextModalLabels.number ? getNextNumberForField : undefined}
           isGeneratingNumber={isMaxNumbersLoading}
-          latestAutoNumber={maxNumbersByField[currentCombinedNumberDateTextProp!.replace('thong_tin_', 'so_')] || null}
-          numberFieldKey={currentCombinedNumberDateTextProp!.replace('thong_tin_', 'so_')}
+          latestAutoNumber={combinedNumberDateTextModalLabels.number ? (maxNumbersByField[currentCombinedNumberDateTextProp!.replace('thong_tin_', 'so_')] || null) : null}
+          numberFieldKey={combinedNumberDateTextModalLabels.number ? currentCombinedNumberDateTextProp!.replace('thong_tin_', 'so_') : undefined}
         />
       )}
 

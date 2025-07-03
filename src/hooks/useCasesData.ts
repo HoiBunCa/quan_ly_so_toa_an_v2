@@ -122,6 +122,10 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           newCase.thong_tin_vien_kiem_sat_kien_nghi = combineNumberAndDate(item.so_vien_kiem_sat_kien_nghi, item.ngay_vien_kiem_sat_kien_nghi);
           newCase.thong_tin_quyet_dinh_cua_toa_an_cap_tren_truc_tiep = combineNumberAndDate(item.so_quyet_dinh_cua_toa_an_cap_tren_truc_tiep, item.ngay_quyet_dinh_cua_toa_an_cap_tren_truc_tiep);
           newCase.thong_tin_yeu_cau_cua_duong_su = combineDateAndText(item.ngay_yeu_cau_cua_duong_su, item.tom_tat_noi_dung_yeu_cau_cua_duong_su); // NEW: Combined field
+          newCase.thong_tin_nguoi_de_nghi_giai_quyet = [ // NEW: Combined field
+            item.ho_ten_nguoi_de_nghi_giai_quyet,
+            item.ngay_nguoi_de_nghi_giai_quyet
+          ].filter(Boolean).join('\n');
         }
 
         // Fields specific to TO_TUNG (newly added)

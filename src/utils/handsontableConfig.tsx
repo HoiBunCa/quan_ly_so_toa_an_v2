@@ -75,6 +75,20 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       }
       td.innerHTML = formattedValue;
     }
+  } else if (prop === 'thong_tin_nguoi_de_nghi_giai_quyet') { // NEW: Formatting for combined name/date field
+    if (typeof value === 'string') {
+      const lines = value.split('\n');
+      let formattedValue = '';
+      if (lines.length >= 1 && lines[0]) {
+        formattedValue += `${lines[0]}`; // "Họ tên: [name]"
+      }
+      if (lines.length >= 2 && lines[1]) {
+        // Ensure the date part is formatted for display
+        const datePart = lines[1].startsWith('Ngày: ') ? lines[1].substring('Ngày: '.length) : lines[1];
+        formattedValue += `\nNgày: ${formatDateForDisplay(datePart)}`;
+      }
+      td.innerHTML = formattedValue;
+    }
   } else if (prop.startsWith('thong_tin_') && typeof value === 'string') {
     // For other combined number/date/text fields
     const lines = value.split('\n');

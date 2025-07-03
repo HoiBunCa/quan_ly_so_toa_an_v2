@@ -59,8 +59,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(errorData.message || 'Đăng nhập thất bại');
       }
 
+      // Assuming the API response directly contains access, refresh, name, user_id, role
       const data = await response.json();
-      const { access, refresh, name, user_id, role } = data.data;
+      const { access, refresh, name, user_id, role } = data; // Changed from data.data to data
 
       setAccessToken(access);
       setRefreshToken(refresh);

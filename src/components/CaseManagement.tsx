@@ -1,21 +1,23 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { CaseBook, CaseType } from '../types/caseTypes'; // Import CaseType
-import { caseTypes } from '../data/caseTypesData';
+import { caseTypes } from '../../data/caseTypesData';
 import toast from 'react-hot-toast';
-import AddCaseModal from './AddCaseModal';
-import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
-import DefendantInfoModal from './case-management/DefendantInfoModal';
-import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
-import NumberDateInputModal from './common/NumberDateInputModal';
-import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
+import AddCaseModal from '../AddCaseModal';
+import PlaintiffInfoModal from './PlaintiffInfoModal';
+import DefendantInfoModal from './DefendantInfoModal';
+import RelatedPartyInfoModal from './RelatedPartyInfoModal'; // Import new modal
+import NumberDateInputModal from '../common/NumberDateInputModal';
+import AdvancedSearchModal, { AdvancedSearchCriteria } from './AdvancedSearchModal'; // Import new modal and interface
 
 // Import new modular components and hook
-import CaseManagementHeader from './case-management/CaseManagementHeader';
-import CaseTable from './case-management/CaseTable';
-import CaseInstructions from './case-management/CaseInstructions';
-import { useCasesData } from '../hooks/useCasesData';
-import { getHandsontableConfig } from '../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate } from '../utils/dateUtils';
+import CaseManagementHeader from './CaseManagementHeader';
+import CaseTable from './CaseTable';
+import CaseInstructions from './CaseInstructions';
+import { useCasesData } from '../../hooks/useCasesData';
+import { getHandsontableConfig } from '../../utils/handsontableConfig';
+import { parseNumberDateString, combineNumberAndDate } from '../../utils/dateUtils';
+import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -61,6 +63,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   // New state to hold the IDs of cases selected from the advanced search modal
   const [activeCaseIdsFilter, setActiveCaseIdsFilter] = useState<string[] | null>(null);
 
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId); // This is correct
   
@@ -87,7 +90,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       wsRef.current.send(JSON.stringify({ 
         action: 'get_all_max_numbers', 
         year: book.year,
-        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI'] // Request for specific types
+        case_types: ['HON_NHAN', 'GIA_QUYET_TRANH_CHAP_HOA_GIAI'] // Request for specific types
       }));
     } else {
       console.warn('WebSocket not open. Cannot request max numbers update.');
@@ -95,9 +98,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   }, [book.year]);
 
   useEffect(() => {
-    // Always connect WebSocket to get max numbers for relevant types
+    // Only connect WebSocket if accessToken is available
+    if (!accessToken) {
+      setIsMaxNumbersLoading(false);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      return;
+    }
+
     setIsMaxNumbersLoading(true);
-    const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
+    // Pass accessToken as a query parameter for authentication
+    const ws = new WebSocket(`ws://localhost:8003/ws/get-max-so/?token=${accessToken}`);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -140,7 +153,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     return () => {
       ws.close();
     };
-  }, [book.year, requestMaxNumbersUpdate, fetchCases]); // Depend on book.year and fetchCases
+  }, [book.year, requestMaxNumbersUpdate, fetchCases, accessToken]); // Depend on book.year, fetchCases, and accessToken
 
   const getNextNumberForField = useCallback((fieldKey: string) => {
     console.log(`getNextNumberForField called for: ${fieldKey}`);
@@ -267,11 +280,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         return;
       }
 
-      const response = await fetch(updateUrl, {
+      const response = await authenticatedFetch(updateUrl, accessToken, logout, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
 
@@ -285,7 +295,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       toast.error(`Cập nhật thất bại: ${e.message}`);
       fetchCases(); 
     }
-  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId]);
+  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId, accessToken, logout]); // Add accessToken and logout to dependencies
 
   const handleSavePlaintiffInfo = async (data: { name: string; year: string; address: string }) => {
     if (!currentCaseIdForPlaintiffEdit) return;
@@ -438,6 +448,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     refreshData: fetchCases, // This will re-fetch all data, then the filter will re-apply
     setSelectedRows,
     onUpdateCase: handleUpdateCase,
+    accessToken, // Pass accessToken
+    logout, // Pass logout
   });
 
   // Determine which field to generate/display for the AddCaseModal

@@ -72,6 +72,23 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           ...item
         };
 
+        // Convert boolean-like string fields to actual booleans for Handsontable checkbox
+        const booleanFields = [
+          'don_khoi_kien_cua_co_quan_to_chuc',
+          'hoa_giai_doan_tu',
+          'ap_dung_an_le',
+          'co_uy_thac_tu_phap',
+          'khong_uy_thac_tu_phap',
+          'viec_hon_nhan_va_gia_dinh'
+        ];
+        booleanFields.forEach(field => {
+          if (typeof item[field] === 'string') {
+            newCase[field] = item[field] === 'Có';
+          } else if (typeof item[field] === 'boolean') {
+            newCase[field] = item[field];
+          }
+        });
+
         // Common combined fields for all types
         newCase.thong_tin_nguoi_khoi_kien = [
           item.ho_ten_nguoi_khoi_kien,

@@ -102,6 +102,23 @@ export default function AdvancedSearchModal({
         // Populate thong_tin_so_ngay_thu_ly for display in the modal table
         newCase.thong_tin_so_ngay_thu_ly = combineNumberAndDate(item.so_thu_ly, item.ngay_thu_ly);
 
+        // Convert boolean-like string fields to actual booleans for Handsontable checkbox
+        const booleanFields = [
+          'don_khoi_kien_cua_co_quan_to_chuc',
+          'hoa_giai_doan_tu',
+          'ap_dung_an_le',
+          'co_uy_thac_tu_phap',
+          'khong_uy_thac_tu_phap',
+          'viec_hon_nhan_va_gia_dinh'
+        ];
+        booleanFields.forEach(field => {
+          if (typeof item[field] === 'string') {
+            newCase[field] = item[field] === 'Có';
+          } else if (typeof item[field] === 'boolean') {
+            newCase[field] = item[field];
+          }
+        });
+
         newCase.thong_tin_nguoi_khoi_kien = [
           item.ho_ten_nguoi_khoi_kien,
           item.nam_sinh_nguoi_khoi_kien,

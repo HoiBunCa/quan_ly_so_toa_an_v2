@@ -413,8 +413,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           }
           updatedC[prop] = newValue; // Store the combined string
         } else if (attribute?.type === 'dropdown' && (attribute.options?.includes('Có') || attribute.options?.includes('Không'))) {
-          // Store 'Có' or 'Không' for display if it came from dropdown, or boolean if from checkbox
-          updatedC[prop] = typeof newValue === 'boolean' ? (newValue ? 'Có' : 'Không') : newValue;
+          // Store boolean value for display in Handsontable checkbox
+          updatedC[prop] = typeof newValue === 'boolean' ? newValue : (newValue === 'Có');
         }
         else {
           updatedC[prop] = newValue;

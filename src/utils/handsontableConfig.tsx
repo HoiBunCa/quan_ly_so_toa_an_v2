@@ -182,6 +182,7 @@ export function getHandsontableConfig({
           return {
             ...baseColumn,
             type: 'checkbox', // Change to checkbox type
+            readOnly: false, // Ensure checkbox is editable
             // No custom renderer needed for checkboxes, Handsontable handles it
             // The `className` for status will still apply if `attr.id === 'status'`
           };

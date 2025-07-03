@@ -6,18 +6,19 @@ import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
 import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
+import NumberDateInputModal from '../common/NumberDateInputModal';
+import CombinedNumberDateTextModal from '../common/CombinedNumberDateTextModal'; // Import new modal
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
-import { getHandsontableConfig } from '../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate } from '../utils/dateUtils';
-import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useCasesData } from '../../hooks/useCasesData';
+import { getHandsontableConfig } from '../../utils/handsontableConfig';
+import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString } from '../../utils/dateUtils'; // Import new parse utility
+import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
-import NumberDateInputModal from './common/NumberDateInputModal';
-import { useCasesData } from '../hooks/useCasesData';
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -53,6 +54,16 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
   const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
 
+  // New state for Combined Number/Date/Text Modal
+  const [showCombinedNumberDateTextModal, setShowCombinedNumberDateTextModal] = useState(false);
+  const [currentCombinedNumberDateTextInfo, setCurrentCombinedNumberDateTextInfo] = useState({ number: '', date: '', text: '' });
+  const [currentCombinedNumberDateTextProp, setCurrentCombinedNumberDateTextProp] = useState<string | null>(null);
+  const [currentCombinedNumberDateTextCaseId, setCurrentCombinedNumberDateTextCaseId] = useState<string | null>(null);
+  const [isSavingCombinedNumberDateTextInfo, setIsSavingCombinedNumberDateTextInfo] = useState(false);
+  const [combinedNumberDateTextModalTitle, setCombinedNumberDateTextModalTitle] = useState('');
+  const [combinedNumberDateTextModalLabels, setCombinedNumberDateTextModalLabels] = useState({ number: 'Số', date: 'Ngày', text: 'Văn bản' });
+
+
   // New state for advanced search
   const [showAdvancedSearchModal, setShowAdvancedSearchModal] = useState(false);
   const [advancedSearchInitialCriteria, setAdvancedSearchInitialCriteria] = useState<AdvancedSearchCriteria>({
@@ -85,7 +96,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   const requestMaxNumbersUpdate = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
- 
+      console.log('WebSocket: Requesting all max numbers update...');
       // Request max numbers for all relevant case types
       wsRef.current.send(JSON.stringify({ 
         action: 'get_all_max_numbers', 
@@ -119,7 +130,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     };
 
     ws.onmessage = (event) => {
-
+      console.log('WebSocket: Raw message received:', event.data);
       const message = JSON.parse(event.data);
       
       const rawMaxNumbers = message;
@@ -130,14 +141,16 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         }
       }
       setMaxNumbersByField(formattedData); 
-
+      console.log('WebSocket: Received max numbers map and setting state:', formattedData);
+      
       setIsMaxNumbersLoading(false);
-
+      console.log('WebSocket: Setting isMaxNumbersLoading to false.');
       
       fetchCases(); // Refresh cases after max numbers are updated
     };
 
     ws.onclose = () => {
+      console.log('WebSocket disconnected for max numbers');
       setIsMaxNumbersLoading(false);
       wsRef.current = null;
     };
@@ -154,18 +167,22 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   }, [book.year, requestMaxNumbersUpdate, fetchCases, accessToken]); // Depend on book.year, fetchCases, and accessToken
 
   const getNextNumberForField = useCallback((fieldKey: string) => {
-
-
+    console.log(`getNextNumberForField called for: ${fieldKey}`);
+    console.log('Current maxNumbersByField state:', maxNumbersByField);
     const currentMax = maxNumbersByField[fieldKey];
+    console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
 
     if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {
       const parsedMax = parseInt(String(currentMax), 10);
+      console.log('Parsed currentMax:', parsedMax);
 
       if (!isNaN(parsedMax)) {
         const nextNumber = (parsedMax + 1).toString(); // Increment the number
+        console.log(`Generated next number for ${fieldKey}:`, nextNumber);
         return nextNumber;
       }
     }
+    console.warn(`Max number for ${fieldKey} is not a valid number or is empty. Falling back to '1'.`);
     return '1';
   }, [maxNumbersByField]);
 
@@ -217,13 +234,34 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       payload.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[0] || '';
       payload.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[1] || '';
       payload.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[2] || '';
-    } else if (prop.startsWith('thong_tin_')) {
-      const { number, date } = parseNumberDateString(newValue);
-      const originalPropName = prop.replace('thong_tin_', '');
-      payload[`so_${originalPropName}`] = number;
-      payload[`ngay_${originalPropName}`] = date;
-
-      updatedDisplayValue = combineNumberAndDate(number, date);
+    } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
+      // Handle combined number/date fields
+      if (prop === 'thong_tin_so_ngay_don') {
+        const { number, date } = parseNumberDateString(newValue);
+        payload.so_thu_ly = number;
+        payload.ngay_thu_ly = date;
+      } else if (prop === 'thong_tin_so_ngay_thu_ly_chinh') {
+        const { number, date } = parseNumberDateString(newValue);
+        payload.so_thu_ly_chinh = number;
+        payload.ngay_thu_ly_chinh = date;
+      } else if (prop === 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan') {
+        const { number, date, text } = parseNumberDateAndTextString(newValue);
+        payload.so_chuyen_ho_so_vu_viec = number;
+        payload.ngay_chuyen_ho_so_vu_viec = date;
+        payload.noi_nhan_chuyen_ho_so_vu_viec = text;
+      } else if (prop === 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet') {
+        const { number, date, text } = parseNumberDateAndTextString(newValue);
+        payload.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = number;
+        payload.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = date;
+        payload.co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = text;
+      }
+      else { // Existing number/date combined fields
+        const { number, date } = parseNumberDateString(newValue);
+        const originalPropName = prop.replace('thong_tin_', '');
+        payload[`so_${originalPropName}`] = number;
+        payload[`ngay_${originalPropName}`] = date;
+      }
+      updatedDisplayValue = newValue; // Keep the combined string for display
     }
     else {
       payload[prop] = newValue;
@@ -232,30 +270,52 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     setCases(prevCases => prevCases.map(c => {
       if (c.id === caseId) {
         const updatedC = { ...c, lastModified: new Date().toISOString().split('T')[0] };
+        // Update local state for combined fields
         if (prop === 'thong_tin_nguoi_khoi_kien') {
           const lines = String(newValue || '').split('\n');
           updatedC.ho_ten_nguoi_khoi_kien = lines[0] || '';
           updatedC.nam_sinh_nguoi_khoi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_khoi_kien = lines[2] || '';
-          updatedC.thong_tin_nguoi_khoi_kien = updatedDisplayValue;
+          updatedC.thong_tin_nguoi_khoi_kien = newValue;
         } else if (prop === 'thong_tin_nguoi_bi_kien') {
           const lines = String(newValue || '').split('\n');
           updatedC.ho_ten_nguoi_bi_kien = lines[0] || '';
           updatedC.nam_sinh_nguoi_bi_kien = lines[1] || '';
           updatedC.dia_chi_nguoi_bi_kien = lines[2] || '';
-          updatedC.thong_tin_nguoi_bi_kien = updatedDisplayValue;
-        } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') { // New related party field
+          updatedC.thong_tin_nguoi_bi_kien = newValue;
+        } else if (prop === 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan') {
           const lines = String(newValue || '').split('\n');
           updatedC.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[0] || '';
           updatedC.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[1] || '';
           updatedC.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[2] || '';
-          updatedC.thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = updatedDisplayValue;
-        } else if (prop.startsWith('thong_tin_')) {
-          const { number, date } = parseNumberDateString(newValue);
-          const originalPropName = prop.replace('thong_tin_', '');
-          updatedC[`so_${originalPropName}`] = number;
-          updatedC[`ngay_${originalPropName}`] = date;
-          updatedC[prop] = updatedDisplayValue;
+          updatedC.thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = newValue;
+        } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
+          if (prop === 'thong_tin_so_ngay_don') {
+            const { number, date } = parseNumberDateString(newValue);
+            updatedC.so_thu_ly = number;
+            updatedC.ngay_thu_ly = date;
+          } else if (prop === 'thong_tin_so_ngay_thu_ly_chinh') {
+            const { number, date } = parseNumberDateString(newValue);
+            updatedC.so_thu_ly_chinh = number;
+            updatedC.ngay_thu_ly_chinh = date;
+          } else if (prop === 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan') {
+            const { number, date, text } = parseNumberDateAndTextString(newValue);
+            updatedC.so_chuyen_ho_so_vu_viec = number;
+            updatedC.ngay_chuyen_ho_so_vu_viec = date;
+            updatedC.noi_nhan_chuyen_ho_so_vu_viec = text;
+          } else if (prop === 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet') {
+            const { number, date, text } = parseNumberDateAndTextString(newValue);
+            updatedC.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = number;
+            updatedC.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = date;
+            updatedC.co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = text;
+          }
+          else { // Existing number/date combined fields
+            const { number, date } = parseNumberDateString(newValue);
+            const originalPropName = prop.replace('thong_tin_', '');
+            updatedC[`so_${originalPropName}`] = number;
+            updatedC[`ngay_${originalPropName}`] = date;
+          }
+          updatedC[prop] = newValue; // Store the combined string
         } else if (attribute?.type === 'dropdown' && (attribute.options?.includes('Có') || attribute.options?.includes('Không'))) {
           updatedC[prop] = newValue; // Store 'Có' or 'Không'
         }
@@ -359,6 +419,24 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   };
 
+  const handleSaveCombinedNumberDateTextInfo = async (data: { number: string, date: string, text: string }) => {
+    if (!currentCombinedNumberDateTextCaseId || !currentCombinedNumberDateTextProp) return;
+
+    setIsSavingCombinedNumberDateTextInfo(true);
+    const rawCombinedString = [
+      data.number ? `Số: ${data.number}` : '',
+      data.date ? `Ngày: ${data.date}` : '',
+      data.text ? `Nơi nhận/Cơ quan: ${data.text}` : ''
+    ].filter(Boolean).join('\n');
+
+    try {
+      await handleUpdateCase(currentCombinedNumberDateTextCaseId, currentCombinedNumberDateTextProp, rawCombinedString);
+      setShowCombinedNumberDateTextModal(false);
+    } finally {
+      setIsSavingCombinedNumberDateTextInfo(false);
+    }
+  };
+
   const handleCellClick = useCallback((caseId: string, prop: string, value: any) => {
     const attribute = caseType.attributes.find(attr => attr.id === prop);
     const title = attribute?.name || prop;
@@ -388,17 +466,60 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       setCurrentRelatedPartyInfo({ name, year, address });
       setShowRelatedPartyInfoModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
-      setCurrentNumberDateCaseId(caseId);
-      setCurrentNumberDateProp(prop);
-      setNumberDateModalTitle(`Chỉnh sửa ${title}`);
-      
-      const caseItem = cases.find(c => c.id === caseId);
-      const originalPropName = prop.replace('thong_tin_', '');
-      const number = caseItem?.[`so_${originalPropName}`] || '';
-      const date = caseItem?.[`ngay_${originalPropName}`] || '';
-      
-      setCurrentNumberDateInfo({ number, date });
-      setShowNumberDateInfoModal(true);
+      // Handle new combined number/date/text fields for TO_TUNG
+      if (prop === 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan' || prop === 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet') {
+        setCurrentCombinedNumberDateTextCaseId(caseId);
+        setCurrentCombinedNumberDateTextProp(prop);
+        setCombinedNumberDateTextModalTitle(`Chỉnh sửa ${title}`);
+        
+        const caseItem = cases.find(c => c.id === caseId);
+        let number = '';
+        let date = '';
+        let text = '';
+        let numberFieldKey = '';
+        let textLabel = '';
+
+        if (prop === 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan') {
+          number = caseItem?.so_chuyen_ho_so_vu_viec || '';
+          date = caseItem?.ngay_chuyen_ho_so_vu_viec || '';
+          text = caseItem?.noi_nhan_chuyen_ho_so_vu_viec || '';
+          numberFieldKey = 'so_chuyen_ho_so_vu_viec';
+          textLabel = 'Nơi nhận chuyển hồ sơ vụ việc';
+        } else if (prop === 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet') {
+          number = caseItem?.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet || '';
+          date = caseItem?.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet || '';
+          text = caseItem?.co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet || '';
+          numberFieldKey = 'so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet';
+          textLabel = 'Cơ quan ban hành kết quả giải quyết yêu cầu hủy QĐ cá biệt';
+        }
+        
+        setCurrentCombinedNumberDateTextInfo({ number, date, text });
+        setCombinedNumberDateTextModalLabels({ number: 'Số', date: 'Ngày', text: textLabel });
+        setShowCombinedNumberDateTextModal(true);
+
+      } else { // Existing number/date combined fields
+        setCurrentNumberDateCaseId(caseId);
+        setCurrentNumberDateProp(prop);
+        setNumberDateModalTitle(`Chỉnh sửa ${title}`);
+        
+        const caseItem = cases.find(c => c.id === caseId);
+        let number = '';
+        let date = '';
+        if (prop === 'thong_tin_so_ngay_don') {
+          number = caseItem?.so_thu_ly || '';
+          date = caseItem?.ngay_thu_ly || '';
+        } else if (prop === 'thong_tin_so_ngay_thu_ly_chinh') {
+          number = caseItem?.so_thu_ly_chinh || '';
+          date = caseItem?.ngay_thu_ly_chinh || '';
+        } else {
+          const originalPropName = prop.replace('thong_tin_', '');
+          number = caseItem?.[`so_${originalPropName}`] || '';
+          date = caseItem?.[`ngay_${originalPropName}`] || '';
+        }
+        
+        setCurrentNumberDateInfo({ number, date });
+        setShowNumberDateInfoModal(true);
+      }
     }
   }, [caseType.attributes, cases]);
 
@@ -541,6 +662,25 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onGenerateNumber={() => getNextNumberForField(currentNumberDateProp!.replace('thong_tin_', 'so_'))} 
           isGeneratingNumber={isMaxNumbersLoading}
           latestAutoNumber={maxNumbersByField[currentNumberDateProp!.replace('thong_tin_', 'so_')] || null}
+        />
+      )}
+
+      {showCombinedNumberDateTextModal && (
+        <CombinedNumberDateTextModal
+          title={combinedNumberDateTextModalTitle}
+          initialNumber={currentCombinedNumberDateTextInfo.number}
+          initialDate={currentCombinedNumberDateTextInfo.date}
+          initialText={currentCombinedNumberDateTextInfo.text}
+          numberLabel={combinedNumberDateTextModalLabels.number}
+          dateLabel={combinedNumberDateTextModalLabels.date}
+          textLabel={combinedNumberDateTextModalLabels.text}
+          onSave={handleSaveCombinedNumberDateTextInfo}
+          onClose={() => setShowCombinedNumberDateTextModal(false)}
+          isSaving={isSavingCombinedNumberDateTextInfo}
+          onGenerateNumber={getNextNumberForField}
+          isGeneratingNumber={isMaxNumbersLoading}
+          latestAutoNumber={maxNumbersByField[currentCombinedNumberDateTextProp!.replace('thong_tin_', 'so_')] || null}
+          numberFieldKey={currentCombinedNumberDateTextProp!.replace('thong_tin_', 'so_')}
         />
       )}
 

@@ -38,7 +38,7 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       td.innerHTML = formattedValue;
     }
   } else if (prop.startsWith('thong_tin_') && typeof value === 'string') {
-    // For other combined number/date fields
+    // For other combined number/date/text fields
     const lines = value.split('\n');
     let formattedValue = '';
     if (lines.length >= 1 && lines[0]) {
@@ -48,6 +48,9 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       // Ensure the date part is formatted for display
       const datePart = lines[1].startsWith('Ngày: ') ? lines[1].substring('Ngày: '.length) : lines[1];
       formattedValue += `\nNgày: ${formatDateForDisplay(datePart)}`;
+    }
+    if (lines.length >= 3 && lines[2]) {
+      formattedValue += `\n${lines[2]}`; // "Nơi nhận/Cơ quan: [text]"
     }
     td.innerHTML = formattedValue;
   } else if (prop === 'hoi_dong_xet_xu' && typeof value === 'string') {
@@ -206,7 +209,7 @@ export function getHandsontableConfig({
                         deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
                     } else if (caseType.id === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
                         deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
-                    } else if (caseType.id === 'THU_LY_TO_TUNG') { // New case type
+                    } else if (caseType.id === 'TO_TUNG') { // New case type
                         deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
                     }
                     else {

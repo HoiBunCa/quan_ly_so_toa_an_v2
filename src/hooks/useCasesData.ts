@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CaseBook, Case } from '../types/caseTypes';
 import { mockCases } from '../data/mockCaseData'; // For non-HON_NHAN types
-import { combineNumberAndDate, formatDateForDisplay } from '../utils/dateUtils'; // Import new utilities
+import { combineNumberAndDate, formatDateForDisplay, combineNumberDateAndText } from '../utils/dateUtils'; // Import new utilities
 import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
@@ -41,7 +41,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/`;
-      } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { 
+      } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/`;
       }
       else {
@@ -116,13 +116,15 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
 
         // Fields specific to TO_TUNG (newly added)
         if (book.caseTypeId === 'TO_TUNG') {
+          newCase.thong_tin_so_ngay_don = combineNumberAndDate(item.so_thu_ly, item.ngay_thu_ly);
+          newCase.thong_tin_so_ngay_thu_ly_chinh = combineNumberAndDate(item.so_thu_ly_chinh, item.ngay_thu_ly_chinh);
           newCase.thong_tin_dung_bien_phap_khan_cap_tam_thoi = combineNumberAndDate(item.so_dung_bien_phap_khan_cap_tam_thoi, item.ngay_dung_bien_phap_khan_cap_tam_thoi);
-          newCase.thong_tin_chuyen_ho_so_vu_viec = combineNumberAndDate(item.so_chuyen_ho_so_vu_viec, item.ngay_chuyen_ho_so_vu_viec);
+          newCase.thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan = combineNumberDateAndText(item.so_chuyen_ho_so_vu_viec, item.ngay_chuyen_ho_so_vu_viec, item.noi_nhan_chuyen_ho_so_vu_viec);
           newCase.thong_tin_tam_dinh_chi = combineNumberAndDate(item.so_tam_dinh_chi, item.ngay_tam_dinh_chi);
           newCase.thong_tin_dinh_chi = combineNumberAndDate(item.so_dinh_chi, item.ngay_dinh_chi);
           newCase.thong_tin_cong_nhan_su_thoa_thuan_cua_duong_su = combineNumberAndDate(item.so_cong_nhan_su_thoa_thuan_cua_duong_su, item.ngay_cong_nhan_su_thoa_thuan_cua_duong_su);
           newCase.thong_tin_ban_an_so_tham = combineNumberAndDate(item.so_ban_an_so_tham, item.ngay_ban_an_so_tham);
-          newCase.thong_tin_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = combineNumberAndDate(item.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet, item.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet);
+          newCase.thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet = combineNumberDateAndText(item.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet, item.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet, item.co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet);
           newCase.thong_tin_giai_quyet_theo_thu_tuc_rut_gon = combineNumberAndDate(item.so_giai_quyet_theo_thu_tuc_rut_gon, item.ngay_giai_quyet_theo_thu_tuc_rut_gon);
           newCase.thong_tin_khang_cao = combineNumberAndDate(item.so_khang_cao, item.ngay_khang_cao);
           newCase.thong_tin_khang_nghi = combineNumberAndDate(item.so_khang_nghi, item.ngay_khang_nghi);
@@ -159,12 +161,11 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
     for (const caseId of idsToDelete) {
       try {
         let deleteUrl = '';
-        console.log("book.caseTypeId: ", book.caseTypeId);
         if (book.caseTypeId === 'HON_NHAN') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
         } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; 
-        } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { // New case type
+        } else if (book.caseTypeId === 'TO_TUNG') { // New case type
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
         }
         else {

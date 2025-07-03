@@ -76,14 +76,13 @@ export const caseTypes: CaseType[] = [
     ]
   },
   {
-    id: 'THU_LY_TO_TUNG',
+    id: 'TO_TUNG',
     name: 'Sổ thụ lý tố tụng',
     code: 'SO_THU_LY_TO_TUNG',
     attributes: [
-      { id: 'so_thu_ly', name: '🔢 Số đơn', type: 'text', required: false, width: 100 },
-      { id: 'ngay_thu_ly', name: '📅 Ngày đơn', type: 'date', required: false, width: 120 },
-      { id: 'so_thu_ly_chinh', name: '🔢 Số thụ lý chính', type: 'text', required: false, width: 150 },
-      { id: 'ngay_thu_ly_chinh', name: '📅 Ngày thụ lý chính', type: 'date', required: false, width: 150 },
+      // Combined fields for display and editing via modal
+      { id: 'thong_tin_so_ngay_don', name: '🔢 Số/Ngày đơn', type: 'textarea', required: false, width: 180 },
+      { id: 'thong_tin_so_ngay_thu_ly_chinh', name: '🔢 Số/Ngày thụ lý chính', type: 'textarea', required: false, width: 200 },
       { id: 'thong_tin_nguoi_khoi_kien', name: '📋 Thông tin người khởi kiện', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_nguoi_bi_kien', name: '📋 Thông tin người bị kiện', type: 'textarea', required: false, width: 250 },
       { id: 'don_khoi_kien_cua_co_quan_to_chuc', name: '🏢 Đơn khởi kiện của cơ quan, tổ chức', type: 'dropdown', options: ['Có', 'Không'], required: false, width: 200 },
@@ -93,8 +92,7 @@ export const caseTypes: CaseType[] = [
       { id: 'ly_do_xin_ly_hon', name: '💔 Lý do xin ly hôn', type: 'text', required: false, width: 200 },
       { id: 'so_con_chua_thanh_nien', name: '👶 Số con chưa thành niên', type: 'number', required: false, width: 150 },
       { id: 'thong_tin_dung_bien_phap_khan_cap_tam_thoi', name: '⏳ Số/Ngày áp dụng BP khẩn cấp tạm thời', type: 'textarea', required: false, width: 300 },
-      { id: 'thong_tin_chuyen_ho_so_vu_viec', name: '📤 Số/Ngày chuyển hồ sơ vụ việc', type: 'textarea', required: false, width: 280 },
-      { id: 'noi_nhan_chuyen_ho_so_vu_viec', name: '📍 Nơi nhận chuyển hồ sơ vụ việc', type: 'text', required: false, width: 250 },
+      { id: 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan', name: '📤 Số/Ngày chuyển HS vụ việc & Nơi nhận', type: 'textarea', required: false, width: 350 },
       { id: 'thong_tin_tam_dinh_chi', name: '⏸️ Số/Ngày tạm đình chỉ', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_dinh_chi', name: '⏹️ Số/Ngày đình chỉ', type: 'textarea', required: false, width: 250 },
       { id: 'ly_do', name: '📝 Lý do', type: 'textarea', required: false, width: 300 },
@@ -104,8 +102,7 @@ export const caseTypes: CaseType[] = [
       { id: 'thong_tin_ban_an_so_tham', name: '📜 Số/Ngày bản án sơ thẩm', type: 'textarea', required: false, width: 280 },
       { id: 'quan_he_phap_luat_da_giai_quyet', name: '⚖️ Quan hệ pháp luật đã giải quyết', type: 'textarea', required: false, width: 300 },
       { id: 'tom_tat_noi_dung_ban_an_quyet_dinh_so_tham', name: '📝 Tóm tắt nội dung bản án/QĐ sơ thẩm', type: 'textarea', required: false, width: 350 },
-      { id: 'thong_tin_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet', name: '📄 Số/Ngày kết quả giải quyết yêu cầu hủy QĐ cá biệt', type: 'textarea', required: false, width: 380 },
-      { id: 'co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet', name: '🏛️ Cơ quan ban hành kết quả giải quyết yêu cầu hủy QĐ cá biệt', type: 'textarea', required: false, width: 380 },
+      { id: 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet', name: '📄 Số/Ngày KQ giải quyết yêu cầu hủy QĐ cá biệt & Cơ quan', type: 'textarea', required: false, width: 450 },
       { id: 'ap_dung_an_le', name: '📖 Áp dụng án lệ', type: 'dropdown', options: ['Có', 'Không'], required: false, width: 150 },
       { id: 'thong_tin_giai_quyet_theo_thu_tuc_rut_gon', name: '⚡ Số/Ngày giải quyết theo thủ tục rút gọn', type: 'textarea', required: false, width: 320 },
       { id: 'co_uy_thac_tu_phap', name: '🤝 Có uỷ thác tư pháp', type: 'dropdown', options: ['Có', 'Không'], required: false, width: 180 },

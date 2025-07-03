@@ -1,0 +1,70 @@
+{
+  "hash": "1d9c2085",
+  "configHash": "e6629868",
+  "lockfileHash": "a2ba07a3",
+  "browserHash": "2ca597dd",
+  "optimized": {
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "ddf7c02b",
+      "needsInterop": true
+    },
+    "handsontable/registry": {
+      "src": "../../node_modules/handsontable/registry.mjs",
+      "file": "handsontable_registry.js",
+      "fileHash": "be1aa1fd",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "1e7c5d02",
+      "needsInterop": true
+    },
+    "react-hot-toast": {
+      "src": "../../node_modules/react-hot-toast/dist/index.mjs",
+      "file": "react-hot-toast.js",
+      "fileHash": "6e68e2df",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "4df7ca11",
+      "needsInterop": false
+    },
+    "@handsontable/react": {
+      "src": "../../node_modules/@handsontable/react/es/react-handsontable.mjs",
+      "file": "@handsontable_react.js",
+      "fileHash": "90668ec7",
+      "needsInterop": false
+    },
+    "handsontable": {
+      "src": "../../node_modules/handsontable/index.mjs",
+      "file": "handsontable.js",
+      "fileHash": "2a9dc1bd",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-ZU5SFTFX": {
+      "file": "chunk-ZU5SFTFX.js"
+    },
+    "chunk-QTVD6AVW": {
+      "file": "chunk-QTVD6AVW.js"
+    },
+    "chunk-PCJSHUET": {
+      "file": "chunk-PCJSHUET.js"
+    },
+    "chunk-EA2GDYZS": {
+      "file": "chunk-EA2GDYZS.js"
+    },
+    "chunk-NKMIMUPW": {
+      "file": "chunk-NKMIMUPW.js"
+    },
+    "chunk-PR4QN5HX": {
+      "file": "chunk-PR4QN5HX.js"
+    }
+  }
+}

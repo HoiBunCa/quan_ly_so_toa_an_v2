@@ -17,8 +17,9 @@ import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { parseNumberDateString, combineNumberAndDate } from '../../utils/dateUtils';
 import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../../context/AuthContext'; // Import useAuth
-import NumberDateInputModal from '../common/NumberDateInputModal';
+
 import { CaseBook } from '../../types/caseTypes';
+import NumberDateInputModal from '../common/NumberDateInputModal';
 
 interface CaseManagementProps {
   book: CaseBook;

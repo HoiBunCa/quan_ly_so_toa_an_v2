@@ -209,7 +209,7 @@ export function getHandsontableConfig({
                         deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
                     } else if (caseType.id === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
                         deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
-                    } else if (caseType.id === 'TO_TUNG') { // New case type
+                    } else if (caseType.id === 'THU_LY_TO_TUNG') { // New case type
                         deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
                     }
                     else {

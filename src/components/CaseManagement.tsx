@@ -6,18 +6,18 @@ import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
 import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
-import NumberDateInputModal from '../common/NumberDateInputModal';
-import CombinedNumberDateTextModal from '../common/CombinedNumberDateTextModal'; // Import new modal
+import NumberDateInputModal from './common/NumberDateInputModal';
+import CombinedNumberDateTextModal from './common/CombinedNumberDateTextModal'; // Import new modal
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
-import { useCasesData } from '../../hooks/useCasesData';
-import { getHandsontableConfig } from '../../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString } from '../../utils/dateUtils'; // Import new parse utility
-import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useCasesData } from '../hooks/useCasesData';
+import { getHandsontableConfig } from '../utils/handsontableConfig';
+import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString } from '../utils/dateUtils'; // Import new parse utility
+import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface CaseManagementProps {
@@ -101,7 +101,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       wsRef.current.send(JSON.stringify({ 
         action: 'get_all_max_numbers', 
         year: book.year,
-        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI', 'TO_TUNG'] 
+        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI', 'THU_LY_TO_TUNG'] 
       }));
     } else {
       console.warn('WebSocket not open. Cannot request max numbers update.');
@@ -341,7 +341,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
       } else if (book.caseTypeId === 'GIA_QUYET_TRANH_CHAP_HOA_GIAI') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; // Corrected API for PUT
-      } else if (book.caseTypeId === 'TO_TUNG') { // New case type
+      } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { // New case type
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
       }
       else {
@@ -590,7 +590,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   // Determine which field to generate/display for the AddCaseModal
   const primaryNumberFieldId = book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'so_chuyen_hoa_giai' : 
-                               book.caseTypeId === 'TO_TUNG' ? 'so_thu_ly_chinh' : 'so_thu_ly';
+                               book.caseTypeId === 'THU_LY_TO_TUNG' ? 'so_thu_ly_chinh' : 'so_thu_ly';
 
   return (
     <div className="p-6 flex flex-col h-full">

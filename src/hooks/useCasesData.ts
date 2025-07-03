@@ -40,7 +40,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
       if (book.caseTypeId === 'HON_NHAN') {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/`;
+        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/`;
       } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/`;
       }
@@ -60,7 +60,9 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
+      console.log("============ data: ", data);
       const fetchedCases: Case[] = data.results.map((item: any) => {
+        console.log("============ so_thu_ly: ", item.so_thu_ly, item.ngay_thu_ly);
         const newCase: Case = {
           id: item.id.toString(),
           caseNumber: item.so_thu_ly || item.so_chuyen_hoa_giai || item.so_thu_ly_chinh || '', // Use so_thu_ly_chinh for TO_TUNG
@@ -170,7 +172,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
 
   const deleteCases = useCallback(async (idsToDelete: string[]) => {
     if (idsToDelete.length === 0) {
-      toast.info('Vui lòng chọn ít nhất một hàng để xóa.');
+      toast.error('Vui lòng chọn ít nhất một hàng để xóa.');
       return;
     }
 
@@ -189,7 +191,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         if (book.caseTypeId === 'HON_NHAN') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
         } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`; 
+          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; 
         } else if (book.caseTypeId === 'TO_TUNG') { // New case type
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
         }

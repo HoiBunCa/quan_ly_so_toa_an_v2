@@ -205,6 +205,8 @@ export default function AdvancedSearchModal({
           successMessage = 'Đã tạo thành công vụ án mới trong sổ hoà giải.';
           payload = {
             ...payload,
+            so_thu_ly: caseItem.so_thu_ly,
+            ngay_thu_ly: caseItem.ngay_thu_ly,
             so_chuyen_hoa_giai: nextSoChuyenHoaGiai,
             ngay_chuyen_hoa_giai: today,
             ngay_nhan_don: caseItem.ngay_nhan_don || '',

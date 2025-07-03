@@ -18,7 +18,7 @@ import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
 import { useCasesData } from '../../hooks/useCasesData';
 import { getHandsontableConfig } from '../../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString, combineDateAndText, parseDateAndTextString, parseNumberDateSummaryAndTextString } from '../../utils/dateUtils'; // Import new parse utility
+import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString, combineDateAndText, parseDateAndTextString, parseNumberDateSummaryAndTextString } from '../utils/dateUtils'; // Import new parse utility
 import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
@@ -285,6 +285,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         payload.so_quyet_dinh_cua_toa_an_cap_tren_truc_tiep = number;
         payload.ngay_quyet_dinh_cua_toa_an_cap_tren_truc_tiep = date;
         payload.tom_tat_dinh_cua_toa_an_cap_tren_truc_tiep = text;
+      } else if (prop === 'thong_tin_ban_an_quyet_dinh_phuc_tham') { // NEW: Handle combined number/date/summary text for TO_TUNG
+        const { number, date, text } = parseNumberDateSummaryAndTextString(newValue);
+        payload.so_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham = number;
+        payload.ngay_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham = date;
+        payload.noi_dung_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham = text;
       } else if (prop === 'thong_tin_so_ngay_don') {
         const { number, date } = parseNumberDateString(newValue);
         payload.so_thu_ly = number;
@@ -374,6 +379,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             updatedC.so_quyet_dinh_cua_toa_an_cap_tren_truc_tiep = number;
             updatedC.ngay_quyet_dinh_cua_toa_an_cap_tren_truc_tiep = date;
             updatedC.tom_tat_dinh_cua_toa_an_cap_tren_truc_tiep = text;
+          } else if (prop === 'thong_tin_ban_an_quyet_dinh_phuc_tham') { // NEW: Handle combined number/date/summary text for TO_TUNG
+            const { number, date, text } = parseNumberDateSummaryAndTextString(newValue);
+            updatedC.so_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham = number;
+            updatedC.ngay_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham = date;
+            updatedC.noi_dung_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham = text;
+          } else if (prop === 'thong_tin_so_ngay_don') {
+            const { number, date } = parseNumberDateString(newValue);
+            updatedC.so_thu_ly = number;
+            updatedC.ngay_thu_ly = date;
+          } else if (prop === 'thong_tin_so_ngay_thu_ly_chinh') {
+            const { number, date } = parseNumberDateString(newValue);
+            updatedC.so_thu_ly_chinh = number;
+            updatedC.ngay_thu_ly_chinh = date;
           } else if (prop === 'thong_tin_so_ngay_thu_ly') { // NEW: For HON_NHAN's combined so_thu_ly/ngay_thu_ly
             const { number, date } = parseNumberDateString(newValue);
             updatedC.so_thu_ly = number;
@@ -645,6 +663,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       setCurrentCombinedNumberDateTextInfo({ number, date, text });
       setCombinedNumberDateTextModalLabels({ number: 'Số', date: 'Ngày', text: 'Tóm tắt' });
+      setShowCombinedNumberDateTextModal(true);
+    } else if (prop === 'thong_tin_ban_an_quyet_dinh_phuc_tham') { // NEW: Handle combined number/date/summary text for TO_TUNG
+      setCurrentCombinedNumberDateTextCaseId(caseId);
+      setCurrentCombinedNumberDateTextProp(prop);
+      setCombinedNumberDateTextModalTitle(`Chỉnh sửa ${title}`);
+
+      const caseItem = cases.find(c => c.id === caseId);
+      const number = caseItem?.so_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham || '';
+      const date = caseItem?.ngay_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham || '';
+      const text = caseItem?.noi_dung_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham || '';
+
+      setCurrentCombinedNumberDateTextInfo({ number, date, text });
+      setCombinedNumberDateTextModalLabels({ number: 'Số', date: 'Ngày', text: 'Nội dung' });
       setShowCombinedNumberDateTextModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
       // Handle new combined number/date/text fields for TO_TUNG

@@ -147,7 +147,11 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           newCase.thong_tin_giai_quyet_theo_thu_tuc_rut_gon = combineNumberAndDate(item.so_giai_quyet_theo_thu_tuc_rut_gon, item.ngay_giai_quyet_theo_thu_tuc_rut_gon);
           newCase.thong_tin_khang_cao = combineNumberAndDate(item.so_khang_cao, item.ngay_khang_cao);
           newCase.thong_tin_khang_nghi = combineNumberAndDate(item.so_khang_nghi, item.ngay_khang_nghi);
-          newCase.thong_tin_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham = combineNumberAndDate(item.so_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham, item.ngay_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham);
+          newCase.thong_tin_ban_an_quyet_dinh_phuc_tham = combineNumberDateSummaryAndText(
+            item.so_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham,
+            item.ngay_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham,
+            item.noi_dung_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham
+          ); // NEW: Combined field
         }
 
         return newCase;

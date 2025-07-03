@@ -177,34 +177,43 @@ export function getHandsontableConfig({
 
     switch (attr.type) {
       case 'dropdown':
-        return {
-          ...baseColumn,
-          type: 'dropdown',
-          source: attr.options || [],
-          renderer: attr.id === 'status' || attr.options?.includes('Có') || attr.options?.includes('Không') ? (instance: any, td: HTMLElement, row: number, col: number, prop: string, value: string) => {
-            const statusColors: { [key: string]: string } = {
-              'Đã thụ lý': 'bg-blue-100 text-blue-800',
-              'Đang giải quyết': 'bg-yellow-100 text-yellow-800',
-              'Đã hòa giải': 'bg-green-100 text-green-800',
-              'Đã trả lại đơn': 'bg-red-100 text-red-800',
-              'Đã chuyển': 'bg-purple-100 text-purple-800',
-              'Filed': 'bg-blue-100 text-blue-800',
-              'In Progress': 'bg-yellow-100 text-yellow-800',
-              'Settled': 'bg-green-100 text-green-800',
-              'Dismissed': 'bg-gray-100 text-gray-800',
-              'Judgment': 'bg-purple-100 text-purple-800',
-              'Closed': 'bg-gray-100 text-gray-800',
-              'Active': 'bg-green-100 text-green-800',
-              'Inactive': 'bg-red-100 text-red-800',
-              'Có': 'bg-green-100 text-green-800', // For boolean 'Có'
-              'Không': 'bg-red-100 text-red-800', // For boolean 'Không'
-            };
-            
-            const colorClass = statusColors[value] || 'bg-gray-100 text-gray-800';
-            td.innerHTML = `<span class="px-2 py-1 text-xs font-medium rounded-full ${colorClass}">${value}</span>`;
-            return td;
-          } : undefined,
-        };
+        // Check if it's a boolean-like dropdown ('Có'/'Không')
+        if (attr.options?.includes('Có') && attr.options?.includes('Không')) {
+          return {
+            ...baseColumn,
+            type: 'checkbox', // Change to checkbox type
+            // No custom renderer needed for checkboxes, Handsontable handles it
+            // The `className` for status will still apply if `attr.id === 'status'`
+          };
+        } else {
+          // Keep as dropdown for other dropdowns (e.g., actual status fields)
+          return {
+            ...baseColumn,
+            type: 'dropdown',
+            source: attr.options || [],
+            renderer: attr.id === 'status' ? (instance: any, td: HTMLElement, row: number, col: number, prop: string, value: string) => {
+              const statusColors: { [key: string]: string } = {
+                'Đã thụ lý': 'bg-blue-100 text-blue-800',
+                'Đang giải quyết': 'bg-yellow-100 text-yellow-800',
+                'Đã hòa giải': 'bg-green-100 text-green-800',
+                'Đã trả lại đơn': 'bg-red-100 text-red-800',
+                'Đã chuyển': 'bg-purple-100 text-purple-800',
+                'Filed': 'bg-blue-100 text-blue-800',
+                'In Progress': 'bg-yellow-100 text-yellow-800',
+                'Settled': 'bg-green-100 text-green-800',
+                'Dismissed': 'bg-gray-100 text-gray-800',
+                'Judgment': 'bg-purple-100 text-purple-800',
+                'Closed': 'bg-gray-100 text-gray-800',
+                'Active': 'bg-green-100 text-green-800',
+                'Inactive': 'bg-red-100 text-red-800',
+              };
+              
+              const colorClass = statusColors[value] || 'bg-gray-100 text-gray-800';
+              td.innerHTML = `<span class="px-2 py-1 text-xs font-medium rounded-full ${colorClass}">${value}</span>`;
+              return td;
+            } : undefined,
+          };
+        }
       case 'date':
         return {
           ...baseColumn,

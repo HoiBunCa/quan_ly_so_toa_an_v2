@@ -2,12 +2,12 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { CaseBook, CaseType } from '../types/caseTypes'; // Import CaseType
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
-import AddCaseModal from './AddCaseModal';
+import AddCaseModal from '../AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
 import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
-import NumberDateInputModal from './common/NumberDateInputModal';
-import CombinedNumberDateTextModal from './common/CombinedNumberDateTextModal'; // Import new modal
+import NumberDateInputModal from '../common/NumberDateInputModal';
+import CombinedNumberDateTextModal from '../common/CombinedNumberDateTextModal'; // Import new modal
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
 import ParticipantInfoModal from './case-management/ParticipantInfoModal'; // NEW: Import ParticipantInfoModal
 import PartyAndCourtInfoModal from './case-management/PartyAndCourtInfoModal'; // NEW: Import PartyAndCourtInfoModal
@@ -238,10 +238,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     let payload: { [key: string]: any } = { created_by: 1 };
     let updatedDisplayValue: any = newValue;
 
-    // Handle boolean fields from dropdown
+    // Handle boolean fields from dropdown or checkbox
     const attribute = caseType.attributes.find(attr => attr.id === prop);
     if (attribute?.type === 'dropdown' && (attribute.options?.includes('Có') || attribute.options?.includes('Không'))) {
-      payload[prop] = newValue === 'Có';
+      payload[prop] = typeof newValue === 'boolean' ? newValue : (newValue === 'Có');
     } else if (prop === 'thong_tin_nguoi_khoi_kien') {
       const lines = String(newValue || '').split('\n');
       payload.ho_ten_nguoi_khoi_kien = lines[0] || '';
@@ -413,7 +413,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           }
           updatedC[prop] = newValue; // Store the combined string
         } else if (attribute?.type === 'dropdown' && (attribute.options?.includes('Có') || attribute.options?.includes('Không'))) {
-          updatedC[prop] = newValue; // Store 'Có' or 'Không'
+          // Store 'Có' or 'Không' for display if it came from dropdown, or boolean if from checkbox
+          updatedC[prop] = typeof newValue === 'boolean' ? (newValue ? 'Có' : 'Không') : newValue;
         }
         else {
           updatedC[prop] = newValue;
@@ -428,7 +429,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       if (book.caseTypeId === 'HON_NHAN') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; // Corrected API for PUT
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`; // Corrected API for PUT
       } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
       }
@@ -454,7 +455,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       toast.error(`Cập nhật thất bại: ${e.message}`);
       fetchCases(); 
     }
-  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId, accessToken, logout]); // Add accessToken and logout to dependencies
+  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId, accessToken, logout]);
 
   const handleSavePlaintiffInfo = async (data: { name: string; year: string; address: string }) => {
     if (!currentCaseIdForPlaintiffEdit) return;

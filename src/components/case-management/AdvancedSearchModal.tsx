@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, User, AlertCircle, Search as SearchIcon, Loader2, FileText } from 'lucide-react';
-import { formatDateForDisplay } from '../../utils/dateUtils';
+import { formatDateForDisplay, combineNumberAndDate } from '../../utils/dateUtils'; // Import combineNumberAndDate
 import { HotTable } from '@handsontable/react';
 import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { Case, CaseBook, CaseType } from '../../types/caseTypes';
 import toast from 'react-hot-toast';
-import { caseTypes } from '../../data/caseTypesData'; // Import caseTypes
-import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
-import { useAuth } from '../../context/AuthContext'; // Import useAuth
+import { caseTypes } from '../../data/caseTypesData';
+import { authenticatedFetch } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 
 export interface AdvancedSearchCriteria {
   ngayNhanDon: string;
@@ -20,10 +20,10 @@ interface AdvancedSearchModalProps {
   onApplySelection: (selectedCaseIds: string[]) => void;
   initialCriteria: AdvancedSearchCriteria;
   book: CaseBook;
-  caseType: CaseType; // Keep this prop, but we'll use a specific caseType for the table
-  onGenerateNextNumber: (fieldKey: string) => string; // New prop for auto-increment number
-  isGeneratingNumber: boolean; // New prop for loading state of number generation
-  onCasesCreated: () => void; // New prop to signal parent to refresh
+  caseType: CaseType;
+  onGenerateNextNumber: (fieldKey: string) => string;
+  isGeneratingNumber: boolean;
+  onCasesCreated: () => void;
 }
 
 export default function AdvancedSearchModal({ 
@@ -41,18 +41,16 @@ export default function AdvancedSearchModal({
   const [nguoiBiKien, setNguoiBiKien] = useState(initialCriteria.nguoiBiKien);
   const [error, setError] = useState('');
 
-  const [currentSearchResults, setCurrentSearchResults] = useState<Case[]>([]); // Local state for search results
+  const [currentSearchResults, setCurrentSearchResults] = useState<Case[]>([]);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [errorResults, setErrorResults] = useState<string | null>(null);
   const [selectedResultIds, setSelectedResultIds] = useState<string[]>([]);
-  const [isCopyingCases, setIsCopyingCases] = useState(false); // New state for copying process
+  const [isCopyingCases, setIsCopyingCases] = useState(false);
 
-  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
+  const { accessToken, logout } = useAuth();
 
-  // Explicitly get the HON_NHAN case type for column definitions in the search results table
   const honNhanCaseType = caseTypes.find(type => type.id === 'HON_NHAN');
 
-  // Add a check for honNhanCaseType to ensure it's found
   if (!honNhanCaseType) {
     console.error("Lỗi: Không tìm thấy cấu hình loại án 'HON_NHAN' trong caseTypesData. Điều này rất quan trọng cho AdvancedSearchModal.");
     return (
@@ -70,10 +68,9 @@ export default function AdvancedSearchModal({
     setIsLoadingResults(true);
     setErrorResults(null);
     setCurrentSearchResults([]);
-    setSelectedResultIds([]); // Clear selection on new search
+    setSelectedResultIds([]);
 
     try {
-      // Always use the API path for 'so-thu-ly-don-khoi-kien' for advanced search
       let apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       let queryParams = new URLSearchParams({ year: book.year.toString() });
 
@@ -102,7 +99,9 @@ export default function AdvancedSearchModal({
           lastModified: new Date().toISOString().split('T')[0],
           ...item
         };
-        // Re-apply combined fields logic for display in modal table
+        // Populate thong_tin_so_ngay_thu_ly for display in the modal table
+        newCase.thong_tin_so_ngay_thu_ly = combineNumberAndDate(item.so_thu_ly, item.ngay_thu_ly);
+
         newCase.thong_tin_nguoi_khoi_kien = [
           item.ho_ten_nguoi_khoi_kien,
           item.nam_sinh_nguoi_khoi_kien,
@@ -126,7 +125,6 @@ export default function AdvancedSearchModal({
           item.ngay_chuyen_hoa_giai ? `Ngày: ${formatDateForDisplay(item.ngay_chuyen_hoa_giai)}` : ''
         ].filter(Boolean).join('\n');
 
-        // Add other combined fields if necessary for display in the modal table
         if (book.caseTypeId === 'HON_NHAN') {
           newCase.thong_tin_tra_lai_don = [item.so_tra_lai_don ? `Số: ${item.so_tra_lai_don}` : '', item.ngay_tra_lai_don ? `Ngày: ${formatDateForDisplay(item.ngay_tra_lai_don)}` : ''].filter(Boolean).join('\n');
           newCase.thong_tin_yeu_cau_sua_doi_bo_sung = [item.so_yeu_cau_sua_doi_bo_sung_don_khoi_kien ? `Số: ${item.so_yeu_cau_sua_doi_bo_sung_don_khoi_kien}` : '', item.ngay_yeu_cau_sua_doi_bo_sung_don_khoi_kien ? `Ngày: ${formatDateForDisplay(item.ngay_yeu_cau_sua_doi_bo_sung_don_khoi_kien)}` : ''].filter(Boolean).join('\n');
@@ -147,6 +145,7 @@ export default function AdvancedSearchModal({
         }
         return newCase;
       });
+      console.log(' ======== fetchedCases:', fetchedCases);
       setCurrentSearchResults(fetchedCases);
       if (fetchedCases.length === 0) {
         toast.success('Không tìm thấy kết quả nào phù hợp.');
@@ -160,7 +159,7 @@ export default function AdvancedSearchModal({
     } finally {
       setIsLoadingResults(false);
     }
-  }, [ngayNhanDon, nguoiKhoiKien, nguoiBiKien, book, accessToken, logout]); // Add accessToken and logout to dependencies
+  }, [ngayNhanDon, nguoiKhoiKien, nguoiBiKien, book, accessToken, logout]);
 
   useEffect(() => {
     if (initialCriteria.ngayNhanDon || initialCriteria.nguoiKhoiKien || initialCriteria.nguoiBiKien) {
@@ -188,9 +187,8 @@ export default function AdvancedSearchModal({
     setIsCopyingCases(true);
     let successfulCopies = 0;
     const failedCopies: string[] = [];
-    const today = new Date().toISOString().split('T')[0]; // Current date for new cases
+    const today = new Date().toISOString().split('T')[0];
 
-    // Filter from the currentSearchResults (local state) to get full data
     const casesToCopy = currentSearchResults.filter(c => selectedResultIds.includes(c.id));
  
     for (const caseItem of casesToCopy) {
@@ -210,7 +208,7 @@ export default function AdvancedSearchModal({
             so_chuyen_hoa_giai: nextSoChuyenHoaGiai,
             ngay_chuyen_hoa_giai: today,
             ngay_nhan_don: caseItem.ngay_nhan_don || '',
-            tom_tat_noi_dung_don: caseItem.noi_dung_don || '', // Map noi_dung_don from HON_NHAN
+            tom_tat_noi_dung_don: caseItem.noi_dung_don || '',
             tai_lieu_kem_theo: caseItem.tai_lieu_kem_theo || '',
             ho_ten_nguoi_khoi_kien: caseItem.ho_ten_nguoi_khoi_kien || '',
             nam_sinh_nguoi_khoi_kien: caseItem.nam_sinh_nguoi_khoi_kien || '',
@@ -232,24 +230,24 @@ export default function AdvancedSearchModal({
             ...payload,
             so_thu_ly_chinh: nextSoThuLyChinh,
             ngay_thu_ly_chinh: today,
-            so_thu_ly: caseItem.so_thu_ly || '', // Map from HON_NHAN's so_thu_ly
-            ngay_thu_ly: caseItem.ngay_thu_ly || '', // Map from HON_NHAN's ngay_thu_ly
+            so_thu_ly: caseItem.so_thu_ly || '',
+            ngay_thu_ly: caseItem.ngay_thu_ly || '',
             ho_ten_nguoi_khoi_kien: caseItem.ho_ten_nguoi_khoi_kien || '',
             nam_sinh_nguoi_khoi_kien: caseItem.nam_sinh_nguoi_khoi_kien || '',
             dia_chi_nguoi_khoi_kien: caseItem.dia_chi_nguoi_khoi_kien || '',
             ho_ten_nguoi_bi_kien: caseItem.ho_ten_nguoi_bi_kien || '',
             nam_sinh_nguoi_bi_kien: caseItem.nam_sinh_nguoi_bi_kien || '',
             dia_chi_nguoi_bi_kien: caseItem.dia_chi_nguoi_bi_kien || '',
-            don_khoi_kien_cua_co_quan_to_chuc: caseItem.don_khoi_kien_cua_co_quan_to_chuc || false, // Assuming boolean
+            don_khoi_kien_cua_co_quan_to_chuc: caseItem.don_khoi_kien_cua_co_quan_to_chuc || false,
             ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
             nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
             dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
             nguoi_bao_ve_quyen_loi: caseItem.nguoi_bao_ve_quyen_loi || '',
-            noi_dung_don: caseItem.noi_dung_don || '', // Map from HON_NHAN's noi_dung_don
+            noi_dung_don: caseItem.noi_dung_don || '',
             ly_do_xin_ly_hon: caseItem.ly_do_xin_ly_hon || '',
             so_con_chua_thanh_nien: caseItem.so_con_chua_thanh_nien || null,
-            tham_phan: caseItem.tham_phan || '', // Map from HON_NHAN's tham_phan
-            ghi_chu: caseItem.ghi_chu || '', // Map from HON_NHAN's ghi_chu
+            tham_phan: caseItem.tham_phan || '',
+            ghi_chu: caseItem.ghi_chu || '',
           };
         } else {
           toast.error('Loại sổ hiện tại không hỗ trợ chức năng sao chép từ tìm kiếm nâng cao.');
@@ -275,42 +273,38 @@ export default function AdvancedSearchModal({
 
     setIsCopyingCases(false);
     if (successfulCopies > 0) {
-      // toast.success(`${successMessage.replace('vụ án mới', `${successfulCopies} vụ án mới`)}`);
-      onCasesCreated(); // Signal parent to refresh
+      onCasesCreated();
     }
     if (failedCopies.length > 0) {
       toast.error(`Không thể tạo các vụ án: ${failedCopies.join(', ')}. Vui lòng kiểm tra console để biết thêm chi tiết.`);
     }
-    onClose(); // Close modal after processing
+    onClose();
   };
 
-  // Use honNhanCaseType for column definitions
   const { columns, settings } = getHandsontableConfig({
-    caseType: honNhanCaseType, // Use the found case type directly
-    filteredCases: currentSearchResults, // Use local search results
-    refreshData: fetchSearchResults, // Refresh local search results
+    caseType: honNhanCaseType,
+    filteredCases: currentSearchResults,
+    refreshData: fetchSearchResults,
     setSelectedRows: (ids) => {
       setSelectedResultIds(ids);
     },
-    onUpdateCase: async () => {}, // No update allowed in this modal
-    accessToken, // Pass accessToken
-    logout, // Pass logout
+    onUpdateCase: async () => {},
+    accessToken,
+    logout,
   });
 
-  // Override settings to make the table read-only and adjust height for modal
   const modalTableSettings = {
     ...settings,
     readOnly: true,
     contextMenu: false,
-    height: '100%', // Set height to 100% to fill the container
-    width: '100%',  // Set width to 100% to fill the container
+    height: '100%',
+    width: '100%',
     stretchH: 'all',
     manualColumnResize: true,
     manualRowResize: true,
-    rowHeaders: false, // Changed to false to hide the serial number column
+    rowHeaders: false,
   };
 
-  // For debugging: show all columns generated from honNhanCaseType
   const relevantColumns = columns; 
 
 

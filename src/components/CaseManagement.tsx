@@ -10,15 +10,16 @@ import NumberDateInputModal from '../common/NumberDateInputModal';
 import CombinedNumberDateTextModal from '../common/CombinedNumberDateTextModal'; // Import new modal
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
 import ParticipantInfoModal from './case-management/ParticipantInfoModal'; // NEW: Import ParticipantInfoModal
+import PartyAndCourtInfoModal from './case-management/PartyAndCourtInfoModal'; // NEW: Import PartyAndCourtInfoModal
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
-import { useCasesData } from '../../hooks/useCasesData';
-import { getHandsontableConfig } from '../../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString } from '../../utils/dateUtils'; // Import new parse utility
-import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useCasesData } from '../hooks/useCasesData';
+import { getHandsontableConfig } from '../utils/handsontableConfig';
+import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString } from '../utils/dateUtils'; // Import new parse utility
+import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface CaseManagementProps {
@@ -53,6 +54,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentCaseIdForParticipantEdit, setCurrentCaseIdForParticipantEdit] = useState<string | null>(null);
   const [currentParticipantInfo, setCurrentParticipantInfo] = useState({ name: '', address: '' });
   const [isSavingParticipantInfo, setIsSavingParticipantInfo] = useState(false);
+
+  // NEW: State for Party and Court Info Modal (for GIAI_QUYET_TRANH_CHAP_HOA_GIAI)
+  const [showPartyAndCourtInfoModal, setShowPartyAndCourtInfoModal] = useState(false);
+  const [currentCaseIdForPartyAndCourtEdit, setCurrentCaseIdForPartyAndCourtEdit] = useState<string | null>(null);
+  const [currentPartyAndCourtInfo, setCurrentPartyAndCourtInfo] = useState({ partyName: '', courtAddress: '' });
+  const [isSavingPartyAndCourtInfo, setIsSavingPartyAndCourtInfo] = useState(false);
 
   const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
   const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
@@ -245,6 +252,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       const lines = String(newValue || '').split('\n');
       payload.ho_ten_nguoi_tham_gia_hoa_giai = lines[0] || '';
       payload.dia_chi_nguoi_tham_gia_hoa_giai = lines[1] || '';
+    } else if (prop === 'thong_tin_duong_su_lua_chon_va_toa_an_quan_ly') { // NEW: Party and Court info for GIAI_QUYET_TRANH_CHAP_HOA_GIAI
+      const lines = String(newValue || '').split('\n');
+      payload.ho_ten_duong_su_lua_chon = lines[0] || '';
+      payload.toa_an_noi_quan_ly_hoa_giai_vien_lam_viec = lines[1] || '';
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
       // Handle combined number/date fields
       if (prop === 'thong_tin_so_ngay_don') {
@@ -309,6 +320,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC.ho_ten_nguoi_tham_gia_hoa_giai = lines[0] || '';
           updatedC.dia_chi_nguoi_tham_gia_hoa_giai = lines[1] || '';
           updatedC.thong_tin_nguoi_tham_gia_hoa_giai = newValue;
+        } else if (prop === 'thong_tin_duong_su_lua_chon_va_toa_an_quan_ly') { // NEW: Party and Court info for GIAI_QUYET_TRANH_CHAP_HOA_GIAI
+          const lines = String(newValue || '').split('\n');
+          updatedC.ho_ten_duong_su_lua_chon = lines[0] || '';
+          updatedC.toa_an_noi_quan_ly_hoa_giai_vien_lam_viec = lines[1] || '';
+          updatedC.thong_tin_duong_su_lua_chon_va_toa_an_quan_ly = newValue;
         } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
           if (prop === 'thong_tin_so_ngay_don') {
             const { number, date } = parseNumberDateString(newValue);
@@ -441,6 +457,21 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   };
 
+  // NEW: Handler for saving party and court info
+  const handleSavePartyAndCourtInfo = async (data: { partyName: string; courtAddress: string }) => {
+    if (!currentCaseIdForPartyAndCourtEdit) return;
+
+    setIsSavingPartyAndCourtInfo(true);
+    const combinedValue = [data.partyName, data.courtAddress].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForPartyAndCourtEdit, 'thong_tin_duong_su_lua_chon_va_toa_an_quan_ly', combinedValue);
+      setShowPartyAndCourtInfoModal(false);
+    } finally {
+      setIsSavingPartyAndCourtInfo(false);
+    }
+  };
+
   const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
     if (!currentNumberDateCaseId || !currentNumberDateProp) return;
 
@@ -511,6 +542,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       const address = caseItem?.dia_chi_nguoi_tham_gia_hoa_giai || '';
       setCurrentParticipantInfo({ name, address });
       setShowParticipantInfoModal(true);
+    } else if (prop === 'thong_tin_duong_su_lua_chon_va_toa_an_quan_ly') { // NEW: Handle party and court info
+      setCurrentCaseIdForPartyAndCourtEdit(caseId);
+      const caseItem = cases.find(c => c.id === caseId);
+      const partyName = caseItem?.ho_ten_duong_su_lua_chon || '';
+      const courtAddress = caseItem?.toa_an_noi_quan_ly_hoa_giai_vien_lam_viec || '';
+      setCurrentPartyAndCourtInfo({ partyName, courtAddress });
+      setShowPartyAndCourtInfoModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
       // Handle new combined number/date/text fields for TO_TUNG
       if (prop === 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan' || prop === 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet') {
@@ -707,6 +745,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveParticipantInfo}
           onClose={() => setShowParticipantInfoModal(false)}
           isSaving={isSavingParticipantInfo}
+        />
+      )}
+
+      {showPartyAndCourtInfoModal && ( // NEW: Render PartyAndCourtInfoModal
+        <PartyAndCourtInfoModal
+          initialData={currentPartyAndCourtInfo}
+          onSave={handleSavePartyAndCourtInfo}
+          onClose={() => setShowPartyAndCourtInfoModal(false)}
+          isSaving={isSavingPartyAndCourtInfo}
         />
       )}
 

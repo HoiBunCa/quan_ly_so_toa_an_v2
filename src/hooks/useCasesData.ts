@@ -111,6 +111,10 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
             item.ho_ten_nguoi_tham_gia_hoa_giai,
             item.dia_chi_nguoi_tham_gia_hoa_giai
           ].filter(Boolean).join('\n');
+          newCase.thong_tin_duong_su_lua_chon_va_toa_an_quan_ly = [ // NEW: Combined field for GIAI_QUYET_TRANH_CHAP_HOA_GIAI
+            item.ho_ten_duong_su_lua_chon,
+            item.toa_an_noi_quan_ly_hoa_giai_vien_lam_viec
+          ].filter(Boolean).join('\n');
           newCase.thong_tin_thong_bao_ve_quyen_lua_chon_hoa_giai = combineNumberAndDate(item.so_thong_bao_ve_quyen_lua_chon_hoa_giai, item.ngay_thong_bao_ve_quyen_lua_chon_hoa_giai);
           newCase.thong_tin_quyet_dinh_cong_nhan_hoa_giai_thanh = combineNumberAndDate(item.so_quyet_dinh_cong_nhan_hoa_giai_thanh, item.ngay_quyet_dinh_cong_nhan_hoa_giai_thanh);
           newCase.thong_tin_quyet_dinh_khong_cong_nhan_hoa_giai_thanh = combineNumberAndDate(item.so_quyet_dinh_khong_cong_nhan_hoa_giai_thanh, item.ngay_quyet_dinh_khong_cong_nhan_hoa_giai_thanh);

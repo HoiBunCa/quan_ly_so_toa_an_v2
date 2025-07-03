@@ -48,6 +48,18 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       }
       td.innerHTML = formattedValue;
     }
+  } else if (prop === 'thong_tin_duong_su_lua_chon_va_toa_an_quan_ly') { // NEW: Formatting for party and court info
+    if (typeof value === 'string') {
+      const lines = value.split('\n');
+      let formattedValue = '';
+      if (lines.length >= 1 && lines[0]) {
+        formattedValue += `Đương sự: ${lines[0]}`;
+      }
+      if (lines.length >= 2 && lines[1]) {
+        formattedValue += `\nToà án: ${lines[1]}`;
+      }
+      td.innerHTML = formattedValue;
+    }
   } else if (prop.startsWith('thong_tin_') && typeof value === 'string') {
     // For other combined number/date/text fields
     const lines = value.split('\n');

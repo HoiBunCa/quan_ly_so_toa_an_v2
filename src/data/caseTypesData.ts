@@ -46,8 +46,7 @@ export const caseTypes: CaseType[] = [
       { id: 'thong_tin_nguoi_tham_gia_hoa_giai', name: '👥 Thông tin người tham gia hoà giải', type: 'textarea', required: false, width: 250 }, // Combined field
       { id: 'tham_phan', name: '👩‍⚖️ Thẩm phán', type: 'text', required: false, width: 150 },
       { id: 'hoa_giai_vien_do_tham_phan_chi_dinh', name: '🤝 Hoà giải viên do thẩm phán chỉ định', type: 'text', required: false, width: 250 },
-      { id: 'ho_ten_duong_su_lua_chon', name: '🧑‍🤝‍🧑 Họ tên đương sự lựa chọn', type: 'text', required: false, width: 200 },
-      { id: 'toa_an_noi_quan_ly_hoa_giai_vien_lam_viec', name: '🏛️ TAND nơi quản lý hoà giải viên', type: 'textarea', required: false, width: 250 },
+      { id: 'thong_tin_duong_su_lua_chon_va_toa_an_quan_ly', name: '🧑‍🤝‍🧑 Thông tin đương sự lựa chọn và Toà án quản lý', type: 'textarea', required: false, width: 300 }, // NEW combined field
       { id: 'thong_tin_thong_bao_ve_quyen_lua_chon_hoa_giai', name: '📢 Số/Ngày thông báo về quyền lựa chọn hoà giải', type: 'textarea', required: false, width: 320 },
       { id: 'ngay_nguoi_khoi_kien_dong_y', name: '✅ Ngày người khởi kiện đồng ý', type: 'date', required: false, width: 180 },
       { id: 'ngay_nguoi_khoi_kien_khong_tra_loi_thong_bao_lan2', name: '❌ Ngày người khởi kiện không trả lời thông báo lần 2', type: 'date', required: false, width: 280 },

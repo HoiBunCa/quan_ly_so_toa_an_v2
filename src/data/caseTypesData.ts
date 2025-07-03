@@ -17,7 +17,7 @@ export const caseTypes: CaseType[] = [
 
       // Combined fields
       { id: 'thong_tin_chuyen_hoa_giai', name: '🔄 Chuyển hoà giải', type: 'textarea', required: false, width: 250 },
-      { id: 'ngay_chuyen_don_ve_giai_quyet_theo_thu_tuc_to_tung', type: 'date', required: false, width: 300 },
+      { id: 'ngay_chuyen_don_ve_giai_quyet_theo_thu_tuc_to_tung', name: 'Chuyển đơn về giải quyết theo thủ tục tố tụng', type: 'date', required: false, width: 300 },
       { id: 'thong_tin_tra_lai_don', name: '↩️ Thông tin trả lại đơn', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_yeu_cau_sua_doi_bo_sung', name: '✏️ Thông tin yêu cầu sửa đổi bổ sung', type: 'textarea', required: false, width: 320 },
       { id: 'thong_tin_chuyen_don_khoi_kien', name: '📤 Thông tin chuyển đơn khởi kiện', type: 'textarea', required: false, width: 250 },
@@ -38,7 +38,7 @@ export const caseTypes: CaseType[] = [
     code: 'SO_THU_LY_GIAI_QUYET_TRANH_CHAP_DUOC_HOA_GIAI_TAI_TOA_AN',
     attributes: [
       { id: 'thong_tin_chuyen_hoa_giai', name: '🔄 Số/Ngày chuyển hoà giải', type: 'textarea', required: false, width: 250 },
-      { id: 'ngay_nhan_don', name: '📅 Ngày nhận đơn', type: 'date', required: false, width: 120 },
+      { id: 'thong_tin_so_ngay_nhan_don', name: '🔢 Số/Ngày nhận đơn', type: 'textarea', required: false, width: 180 }, // NEW: Combined field for so_thu_ly and ngay_thu_ly
       { id: 'tom_tat_noi_dung_don', name: '📝 Tóm tắt nội dung đơn', type: 'textarea', required: false, width: 300 },
       { id: 'tai_lieu_kem_theo', name: '📎 Tài liệu kèm theo', type: 'textarea', required: false, width: 300 },
       { id: 'thong_tin_nguoi_khoi_kien', name: '📋 Thông tin người khởi kiện', type: 'textarea', required: false, width: 250 },

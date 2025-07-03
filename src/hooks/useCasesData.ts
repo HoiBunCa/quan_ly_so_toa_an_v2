@@ -36,11 +36,11 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
       if (searchTerm) {
         queryParams.append('search', searchTerm);
       }
-
+      console.log(book.caseTypeId);
       if (book.caseTypeId === 'HON_NHAN') {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/`;
+        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/`;
       } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/`;
       }
@@ -51,6 +51,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
       }
 
       const fullUrl = `${apiUrl}?${queryParams.toString()}`;
+      
       console.log(`Fetching cases for ${book.caseTypeName} (${book.year}): ${fullUrl}`); // Add this log
 
       const response = await authenticatedFetch(fullUrl, accessToken, logout);
@@ -107,6 +108,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
 
         // Fields specific to GIAI_QUYET_TRANH_CHAP_HOA_GIAI (newly added)
         if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+          newCase.thong_tin_so_ngay_nhan_don = combineNumberAndDate(item.so_thu_ly, item.ngay_thu_ly); // NEW: Combined field for so_thu_ly and ngay_thu_ly
           newCase.thong_tin_nguoi_tham_gia_hoa_giai = [ // NEW: Combined field for GIAI_QUYET_TRANH_CHAP_HOA_GIAI
             item.ho_ten_nguoi_tham_gia_hoa_giai,
             item.dia_chi_nguoi_tham_gia_hoa_giai
@@ -187,7 +189,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         if (book.caseTypeId === 'HON_NHAN') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
         } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; 
+          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`; 
         } else if (book.caseTypeId === 'TO_TUNG') { // New case type
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
         }

@@ -6,8 +6,8 @@ import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
 import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
-import NumberDateInputModal from '../common/NumberDateInputModal';
-import CombinedNumberDateTextModal from '../common/CombinedNumberDateTextModal'; // Import new modal
+import NumberDateInputModal from './common/NumberDateInputModal';
+import CombinedNumberDateTextModal from './common/CombinedNumberDateTextModal'; // Import new modal
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
 import ParticipantInfoModal from './case-management/ParticipantInfoModal'; // NEW: Import ParticipantInfoModal
 import PartyAndCourtInfoModal from './case-management/PartyAndCourtInfoModal'; // NEW: Import PartyAndCourtInfoModal
@@ -16,10 +16,10 @@ import PartyAndCourtInfoModal from './case-management/PartyAndCourtInfoModal'; /
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
-import { useCasesData } from '../../hooks/useCasesData';
-import { getHandsontableConfig } from '../../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString, combineDateAndText, parseDateAndTextString, parseNumberDateSummaryAndTextString } from '../utils/dateUtils'; // Import new parse utility
-import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useCasesData } from '../hooks/useCasesData';
+import { getHandsontableConfig } from '../utils/handsontableConfig';
+import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString, combineDateAndText, parseDateAndTextString, parseNumberDateSummaryAndTextString, combineNumberDateSummaryAndText } from '../utils/dateUtils'; // Import new parse utility
+import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface CaseManagementProps {
@@ -302,6 +302,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         const { number, date } = parseNumberDateString(newValue);
         payload.so_thu_ly = number;
         payload.ngay_thu_ly = date;
+      } else if (prop === 'thong_tin_so_ngay_nhan_don') { // NEW: For GIAI_QUYET_TRANH_CHAP_HOA_GIAI's combined so_thu_ly/ngay_thu_ly
+        const { number, date } = parseNumberDateString(newValue);
+        payload.so_thu_ly = number;
+        payload.ngay_thu_ly = date;
       }
       else { // Existing number/date combined fields
         const { number, date } = parseNumberDateString(newValue);
@@ -396,6 +400,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             const { number, date } = parseNumberDateString(newValue);
             updatedC.so_thu_ly = number;
             updatedC.ngay_thu_ly = date;
+          } else if (prop === 'thong_tin_so_ngay_nhan_don') { // NEW: For GIAI_QUYET_TRANH_CHAP_HOA_GIAI's combined so_thu_ly/ngay_thu_ly
+            const { number, date } = parseNumberDateString(newValue);
+            updatedC.so_thu_ly = number;
+            updatedC.ngay_thu_ly = date;
           }
           else { // Existing number/date combined fields
             const { number, date } = parseNumberDateString(newValue);
@@ -420,7 +428,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       if (book.caseTypeId === 'HON_NHAN') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; // Corrected API for PUT
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`; // Corrected API for PUT
       } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
       }
@@ -726,6 +734,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         } else if (prop === 'thong_tin_so_ngay_thu_ly') { // NEW: For HON_NHAN's combined so_thu_ly/ngay_thu_ly
           number = caseItem?.so_thu_ly || '';
           date = caseItem?.ngay_thu_ly || '';
+        } else if (prop === 'thong_tin_so_ngay_nhan_don') { // NEW: For GIAI_QUYET_TRANH_CHAP_HOA_GIAI's combined so_thu_ly/ngay_thu_ly
+          number = caseItem?.so_thu_ly || '';
+          date = caseItem?.ngay_thu_ly || '';
         }
         else {
           const originalPropName = prop.replace('thong_tin_', '');
@@ -893,9 +904,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveNumberDateInfo}
           onClose={() => setShowNumberDateInfoModal(false)}
           isSaving={isSavingNumberDateInfo}
-          onGenerateNumber={() => getNextNumberForField(currentNumberDateProp!.replace('thong_tin_', 'so_'))} 
+          onGenerateNumber={() => getNextNumberForField(currentNumberDateProp === 'thong_tin_so_ngay_nhan_don' ? 'so_thu_ly' : currentNumberDateProp!.replace('thong_tin_', 'so_'))} 
           isGeneratingNumber={isMaxNumbersLoading}
-          latestAutoNumber={maxNumbersByField[currentNumberDateProp!.replace('thong_tin_', 'so_')] || null}
+          latestAutoNumber={currentNumberDateProp === 'thong_tin_so_ngay_nhan_don' ? (maxNumbersByField['so_thu_ly'] || null) : (maxNumbersByField[currentNumberDateProp!.replace('thong_tin_', 'so_')] || null)}
         />
       )}
 

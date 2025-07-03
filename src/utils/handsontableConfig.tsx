@@ -38,7 +38,7 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       td.innerHTML = formattedValue;
     }
   } else if (prop.startsWith('thong_tin_') && typeof value === 'string') {
-    // For other combined number/date fields
+    // For other combined number/date/text fields
     const lines = value.split('\n');
     let formattedValue = '';
     if (lines.length >= 1 && lines[0]) {
@@ -49,7 +49,13 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       const datePart = lines[1].startsWith('Ngày: ') ? lines[1].substring('Ngày: '.length) : lines[1];
       formattedValue += `\nNgày: ${formatDateForDisplay(datePart)}`;
     }
+    if (lines.length >= 3 && lines[2]) {
+      formattedValue += `\n${lines[2]}`; // "Nơi nhận/Cơ quan: [text]"
+    }
     td.innerHTML = formattedValue;
+  } else if (prop === 'hoi_dong_xet_xu' && typeof value === 'string') {
+    // Specific handling for 'hoi_dong_xet_xu' if it's multi-line but not number/date
+    td.innerHTML = value;
   }
 
   td.style.whiteSpace = 'pre-wrap'; // Ensure text wraps
@@ -81,7 +87,7 @@ export function getHandsontableConfig({
       data: attr.id,
       title: attr.name, // Use attr.name directly for the header title
       width: attr.width || 120,
-      readOnly: attr.id === 'caseNumber' || attr.id.startsWith('thong_tin_'), // Make all combined info fields read-only
+      readOnly: attr.id === 'caseNumber' || attr.id.startsWith('thong_tin_') || attr.id === 'hoi_dong_xet_xu', // Make all combined info fields and hoi_dong_xet_xu read-only
       className: attr.id === 'caseNumber' ? 'font-medium text-blue-600' : ''
     };
 
@@ -91,7 +97,7 @@ export function getHandsontableConfig({
           ...baseColumn,
           type: 'dropdown',
           source: attr.options || [],
-          renderer: attr.id === 'status' ? (instance: any, td: HTMLElement, row: number, col: number, prop: string, value: string) => {
+          renderer: attr.id === 'status' || attr.options?.includes('Có') || attr.options?.includes('Không') ? (instance: any, td: HTMLElement, row: number, col: number, prop: string, value: string) => {
             const statusColors: { [key: string]: string } = {
               'Đã thụ lý': 'bg-blue-100 text-blue-800',
               'Đang giải quyết': 'bg-yellow-100 text-yellow-800',
@@ -105,7 +111,9 @@ export function getHandsontableConfig({
               'Judgment': 'bg-purple-100 text-purple-800',
               'Closed': 'bg-gray-100 text-gray-800',
               'Active': 'bg-green-100 text-green-800',
-              'Inactive': 'bg-red-100 text-red-800'
+              'Inactive': 'bg-red-100 text-red-800',
+              'Có': 'bg-green-100 text-green-800', // For boolean 'Có'
+              'Không': 'bg-red-100 text-red-800', // For boolean 'Không'
             };
             
             const colorClass = statusColors[value] || 'bg-gray-100 text-gray-800';
@@ -200,8 +208,11 @@ export function getHandsontableConfig({
                     if (caseType.id === 'HON_NHAN') {
                         deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
                     } else if (caseType.id === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-                        deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`;
-                    } else {
+                        deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
+                    } else if (caseType.id === 'THU_LY_TO_TUNG') { // New case type
+                        deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
+                    }
+                    else {
                         console.warn(`Deletion not supported for case type: ${caseType.id}`);
                         failedDeletions.push(caseId);
                         continue;
@@ -269,7 +280,7 @@ export function getHandsontableConfig({
           const changedCaseInFilteredData = filteredCases[rowIndex];
           
           // Only update if the property is NOT a combined info field
-          if (oldValue !== newValue && changedCaseInFilteredData && !String(prop).startsWith('thong_tin_')) {
+          if (oldValue !== newValue && changedCaseInFilteredData && !String(prop).startsWith('thong_tin_') && prop !== 'hoi_dong_xet_xu') {
             const caseId = changedCaseInFilteredData.id;
             await onUpdateCase(caseId, prop, newValue);
           }

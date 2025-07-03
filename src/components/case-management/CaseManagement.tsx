@@ -1,12 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CaseBook, CaseType } from '../types/caseTypes'; // Import CaseType
+// Import CaseType
 import { caseTypes } from '../../data/caseTypesData';
 import toast from 'react-hot-toast';
 import AddCaseModal from '../AddCaseModal';
 import PlaintiffInfoModal from './PlaintiffInfoModal';
 import DefendantInfoModal from './DefendantInfoModal';
 import RelatedPartyInfoModal from './RelatedPartyInfoModal'; // Import new modal
-import NumberDateInputModal from '../common/NumberDateInputModal';
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './AdvancedSearchModal'; // Import new modal and interface
 
 // Import new modular components and hook
@@ -18,6 +17,9 @@ import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { parseNumberDateString, combineNumberAndDate } from '../../utils/dateUtils';
 import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../../context/AuthContext'; // Import useAuth
+
+import { CaseBook } from '../../types/caseTypes';
+import NumberDateInputModal from '../common/NumberDateInputModal';
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -85,7 +87,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   const requestMaxNumbersUpdate = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      console.log('WebSocket: Requesting all max numbers update...');
+
       // Request max numbers for both HON_NHAN and GIAI_QUYET_TRANH_CHAP_HOA_GIAI
       wsRef.current.send(JSON.stringify({ 
         action: 'get_all_max_numbers', 
@@ -111,7 +113,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     };
 
     ws.onmessage = (event) => {
-      console.log('WebSocket: Raw message received:', event.data);
+   
       const message = JSON.parse(event.data);
       
       const rawMaxNumbers = message;
@@ -122,8 +124,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         }
       }
       setMaxNumbersByField(formattedData); 
-      console.log('WebSocket: Received max numbers map and setting state:', formattedData);
-      
+
       setIsMaxNumbersLoading(false);
       console.log('WebSocket: Setting isMaxNumbersLoading to false.');
       
@@ -148,18 +149,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   }, [book.year, requestMaxNumbersUpdate, fetchCases]); // Depend on book.year and fetchCases
 
   const getNextNumberForField = useCallback((fieldKey: string) => {
-    console.log(`getNextNumberForField called for: ${fieldKey}`);
-    console.log('Current maxNumbersByField state:', maxNumbersByField);
     const currentMax = maxNumbersByField[fieldKey];
-    console.log(`Current max for ${fieldKey}:`, currentMax, '(Type:', typeof currentMax, ')');
 
     if (currentMax !== null && currentMax !== undefined && String(currentMax).trim() !== '') {
       const parsedMax = parseInt(String(currentMax), 10);
-      console.log('Parsed currentMax:', parsedMax);
+
 
       if (!isNaN(parsedMax)) {
         const nextNumber = (parsedMax + 1).toString(); // Increment the number
-        console.log(`Generated next number for ${fieldKey}:`, nextNumber);
+
         return nextNumber;
       }
     }

@@ -17,15 +17,15 @@ export const caseTypes: CaseType[] = [
 
       // Combined fields
       { id: 'thong_tin_chuyen_hoa_giai', name: '🔄 Chuyển hoà giải', type: 'textarea', required: false, width: 250 },
-      { id: 'thong_tin_tra_lai_don', name: '↩️ Thông tin trả lại đơn', type: 'textarea', required: false, width: 250 },
-      { id: 'thong_tin_yeu_cau_sua_doi_bo_sung', name: '✏️ Thông tin yêu cầu sửa đổi bổ sung', type: 'textarea', required: false, width: 320 },
-      { id: 'thong_tin_chuyen_don_khoi_kien', name: '📤 Thông tin chuyển đơn khởi kiện', type: 'textarea', required: false, width: 250 },
-      { id: 'thong_tin_thong_bao_nop_tam_ung_an_phi', name: '📢 Thông tin thông báo nộp tạm ứng án phí', type: 'textarea', required: false, width: 320 },
+      { id: 'thong_tin_tra_lai_don', name: '↩️ Trả lại đơn', type: 'textarea', required: false, width: 250 },
+      { id: 'thong_tin_yeu_cau_sua_doi_bo_sung', name: '✏️ Yêu cầu sửa đổi bổ sung', type: 'textarea', required: false, width: 320 },
+      { id: 'thong_tin_chuyen_don_khoi_kien', name: '📤 Chuyển đơn khởi kiện', type: 'textarea', required: false, width: 250 },
+      { id: 'thong_tin_thong_bao_nop_tam_ung_an_phi', name: '📢 Thông báo nộp tạm ứng án phí', type: 'textarea', required: false, width: 320 },
       { id: 'ngay_nop_tien_tam_ung_an_phi', name: '📅 Ngày nộp tiền tạm ứng án phí', type: 'date', required: false, width: 260 },
-      { id: 'thong_tin_thu_ly_vu_an', name: '⚖️ Thông tin thụ lý vụ án', type: 'textarea', required: false, width: 250 },
-      { id: 'thong_tin_giu_nguyen_tra_lai_don', name: '🛑 Thông tin giữ nguyên trả lại đơn', type: 'textarea', required: false, width: 320 },
-      { id: 'thong_tin_nhan_lai_don_khoi_kien_va_tai_lieu', name: '🔄 Số/Ngày nhận lại đơn khởi kiện và tài liệu', type: 'textarea', required: false, width: 370 },
-      { id: 'thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien', name: '⚖️ Yêu cầu toà án nhận lại đơn khởi kiện', type: 'textarea', required: false, width: 320 },
+      { id: 'thong_tin_thu_ly_vu_an', name: '⚖️ Thụ lý vụ án', type: 'textarea', required: false, width: 250 },
+      { id: 'thong_tin_giu_nguyen_tra_lai_don', name: '🛑 Giữ nguyên việc trả lại đơn khởi kiện và thông báo cho đương sự, VKS cung cấp', type: 'textarea', required: false, width: 620 },
+      { id: 'thong_tin_nhan_lai_don_khoi_kien_va_tai_lieu', name: '🔄 Nhận lại đơn khởi kiện và tài liệu, chứng cứ kèm theo để tiến hành việc thụ lý vụ án', type: 'textarea', required: false, width: 670 },
+      { id: 'thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien', name: '⚖️ Yêu cầu toà án cấp sơ thẩm nhận lại đơn khởi kiện', type: 'textarea', required: false, width: 620 },
       { id: 'thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi', name: '⏳ Áp dụng biện pháp khẩn cấp tạm thời', type: 'textarea', required: false, width: 380 },
       { id: 'tham_phan', name: '👩‍⚖️ Thẩm phán', type: 'text', required: false, width: 150 },
       { id: 'ghi_chu', name: '📝 Ghi chú', type: 'textarea', required: false, width: 300 }

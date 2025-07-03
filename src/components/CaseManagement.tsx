@@ -6,18 +6,18 @@ import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
 import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
-import NumberDateInputModal from './common/NumberDateInputModal';
+import NumberDateInputModal from '../common/NumberDateInputModal';
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
-import { authenticatedFetch } from '../utils/api';
-import { useAuth } from '../context/AuthContext'; 
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
-import { useCasesData } from '../hooks/useCasesData';
-import { getHandsontableConfig } from '../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate } from '../utils/dateUtils';
+import { useCasesData } from '../../hooks/useCasesData';
+import { getHandsontableConfig } from '../../utils/handsontableConfig';
+import { parseNumberDateString, combineNumberAndDate } from '../../utils/dateUtils';
+import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface CaseManagementProps {
   book: CaseBook;
@@ -52,7 +52,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentNumberDateCaseId, setCurrentNumberDateCaseId] = useState<string | null>(null);
   const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
   const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
-  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   // New state for advanced search
   const [showAdvancedSearchModal, setShowAdvancedSearchModal] = useState(false);
@@ -64,6 +63,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   // New state to hold the IDs of cases selected from the advanced search modal
   const [activeCaseIdsFilter, setActiveCaseIdsFilter] = useState<string[] | null>(null);
 
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   const caseType = caseTypes.find(type => type.id === book.caseTypeId); // This is correct
   
@@ -86,11 +86,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const requestMaxNumbersUpdate = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       console.log('WebSocket: Requesting all max numbers update...');
-      // Request max numbers for both HON_NHAN and GIAI_QUYET_TRANH_CHAP_HOA_GIAI
+      // Request max numbers for all relevant case types
       wsRef.current.send(JSON.stringify({ 
         action: 'get_all_max_numbers', 
         year: book.year,
-        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI'] // Request for specific types
+        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI', 'TO_TUNG'] // Added TO_TUNG
       }));
     } else {
       console.warn('WebSocket not open. Cannot request max numbers update.');
@@ -98,9 +98,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   }, [book.year]);
 
   useEffect(() => {
-    // Always connect WebSocket to get max numbers for relevant types
+    // Only connect WebSocket if accessToken is available
+    if (!accessToken) {
+      setIsMaxNumbersLoading(false);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      return;
+    }
+
     setIsMaxNumbersLoading(true);
-    const ws = new WebSocket('ws://localhost:8003/ws/get-max-so/');
+    // Pass accessToken as a query parameter for authentication
+    const ws = new WebSocket(`ws://localhost:8003/ws/get-max-so/?token=${accessToken}`);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -143,7 +153,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     return () => {
       ws.close();
     };
-  }, [book.year, requestMaxNumbersUpdate, fetchCases]); // Depend on book.year and fetchCases
+  }, [book.year, requestMaxNumbersUpdate, fetchCases, accessToken]); // Depend on book.year, fetchCases, and accessToken
 
   const getNextNumberForField = useCallback((fieldKey: string) => {
     console.log(`getNextNumberForField called for: ${fieldKey}`);
@@ -194,7 +204,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     let payload: { [key: string]: any } = { created_by: 1 };
     let updatedDisplayValue: any = newValue;
 
-    if (prop === 'thong_tin_nguoi_khoi_kien') {
+    // Handle boolean fields from dropdown
+    const attribute = caseType.attributes.find(attr => attr.id === prop);
+    if (attribute?.type === 'dropdown' && (attribute.options?.includes('Có') || attribute.options?.includes('Không'))) {
+      payload[prop] = newValue === 'Có';
+    } else if (prop === 'thong_tin_nguoi_khoi_kien') {
       const lines = String(newValue || '').split('\n');
       payload.ho_ten_nguoi_khoi_kien = lines[0] || '';
       payload.nam_sinh_nguoi_khoi_kien = lines[1] || '';
@@ -248,6 +262,8 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC[`so_${originalPropName}`] = number;
           updatedC[`ngay_${originalPropName}`] = date;
           updatedC[prop] = updatedDisplayValue;
+        } else if (attribute?.type === 'dropdown' && (attribute.options?.includes('Có') || attribute.options?.includes('Không'))) {
+          updatedC[prop] = newValue; // Store 'Có' or 'Không'
         }
         else {
           updatedC[prop] = newValue;
@@ -263,7 +279,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; // Corrected API for PUT
-      } else {
+      } else if (book.caseTypeId === 'TO_TUNG') { // New case type
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
+      }
+      else {
         console.warn(`Update not supported for case type: ${book.caseTypeId}`);
         toast.error(`Cập nhật thất bại: Loại sổ án không được hỗ trợ.`);
         fetchCases();
@@ -272,9 +291,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
       const response = await authenticatedFetch(updateUrl, accessToken, logout, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
 
@@ -288,7 +304,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       toast.error(`Cập nhật thất bại: ${e.message}`);
       fetchCases(); 
     }
-  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId]);
+  }, [cases, fetchCases, setCases, caseType.attributes, book.caseTypeId, accessToken, logout]); // Add accessToken and logout to dependencies
 
   const handleSavePlaintiffInfo = async (data: { name: string; year: string; address: string }) => {
     if (!currentCaseIdForPlaintiffEdit) return;
@@ -441,10 +457,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     refreshData: fetchCases, // This will re-fetch all data, then the filter will re-apply
     setSelectedRows,
     onUpdateCase: handleUpdateCase,
+    accessToken, // Pass accessToken
+    logout, // Pass logout
   });
 
   // Determine which field to generate/display for the AddCaseModal
-  const primaryNumberFieldId = book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'so_chuyen_hoa_giai' : 'so_thu_ly';
+  const primaryNumberFieldId = book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'so_chuyen_hoa_giai' : 
+                               book.caseTypeId === 'TO_TUNG' ? 'so_thu_ly_chinh' : 'so_thu_ly';
 
   return (
     <div className="p-6 flex flex-col h-full">

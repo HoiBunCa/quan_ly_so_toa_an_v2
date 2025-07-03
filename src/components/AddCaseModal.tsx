@@ -54,7 +54,12 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
       apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/';
       payload.so_chuyen_hoa_giai = primaryNumber;
       payload.ngay_chuyen_hoa_giai = primaryDate;
-    } else {
+    } else if (caseTypeCode === 'SO_THU_LY_TO_TUNG') { // New case type
+      apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-to-tung/';
+      payload.so_thu_ly_chinh = primaryNumber;
+      payload.ngay_thu_ly_chinh = primaryDate;
+    }
+    else {
       // Default for HON_NHAN and any other types
       apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/';
       payload.so_thu_ly = primaryNumber;
@@ -98,9 +103,12 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
   };
 
   // Determine labels and placeholders based on case type
-  const numberLabel = caseTypeCode === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'Số chuyển hoà giải' : 'Số thụ lý';
-  const dateLabel = caseTypeCode === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'Ngày chuyển hoà giải' : 'Ngày thụ lý';
-  const placeholderText = caseTypeCode === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'Nhập số chuyển hoà giải' : 'Nhập số thụ lý';
+  const numberLabel = caseTypeCode === 'SO_THU_LY_GIAI_QUYET_TRANH_CHAP_DUOC_HOA_GIAI_TAI_TOA_AN' ? 'Số chuyển hoà giải' :
+                      caseTypeCode === 'SO_THU_LY_TO_TUNG' ? 'Số thụ lý chính' : 'Số thụ lý';
+  const dateLabel = caseTypeCode === 'SO_THU_LY_GIAI_QUYET_TRANH_CHAP_DUOC_HOA_GIAI_TAI_TOA_AN' ? 'Ngày chuyển hoà giải' :
+                    caseTypeCode === 'SO_THU_LY_TO_TUNG' ? 'Ngày thụ lý chính' : 'Ngày thụ lý';
+  const placeholderText = caseTypeCode === 'SO_THU_LY_GIAI_QUYET_TRANH_CHAP_DUOC_HOA_GIAI_TAI_TOA_AN' ? 'Nhập số chuyển hoà giải' :
+                          caseTypeCode === 'SO_THU_LY_TO_TUNG' ? 'Nhập số thụ lý chính' : 'Nhập số thụ lý';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">

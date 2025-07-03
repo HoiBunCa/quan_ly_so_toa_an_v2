@@ -59,9 +59,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(errorData.message || 'Đăng nhập thất bại');
       }
 
-      // Assuming the API response directly contains access, refresh, name, user_id, role
       const data = await response.json();
-      const { access, refresh, name, user_id, role } = data; // Changed from data.data to data
+      const { access, refresh, name, user_id, role } = data.data;
 
       setAccessToken(access);
       setRefreshToken(refresh);
@@ -94,11 +93,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return <div className="flex items-center justify-center h-screen text-gray-600">Đang tải...</div>;
   }
 
-  // Explicitly define the context value
-  const contextValue: AuthContextType = { user, accessToken, login, logout };
-
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{ user, accessToken, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

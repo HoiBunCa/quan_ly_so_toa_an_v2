@@ -43,8 +43,7 @@ export const caseTypes: CaseType[] = [
       { id: 'tai_lieu_kem_theo', name: '📎 Tài liệu kèm theo', type: 'textarea', required: false, width: 300 },
       { id: 'thong_tin_nguoi_khoi_kien', name: '📋 Thông tin người khởi kiện', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_nguoi_bi_kien', name: '📋 Thông tin người bị kiện', type: 'textarea', required: false, width: 250 },
-      { id: 'ho_ten_nguoi_tham_gia_hoa_giai', name: '👥 Họ tên người tham gia hoà giải', type: 'text', required: false, width: 200 },
-      { id: 'dia_chi_nguoi_tham_gia_hoa_giai', type: 'textarea', required: false, width: 250 },
+      { id: 'thong_tin_nguoi_tham_gia_hoa_giai', name: '👥 Thông tin người tham gia hoà giải', type: 'textarea', required: false, width: 250 }, // Combined field
       { id: 'tham_phan', name: '👩‍⚖️ Thẩm phán', type: 'text', required: false, width: 150 },
       { id: 'hoa_giai_vien_do_tham_phan_chi_dinh', name: '🤝 Hoà giải viên do thẩm phán chỉ định', type: 'text', required: false, width: 250 },
       { id: 'ho_ten_duong_su_lua_chon', name: '🧑‍🤝‍🧑 Họ tên đương sự lựa chọn', type: 'text', required: false, width: 200 },

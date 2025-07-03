@@ -40,8 +40,8 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
       if (book.caseTypeId === 'HON_NHAN') {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/`;
-      } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { // New case type
+        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/`;
+      } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/`;
       }
       else {
@@ -107,6 +107,10 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
 
         // Fields specific to GIAI_QUYET_TRANH_CHAP_HOA_GIAI (newly added)
         if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+          newCase.thong_tin_nguoi_tham_gia_hoa_giai = [ // NEW: Combined field for GIAI_QUYET_TRANH_CHAP_HOA_GIAI
+            item.ho_ten_nguoi_tham_gia_hoa_giai,
+            item.dia_chi_nguoi_tham_gia_hoa_giai
+          ].filter(Boolean).join('\n');
           newCase.thong_tin_thong_bao_ve_quyen_lua_chon_hoa_giai = combineNumberAndDate(item.so_thong_bao_ve_quyen_lua_chon_hoa_giai, item.ngay_thong_bao_ve_quyen_lua_chon_hoa_giai);
           newCase.thong_tin_quyet_dinh_cong_nhan_hoa_giai_thanh = combineNumberAndDate(item.so_quyet_dinh_cong_nhan_hoa_giai_thanh, item.ngay_quyet_dinh_cong_nhan_hoa_giai_thanh);
           newCase.thong_tin_quyet_dinh_khong_cong_nhan_hoa_giai_thanh = combineNumberAndDate(item.so_quyet_dinh_khong_cong_nhan_hoa_giai_thanh, item.ngay_quyet_dinh_khong_cong_nhan_hoa_giai_thanh);
@@ -116,7 +120,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         }
 
         // Fields specific to TO_TUNG (newly added)
-        if (book.caseTypeId === 'THU_LY_TO_TUNG') {
+        if (book.caseTypeId === 'TO_TUNG') {
           newCase.thong_tin_so_ngay_don = combineNumberAndDate(item.so_thu_ly, item.ngay_thu_ly);
           newCase.thong_tin_so_ngay_thu_ly_chinh = combineNumberAndDate(item.so_thu_ly_chinh, item.ngay_thu_ly_chinh);
           newCase.thong_tin_dung_bien_phap_khan_cap_tam_thoi = combineNumberAndDate(item.so_dung_bien_phap_khan_cap_tam_thoi, item.ngay_dung_bien_phap_khan_cap_tam_thoi);
@@ -165,8 +169,8 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         if (book.caseTypeId === 'HON_NHAN') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
         } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; 
-        } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { // New case type
+          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`; 
+        } else if (book.caseTypeId === 'TO_TUNG') { // New case type
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
         }
         else {

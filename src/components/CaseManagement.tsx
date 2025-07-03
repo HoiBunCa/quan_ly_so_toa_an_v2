@@ -6,18 +6,19 @@ import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './case-management/PlaintiffInfoModal';
 import DefendantInfoModal from './case-management/DefendantInfoModal';
 import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
-import NumberDateInputModal from './common/NumberDateInputModal';
-import CombinedNumberDateTextModal from './common/CombinedNumberDateTextModal'; // Import new modal
+import NumberDateInputModal from '../common/NumberDateInputModal';
+import CombinedNumberDateTextModal from '../common/CombinedNumberDateTextModal'; // Import new modal
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
+import ParticipantInfoModal from './case-management/ParticipantInfoModal'; // NEW: Import ParticipantInfoModal
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
-import { useCasesData } from '../hooks/useCasesData';
-import { getHandsontableConfig } from '../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString } from '../utils/dateUtils'; // Import new parse utility
-import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useCasesData } from '../../hooks/useCasesData';
+import { getHandsontableConfig } from '../../utils/handsontableConfig';
+import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString } from '../../utils/dateUtils'; // Import new parse utility
+import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface CaseManagementProps {
@@ -46,6 +47,12 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentCaseIdForRelatedPartyEdit, setCurrentCaseIdForRelatedPartyEdit] = useState<string | null>(null);
   const [currentRelatedPartyInfo, setCurrentRelatedPartyInfo] = useState({ name: '', year: '', address: '' });
   const [isSavingRelatedPartyInfo, setIsSavingRelatedPartyInfo] = useState(false);
+
+  // NEW: State for Participant Info Modal (for GIAI_QUYET_TRANH_CHAP_HOA_GIAI)
+  const [showParticipantInfoModal, setShowParticipantInfoModal] = useState(false);
+  const [currentCaseIdForParticipantEdit, setCurrentCaseIdForParticipantEdit] = useState<string | null>(null);
+  const [currentParticipantInfo, setCurrentParticipantInfo] = useState({ name: '', address: '' });
+  const [isSavingParticipantInfo, setIsSavingParticipantInfo] = useState(false);
 
   const [showNumberDateInfoModal, setShowNumberDateInfoModal] = useState(false);
   const [currentNumberDateInfo, setCurrentNumberDateInfo] = useState({ number: '', date: '' });
@@ -101,7 +108,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       wsRef.current.send(JSON.stringify({ 
         action: 'get_all_max_numbers', 
         year: book.year,
-        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI', 'THU_LY_TO_TUNG'] 
+        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI', 'TO_TUNG'] 
       }));
     } else {
       console.warn('WebSocket not open. Cannot request max numbers update.');
@@ -234,6 +241,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       payload.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[0] || '';
       payload.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[1] || '';
       payload.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[2] || '';
+    } else if (prop === 'thong_tin_nguoi_tham_gia_hoa_giai') { // NEW: Participant info for GIAI_QUYET_TRANH_CHAP_HOA_GIAI
+      const lines = String(newValue || '').split('\n');
+      payload.ho_ten_nguoi_tham_gia_hoa_giai = lines[0] || '';
+      payload.dia_chi_nguoi_tham_gia_hoa_giai = lines[1] || '';
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
       // Handle combined number/date fields
       if (prop === 'thong_tin_so_ngay_don') {
@@ -293,6 +304,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           updatedC.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[1] || '';
           updatedC.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = lines[2] || '';
           updatedC.thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = newValue;
+        } else if (prop === 'thong_tin_nguoi_tham_gia_hoa_giai') { // NEW: Participant info for GIAI_QUYET_TRANH_CHAP_HOA_GIAI
+          const lines = String(newValue || '').split('\n');
+          updatedC.ho_ten_nguoi_tham_gia_hoa_giai = lines[0] || '';
+          updatedC.dia_chi_nguoi_tham_gia_hoa_giai = lines[1] || '';
+          updatedC.thong_tin_nguoi_tham_gia_hoa_giai = newValue;
         } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
           if (prop === 'thong_tin_so_ngay_don') {
             const { number, date } = parseNumberDateString(newValue);
@@ -339,9 +355,9 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       let updateUrl = '';
       if (book.caseTypeId === 'HON_NHAN') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
-      } else if (book.caseTypeId === 'GIA_QUYET_TRANH_CHAP_HOA_GIAI') {
-        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; // Corrected API for PUT
-      } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { // New case type
+      } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`; // Corrected API for PUT
+      } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
       }
       else {
@@ -410,6 +426,21 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   };
 
+  // NEW: Handler for saving participant info
+  const handleSaveParticipantInfo = async (data: { name: string; address: string }) => {
+    if (!currentCaseIdForParticipantEdit) return;
+
+    setIsSavingParticipantInfo(true);
+    const combinedValue = [data.name, data.address].filter(Boolean).join('\n');
+    
+    try {
+      await handleUpdateCase(currentCaseIdForParticipantEdit, 'thong_tin_nguoi_tham_gia_hoa_giai', combinedValue);
+      setShowParticipantInfoModal(false);
+    } finally {
+      setIsSavingParticipantInfo(false);
+    }
+  };
+
   const handleSaveNumberDateInfo = async (data: { number: string, date: string }) => {
     if (!currentNumberDateCaseId || !currentNumberDateProp) return;
 
@@ -473,6 +504,13 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       const address = caseItem?.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '';
       setCurrentRelatedPartyInfo({ name, year, address });
       setShowRelatedPartyInfoModal(true);
+    } else if (prop === 'thong_tin_nguoi_tham_gia_hoa_giai') { // NEW: Handle participant info
+      setCurrentCaseIdForParticipantEdit(caseId);
+      const caseItem = cases.find(c => c.id === caseId);
+      const name = caseItem?.ho_ten_nguoi_tham_gia_hoa_giai || '';
+      const address = caseItem?.dia_chi_nguoi_tham_gia_hoa_giai || '';
+      setCurrentParticipantInfo({ name, address });
+      setShowParticipantInfoModal(true);
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
       // Handle new combined number/date/text fields for TO_TUNG
       if (prop === 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan' || prop === 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet') {
@@ -590,7 +628,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
 
   // Determine which field to generate/display for the AddCaseModal
   const primaryNumberFieldId = book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' ? 'so_chuyen_hoa_giai' : 
-                               book.caseTypeId === 'THU_LY_TO_TUNG' ? 'so_thu_ly_chinh' : 'so_thu_ly';
+                               book.caseTypeId === 'TO_TUNG' ? 'so_thu_ly_chinh' : 'so_thu_ly';
 
   return (
     <div className="p-6 flex flex-col h-full">
@@ -660,6 +698,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           onSave={handleSaveRelatedPartyInfo}
           onClose={() => setShowRelatedPartyInfoModal(false)}
           isSaving={isSavingRelatedPartyInfo}
+        />
+      )}
+
+      {showParticipantInfoModal && ( // NEW: Render ParticipantInfoModal
+        <ParticipantInfoModal
+          initialData={currentParticipantInfo}
+          onSave={handleSaveParticipantInfo}
+          onClose={() => setShowParticipantInfoModal(false)}
+          isSaving={isSavingParticipantInfo}
         />
       )}
 

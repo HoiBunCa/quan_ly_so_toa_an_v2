@@ -1,12 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CaseBook, CaseType } from '../types/caseTypes'; // Import CaseType
+// Import CaseType
 import { caseTypes } from '../../data/caseTypesData';
 import toast from 'react-hot-toast';
 import AddCaseModal from '../AddCaseModal';
 import PlaintiffInfoModal from './PlaintiffInfoModal';
 import DefendantInfoModal from './DefendantInfoModal';
 import RelatedPartyInfoModal from './RelatedPartyInfoModal'; // Import new modal
-import NumberDateInputModal from '../common/NumberDateInputModal';
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './AdvancedSearchModal'; // Import new modal and interface
 
 // Import new modular components and hook
@@ -18,6 +17,8 @@ import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { parseNumberDateString, combineNumberAndDate } from '../../utils/dateUtils';
 import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../../context/AuthContext'; // Import useAuth
+import NumberDateInputModal from '../common/NumberDateInputModal';
+import { CaseBook } from '../../types/caseTypes';
 
 interface CaseManagementProps {
   book: CaseBook;

@@ -248,7 +248,6 @@ export default function AdvancedSearchModal({
             so_con_chua_thanh_nien: caseItem.so_con_chua_thanh_nien || null,
             tham_phan: caseItem.tham_phan || '', // Map from HON_NHAN's tham_phan
             ghi_chu: caseItem.ghi_chu || '', // Map from HON_NHAN's ghi_chu
-            // Other TO_TUNG specific fields will be default/empty
           };
         } else {
           toast.error('Loại sổ hiện tại không hỗ trợ chức năng sao chép từ tìm kiếm nâng cao.');

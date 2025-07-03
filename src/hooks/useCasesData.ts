@@ -88,11 +88,12 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           item.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan
         ].filter(Boolean).join('\n');
 
-        // Combined field for 'chuyen_hoa_giai' (used in HON_NHAN and GIAI_QUYET_TRANH_CHAP_HOA_GIAI)
+        // Combined field for 'chuyen_hoa_giai' (used in HON_NHAN and GIA_QUYET_TRANH_CHAP_HOA_GIAI)
         newCase.thong_tin_chuyen_hoa_giai = combineNumberAndDate(item.so_chuyen_hoa_giai, item.ngay_chuyen_hoa_giai);
         
         // Fields specific to HON_NHAN (already existing)
         if (book.caseTypeId === 'HON_NHAN') {
+          newCase.thong_tin_so_ngay_thu_ly = combineNumberAndDate(item.so_thu_ly, item.ngay_thu_ly); // NEW: Combined field for HON_NHAN
           newCase.thong_tin_tra_lai_don = combineNumberAndDate(item.so_tra_lai_don, item.ngay_tra_lai_don);
           newCase.thong_tin_yeu_cau_sua_doi_bo_sung = combineNumberAndDate(item.so_yeu_cau_sua_doi_bo_sung_don_khoi_kien, item.ngay_yeu_cau_sua_doi_bo_sung_don_khoi_kien);
           newCase.thong_tin_chuyen_don_khoi_kien = combineNumberAndDate(item.so_chuyen_don_khoi_kien, item.ngay_chuyen_don_khoi_kien);

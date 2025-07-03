@@ -101,7 +101,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       wsRef.current.send(JSON.stringify({ 
         action: 'get_all_max_numbers', 
         year: book.year,
-        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI', 'TO_TUNG'] // Added TO_TUNG
+        case_types: ['HON_NHAN', 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI', 'TO_TUNG'] 
       }));
     } else {
       console.warn('WebSocket not open. Cannot request max numbers update.');
@@ -254,6 +254,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         payload.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = number;
         payload.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = date;
         payload.co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = text;
+      } else if (prop === 'thong_tin_so_ngay_thu_ly') { // NEW: For HON_NHAN's combined so_thu_ly/ngay_thu_ly
+        const { number, date } = parseNumberDateString(newValue);
+        payload.so_thu_ly = number;
+        payload.ngay_thu_ly = date;
       }
       else { // Existing number/date combined fields
         const { number, date } = parseNumberDateString(newValue);
@@ -308,6 +312,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             updatedC.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = number;
             updatedC.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = date;
             updatedC.co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = text;
+          } else if (prop === 'thong_tin_so_ngay_thu_ly') { // NEW: For HON_NHAN's combined so_thu_ly/ngay_thu_ly
+            const { number, date } = parseNumberDateString(newValue);
+            updatedC.so_thu_ly = number;
+            updatedC.ngay_thu_ly = date;
           }
           else { // Existing number/date combined fields
             const { number, date } = parseNumberDateString(newValue);
@@ -331,7 +339,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       let updateUrl = '';
       if (book.caseTypeId === 'HON_NHAN') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
-      } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+      } else if (book.caseTypeId === 'GIA_QUYET_TRANH_CHAP_HOA_GIAI') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; // Corrected API for PUT
       } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
@@ -511,7 +519,11 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         } else if (prop === 'thong_tin_so_ngay_thu_ly_chinh') {
           number = caseItem?.so_thu_ly_chinh || '';
           date = caseItem?.ngay_thu_ly_chinh || '';
-        } else {
+        } else if (prop === 'thong_tin_so_ngay_thu_ly') { // NEW: For HON_NHAN's combined so_thu_ly/ngay_thu_ly
+          number = caseItem?.so_thu_ly || '';
+          date = caseItem?.ngay_thu_ly || '';
+        }
+        else {
           const originalPropName = prop.replace('thong_tin_', '');
           number = caseItem?.[`so_${originalPropName}`] || '';
           date = caseItem?.[`ngay_${originalPropName}`] || '';

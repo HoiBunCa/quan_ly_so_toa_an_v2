@@ -6,8 +6,7 @@ export const caseTypes: CaseType[] = [
     name: 'Sổ thụ lý đơn khởi kiện',
     code: 'SO_THU_LY_DON_KHOI_KIEN',
     attributes: [
-      { id: 'so_thu_ly', name: '🔢 Số thụ lý', type: 'text', required: false, width: 120 },
-      { id: 'ngay_thu_ly', name: '📅 Ngày thụ lý', type: 'date', required: false, width: 120 },
+      { id: 'thong_tin_so_ngay_thu_ly', name: '🔢 Số/Ngày thụ lý', type: 'textarea', required: false, width: 180 }, // New combined field
       { id: 'thong_tin_nguoi_khoi_kien', name: '📋 Thông tin người khởi kiện', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_nguoi_bi_kien', name: '📋 Thông tin người bị kiện', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan', name: '📋 Thông tin người có quyền lợi và nghĩa vụ liên quan', type: 'textarea', required: false, width: 250 },
@@ -24,9 +23,7 @@ export const caseTypes: CaseType[] = [
       { id: 'thong_tin_thong_bao_nop_tam_ung_an_phi', name: '📢 Thông tin thông báo nộp tạm ứng án phí', type: 'textarea', required: false, width: 320 },
       { id: 'ngay_nop_tien_tam_ung_an_phi', name: '📅 Ngày nộp tiền tạm ứng án phí', type: 'date', required: false, width: 260 },
       { id: 'thong_tin_thu_ly_vu_an', name: '⚖️ Thông tin thụ lý vụ án', type: 'textarea', required: false, width: 250 },
-      { id: 'thong_tin_giu_nguyen_tra_lai_don', name: '🛑 Thông tin giữ nguyên trả lại đơn', type: false, width: 320 },
-
-      // New combined fields for editing
+      { id: 'thong_tin_giu_nguyen_tra_lai_don', name: '🛑 Thông tin giữ nguyên trả lại đơn', type: 'textarea', required: false, width: 320 },
       { id: 'thong_tin_nhan_lai_don_khoi_kien_va_tai_lieu', name: '🔄 Số/Ngày nhận lại đơn khởi kiện và tài liệu', type: 'textarea', required: false, width: 320 },
       { id: 'thong_tin_yeu_cau_toa_an_nhan_lai_don_khoi_kien', name: '⚖️ Yêu cầu toà án nhận lại đơn khởi kiện', type: 'textarea', required: false, width: 320 },
       { id: 'thong_tin_ap_dung_bien_phap_khan_cap_tam_thoi', name: '⏳ Áp dụng biện pháp khẩn cấp tạm thời', type: 'textarea', required: false, width: 280 },

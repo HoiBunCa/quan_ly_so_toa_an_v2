@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { CaseBook, CaseType } from '../types/caseTypes'; // Import CaseType
 import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
-import AddCaseModal from '../AddCaseModal';
+import AddCaseModal from './AddCaseModal';
 import PlaintiffInfoModal from './PlaintiffInfoModal';
 import DefendantInfoModal from './DefendantInfoModal';
 import RelatedPartyInfoModal from './RelatedPartyInfoModal'; // Import new modal

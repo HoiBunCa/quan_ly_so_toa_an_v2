@@ -8,6 +8,8 @@ import DefendantInfoModal from './case-management/DefendantInfoModal';
 import RelatedPartyInfoModal from './case-management/RelatedPartyInfoModal'; // Import new modal
 import NumberDateInputModal from './common/NumberDateInputModal';
 import AdvancedSearchModal, { AdvancedSearchCriteria } from './case-management/AdvancedSearchModal'; // Import new modal and interface
+import { authenticatedFetch } from '../utils/api';
+import { useAuth } from '../context/AuthContext'; 
 
 // Import new modular components and hook
 import CaseManagementHeader from './case-management/CaseManagementHeader';
@@ -50,6 +52,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [currentNumberDateCaseId, setCurrentNumberDateCaseId] = useState<string | null>(null);
   const [isSavingNumberDateInfo, setIsSavingNumberDateInfo] = useState(false);
   const [numberDateModalTitle, setNumberDateModalTitle] = useState('');
+  const { accessToken, logout } = useAuth(); // Use hook to get accessToken and logout
 
   // New state for advanced search
   const [showAdvancedSearchModal, setShowAdvancedSearchModal] = useState(false);
@@ -267,7 +270,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         return;
       }
 
-      const response = await fetch(updateUrl, {
+      const response = await authenticatedFetch(updateUrl, accessToken, logout, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

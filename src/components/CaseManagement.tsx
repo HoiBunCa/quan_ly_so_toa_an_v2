@@ -16,10 +16,10 @@ import PartyAndCourtInfoModal from './case-management/PartyAndCourtInfoModal'; /
 import CaseManagementHeader from './case-management/CaseManagementHeader';
 import CaseTable from './case-management/CaseTable';
 import CaseInstructions from './case-management/CaseInstructions';
-import { useCasesData } from '../hooks/useCasesData';
-import { getHandsontableConfig } from '../utils/handsontableConfig';
-import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString } from '../utils/dateUtils'; // Import new parse utility
-import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
+import { useCasesData } from '../../hooks/useCasesData';
+import { getHandsontableConfig } from '../../utils/handsontableConfig';
+import { parseNumberDateString, combineNumberAndDate, parseNumberDateAndTextString, combineDateAndText, parseDateAndTextString } from '../../utils/dateUtils'; // Import new parse utility
+import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface CaseManagementProps {
@@ -76,6 +76,15 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
   const [isSavingCombinedNumberDateTextInfo, setIsSavingCombinedNumberDateTextInfo] = useState(false);
   const [combinedNumberDateTextModalTitle, setCombinedNumberDateTextModalTitle] = useState('');
   const [combinedNumberDateTextModalLabels, setCombinedNumberDateTextModalLabels] = useState({ number: 'Số', date: 'Ngày', text: 'Văn bản' });
+
+  // NEW: State for Date/Text Combined Modal (for 'thong_tin_yeu_cau_cua_duong_su')
+  const [showDateTextModal, setShowDateTextModal] = useState(false);
+  const [currentDateTextInfo, setCurrentDateTextInfo] = useState({ date: '', text: '' });
+  const [currentDateTextProp, setCurrentDateTextProp] = useState<string | null>(null);
+  const [currentDateTextCaseId, setCurrentDateTextCaseId] = useState<string | null>(null);
+  const [isSavingDateTextInfo, setIsSavingDateTextInfo] = useState(false);
+  const [dateTextModalTitle, setDateTextModalTitle] = useState('');
+  const [dateTextModalLabels, setDateTextModalLabels] = useState({ date: 'Ngày', text: 'Văn bản' });
 
 
   // New state for advanced search
@@ -257,8 +266,17 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       payload.ho_ten_duong_su_lua_chon = lines[0] || '';
       payload.toa_an_noi_quan_ly_hoa_giai_vien_lam_viec = lines[1] || '';
     } else if (prop.startsWith('thong_tin_') && attribute?.type === 'textarea') {
-      // Handle combined number/date fields
-      if (prop === 'thong_tin_so_ngay_don') {
+      // Handle new combined number/date/text fields for TO_TUNG
+      if (prop === 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan' || prop === 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet') {
+        const { number, date, text } = parseNumberDateAndTextString(newValue);
+        payload.so_chuyen_ho_so_vu_viec = number;
+        payload.ngay_chuyen_ho_so_vu_viec = date;
+        payload.noi_nhan_chuyen_ho_so_vu_viec = text;
+      } else if (prop === 'thong_tin_yeu_cau_cua_duong_su') { // NEW: Handle combined date/text for 'thong_tin_yeu_cau_cua_duong_su'
+        const { date, text } = parseDateAndTextString(newValue);
+        payload.ngay_yeu_cau_cua_duong_su = date;
+        payload.tom_tat_noi_dung_yeu_cau_cua_duong_su = text;
+      } else if (prop === 'thong_tin_so_ngay_don') {
         const { number, date } = parseNumberDateString(newValue);
         payload.so_thu_ly = number;
         payload.ngay_thu_ly = date;
@@ -266,16 +284,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         const { number, date } = parseNumberDateString(newValue);
         payload.so_thu_ly_chinh = number;
         payload.ngay_thu_ly_chinh = date;
-      } else if (prop === 'thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan') {
-        const { number, date, text } = parseNumberDateAndTextString(newValue);
-        payload.so_chuyen_ho_so_vu_viec = number;
-        payload.ngay_chuyen_ho_so_vu_viec = date;
-        payload.noi_nhan_chuyen_ho_so_vu_viec = text;
-      } else if (prop === 'thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet') {
-        const { number, date, text } = parseNumberDateAndTextString(newValue);
-        payload.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = number;
-        payload.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = date;
-        payload.co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = text;
       } else if (prop === 'thong_tin_so_ngay_thu_ly') { // NEW: For HON_NHAN's combined so_thu_ly/ngay_thu_ly
         const { number, date } = parseNumberDateString(newValue);
         payload.so_thu_ly = number;
@@ -344,6 +352,10 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
             updatedC.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = number;
             updatedC.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = date;
             updatedC.co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet = text;
+          } else if (prop === 'thong_tin_yeu_cau_cua_duong_su') { // NEW: Handle combined date/text for 'thong_tin_yeu_cau_cua_duong_su'
+            const { date, text } = parseDateAndTextString(newValue);
+            updatedC.ngay_yeu_cau_cua_duong_su = date;
+            updatedC.tom_tat_noi_dung_yeu_cau_cua_duong_su = text;
           } else if (prop === 'thong_tin_so_ngay_thu_ly') { // NEW: For HON_NHAN's combined so_thu_ly/ngay_thu_ly
             const { number, date } = parseNumberDateString(newValue);
             updatedC.so_thu_ly = number;
@@ -372,7 +384,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
       if (book.caseTypeId === 'HON_NHAN') {
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`; // Corrected API for PUT
+        updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; // Corrected API for PUT
       } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         updateUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
       }
@@ -507,6 +519,21 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     }
   };
 
+  // NEW: Handler for saving date/text combined info
+  const handleSaveDateTextInfo = async (data: { date: string, text: string }) => {
+    if (!currentDateTextCaseId || !currentDateTextProp) return;
+
+    setIsSavingDateTextInfo(true);
+    const rawCombinedString = combineDateAndText(data.date, data.text);
+
+    try {
+      await handleUpdateCase(currentDateTextCaseId, currentDateTextProp, rawCombinedString);
+      setShowDateTextModal(false);
+    } finally {
+      setIsSavingDateTextInfo(false);
+    }
+  };
+
   const handleCellClick = useCallback((caseId: string, prop: string, value: any) => {
     const attribute = caseType.attributes.find(attr => attr.id === prop);
     const title = attribute?.name || prop;
@@ -580,6 +607,19 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         setCurrentCombinedNumberDateTextInfo({ number, date, text });
         setCombinedNumberDateTextModalLabels({ number: 'Số', date: 'Ngày', text: textLabel });
         setShowCombinedNumberDateTextModal(true);
+
+      } else if (prop === 'thong_tin_yeu_cau_cua_duong_su') { // NEW: Handle combined date/text for 'thong_tin_yeu_cau_cua_duong_su'
+        setCurrentDateTextCaseId(caseId);
+        setCurrentDateTextProp(prop);
+        setDateTextModalTitle(`Chỉnh sửa ${title}`);
+
+        const caseItem = cases.find(c => c.id === caseId);
+        const date = caseItem?.ngay_yeu_cau_cua_duong_su || '';
+        const text = caseItem?.tom_tat_noi_dung_yeu_cau_cua_duong_su || '';
+        
+        setCurrentDateTextInfo({ date, text });
+        setDateTextModalLabels({ date: 'Ngày yêu cầu', text: 'Tóm tắt nội dung yêu cầu' });
+        setShowDateTextModal(true);
 
       } else { // Existing number/date combined fields
         setCurrentNumberDateCaseId(caseId);
@@ -787,6 +827,22 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
           isGeneratingNumber={isMaxNumbersLoading}
           latestAutoNumber={maxNumbersByField[currentCombinedNumberDateTextProp!.replace('thong_tin_', 'so_')] || null}
           numberFieldKey={currentCombinedNumberDateTextProp!.replace('thong_tin_', 'so_')}
+        />
+      )}
+
+      {showDateTextModal && ( // NEW: Render DateTextModal
+        <CombinedNumberDateTextModal
+          title={dateTextModalTitle}
+          initialNumber="" // No number for this modal
+          initialDate={currentDateTextInfo.date}
+          initialText={currentDateTextInfo.text}
+          numberLabel="" // Hide number label
+          dateLabel={dateTextModalLabels.date}
+          textLabel={dateTextModalLabels.text}
+          onSave={handleSaveDateTextInfo}
+          onClose={() => setShowDateTextModal(false)}
+          isSaving={isSavingDateTextInfo}
+          // No auto-generate for this type of combined field
         />
       )}
 

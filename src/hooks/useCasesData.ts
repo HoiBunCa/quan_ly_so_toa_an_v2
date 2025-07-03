@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CaseBook, Case } from '../types/caseTypes';
 import { mockCases } from '../data/mockCaseData'; // For non-HON_NHAN types
-import { combineNumberAndDate, formatDateForDisplay, combineNumberDateAndText } from '../utils/dateUtils'; // Import new utilities
+import { combineNumberAndDate, formatDateForDisplay, combineNumberDateAndText, combineDateAndText, parseDateAndTextString } from '../utils/dateUtils'; // Import new utilities
 import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
@@ -40,7 +40,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
       if (book.caseTypeId === 'HON_NHAN') {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/`;
+        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/`;
       } else if (book.caseTypeId === 'TO_TUNG') { // New case type
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/`;
       }
@@ -121,6 +121,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           newCase.thong_tin_chuyen_don_giai_quyet_theo_thu_tuc_to_tung = combineNumberAndDate(item.so_chuyen_don_giai_quyet_theo_thu_tuc_to_tung, item.ngay_chuyen_don_giai_quyet_theo_thu_tuc_to_tung);
           newCase.thong_tin_vien_kiem_sat_kien_nghi = combineNumberAndDate(item.so_vien_kiem_sat_kien_nghi, item.ngay_vien_kiem_sat_kien_nghi);
           newCase.thong_tin_quyet_dinh_cua_toa_an_cap_tren_truc_tiep = combineNumberAndDate(item.so_quyet_dinh_cua_toa_an_cap_tren_truc_tiep, item.ngay_quyet_dinh_cua_toa_an_cap_tren_truc_tiep);
+          newCase.thong_tin_yeu_cau_cua_duong_su = combineDateAndText(item.ngay_yeu_cau_cua_duong_su, item.tom_tat_noi_dung_yeu_cau_cua_duong_su); // NEW: Combined field
         }
 
         // Fields specific to TO_TUNG (newly added)
@@ -173,7 +174,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         if (book.caseTypeId === 'HON_NHAN') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
         } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`; 
+          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; 
         } else if (book.caseTypeId === 'TO_TUNG') { // New case type
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
         }

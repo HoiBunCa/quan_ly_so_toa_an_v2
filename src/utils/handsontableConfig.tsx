@@ -60,6 +60,21 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       }
       td.innerHTML = formattedValue;
     }
+  } else if (prop === 'thong_tin_yeu_cau_cua_duong_su') { // NEW: Formatting for combined date/text field
+    if (typeof value === 'string') {
+      const lines = value.split('\n');
+      let formattedValue = '';
+      if (lines.length >= 1 && lines[0]) {
+        // Assuming first line is "Ngày: DD-MM-YYYY"
+        const datePart = lines[0].startsWith('Ngày: ') ? lines[0].substring('Ngày: '.length) : lines[0];
+        formattedValue += `Ngày: ${formatDateForDisplay(datePart)}`;
+      }
+      if (lines.length >= 2 && lines[1]) {
+        // Assuming second line is "Tóm tắt: [text]"
+        formattedValue += `\n${lines[1]}`;
+      }
+      td.innerHTML = formattedValue;
+    }
   } else if (prop.startsWith('thong_tin_') && typeof value === 'string') {
     // For other combined number/date/text fields
     const lines = value.split('\n');
@@ -231,7 +246,7 @@ export function getHandsontableConfig({
                     if (caseType.id === 'HON_NHAN') {
                         deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
                     } else if (caseType.id === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
-                        deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa_giai_tai_toa_an/${caseId}/`;
+                        deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`;
                     } else if (caseType.id === 'TO_TUNG') { // New case type
                         deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
                     }

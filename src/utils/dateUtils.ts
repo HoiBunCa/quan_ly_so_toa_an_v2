@@ -93,3 +93,34 @@ export const parseNumberDateAndTextString = (combinedString: string) => {
   }
   return { number, date, text };
 };
+
+export const combineDateAndText = (date: string | undefined, text: string | undefined): string => {
+  const parts = [];
+  if (date) parts.push(`Ngày: ${formatDateForDisplay(date)}`);
+  if (text) parts.push(`Tóm tắt: ${text}`);
+  return parts.filter(Boolean).join('\n');
+};
+
+export const parseDateAndTextString = (combinedString: string) => {
+  const lines = String(combinedString || '').split('\n');
+  let date = '';
+  let text = '';
+
+  if (lines[0]?.startsWith('Ngày: ')) {
+    const extractedDateStr = lines[0].substring('Ngày: '.length);
+    const dateParts = extractedDateStr.split('-');
+    if (dateParts.length === 3) {
+      if (dateParts[0].length === 4) {
+        date = extractedDateStr;
+      } else {
+        date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+      }
+    } else {
+      date = extractedDateStr;
+    }
+  }
+  if (lines[1]?.startsWith('Tóm tắt: ')) {
+    text = lines[1].substring('Tóm tắt: '.length);
+  }
+  return { date, text };
+};

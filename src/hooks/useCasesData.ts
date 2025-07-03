@@ -50,7 +50,10 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         return;
       }
 
-      const response = await authenticatedFetch(`${apiUrl}?${queryParams.toString()}`, accessToken, logout);
+      const fullUrl = `${apiUrl}?${queryParams.toString()}`;
+      console.log(`Fetching cases for ${book.caseTypeName} (${book.year}): ${fullUrl}`); // Add this log
+
+      const response = await authenticatedFetch(fullUrl, accessToken, logout);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);

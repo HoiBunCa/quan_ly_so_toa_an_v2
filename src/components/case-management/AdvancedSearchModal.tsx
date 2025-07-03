@@ -181,7 +181,7 @@ export default function AdvancedSearchModal({
 
   const handleApplySelection = async () => {
     if (selectedResultIds.length === 0) {
-      toast.info('Vui lòng chọn ít nhất một vụ án để áp dụng.');
+      toast.success('Vui lòng chọn ít nhất một vụ án để áp dụng.');
       return;
     }
 
@@ -222,7 +222,7 @@ export default function AdvancedSearchModal({
             tham_phan: caseItem.tham_phan || '',
             ghi_chu: caseItem.ghi_chu || '',
           };
-        } else if (book.caseTypeId === 'TO_TUNG') {
+        } else if (book.caseTypeId === 'THU_LY_TO_TUNG') {
           const nextSoThuLyChinh = onGenerateNextNumber('so_thu_ly_chinh');
           apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-to-tung/';
           successMessage = 'Đã tạo thành công vụ án mới trong sổ tố tụng.';

@@ -180,7 +180,6 @@ export default function AdvancedSearchModal({
   };
 
   const handleApplySelection = async () => {
-
     if (selectedResultIds.length === 0) {
       toast.info('Vui lòng chọn ít nhất một vụ án để áp dụng.');
       return;
@@ -189,38 +188,75 @@ export default function AdvancedSearchModal({
     setIsCopyingCases(true);
     let successfulCopies = 0;
     const failedCopies: string[] = [];
-    const today = new Date().toISOString().split('T')[0]; // Current date for ngay_chuyen_hoa_giai
+    const today = new Date().toISOString().split('T')[0]; // Current date for new cases
 
     // Filter from the currentSearchResults (local state) to get full data
     const casesToCopy = currentSearchResults.filter(c => selectedResultIds.includes(c.id));
  
-
     for (const caseItem of casesToCopy) {
       try {
-        const nextSoChuyenHoaGiai = onGenerateNextNumber('so_chuyen_hoa_giai'); // Get next auto-increment number
+        let payload: { [key: string]: any } = { created_by: 1 };
+        let apiUrl = '';
+        let successMessage = '';
 
-        const payload = {
-          created_by: 1,
-          so_chuyen_hoa_giai: nextSoChuyenHoaGiai,
-          ngay_chuyen_hoa_giai: today,
-          ngay_nhan_don: caseItem.ngay_nhan_don || '',
-          tom_tat_noi_dung_don: caseItem.noi_dung_don || '', // Map noi_dung_don from HON_NHAN
-          tai_lieu_kem_theo: caseItem.tai_lieu_kem_theo || '',
-          ho_ten_nguoi_khoi_kien: caseItem.ho_ten_nguoi_khoi_kien || '',
-          nam_sinh_nguoi_khoi_kien: caseItem.nam_sinh_nguoi_khoi_kien || '',
-          dia_chi_nguoi_khoi_kien: caseItem.dia_chi_nguoi_khoi_kien || '',
-          ho_ten_nguoi_bi_kien: caseItem.ho_ten_nguoi_bi_kien || '',
-          nam_sinh_nguoi_bi_kien: caseItem.nam_sinh_nguoi_bi_kien || '',
-          dia_chi_nguoi_bi_kien: caseItem.dia_chi_nguoi_bi_kien || '',
-          ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
-          nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
-          dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
-          tham_phan: caseItem.tham_phan || '',
-          ghi_chu: caseItem.ghi_chu || '',
-          // Other fields specific to GIAI_QUYET_TRANH_CHAP_HOA_GIAI are omitted as per request
-        };
+        if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+          const nextSoChuyenHoaGiai = onGenerateNextNumber('so_chuyen_hoa_giai');
+          apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/';
+          successMessage = 'Đã tạo thành công vụ án mới trong sổ hoà giải.';
+          payload = {
+            ...payload,
+            so_chuyen_hoa_giai: nextSoChuyenHoaGiai,
+            ngay_chuyen_hoa_giai: today,
+            ngay_nhan_don: caseItem.ngay_nhan_don || '',
+            tom_tat_noi_dung_don: caseItem.noi_dung_don || '', // Map noi_dung_don from HON_NHAN
+            tai_lieu_kem_theo: caseItem.tai_lieu_kem_theo || '',
+            ho_ten_nguoi_khoi_kien: caseItem.ho_ten_nguoi_khoi_kien || '',
+            nam_sinh_nguoi_khoi_kien: caseItem.nam_sinh_nguoi_khoi_kien || '',
+            dia_chi_nguoi_khoi_kien: caseItem.dia_chi_nguoi_khoi_kien || '',
+            ho_ten_nguoi_bi_kien: caseItem.ho_ten_nguoi_bi_kien || '',
+            nam_sinh_nguoi_bi_kien: caseItem.nam_sinh_nguoi_bi_kien || '',
+            dia_chi_nguoi_bi_kien: caseItem.dia_chi_nguoi_bi_kien || '',
+            ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
+            nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
+            dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
+            tham_phan: caseItem.tham_phan || '',
+            ghi_chu: caseItem.ghi_chu || '',
+          };
+        } else if (book.caseTypeId === 'TO_TUNG') {
+          const nextSoThuLyChinh = onGenerateNextNumber('so_thu_ly_chinh');
+          apiUrl = 'http://localhost:8003/home/api/v1/so-thu-ly-to-tung/';
+          successMessage = 'Đã tạo thành công vụ án mới trong sổ tố tụng.';
+          payload = {
+            ...payload,
+            so_thu_ly_chinh: nextSoThuLyChinh,
+            ngay_thu_ly_chinh: today,
+            so_thu_ly: caseItem.so_thu_ly || '', // Map from HON_NHAN's so_thu_ly
+            ngay_thu_ly: caseItem.ngay_thu_ly || '', // Map from HON_NHAN's ngay_thu_ly
+            ho_ten_nguoi_khoi_kien: caseItem.ho_ten_nguoi_khoi_kien || '',
+            nam_sinh_nguoi_khoi_kien: caseItem.nam_sinh_nguoi_khoi_kien || '',
+            dia_chi_nguoi_khoi_kien: caseItem.dia_chi_nguoi_khoi_kien || '',
+            ho_ten_nguoi_bi_kien: caseItem.ho_ten_nguoi_bi_kien || '',
+            nam_sinh_nguoi_bi_kien: caseItem.nam_sinh_nguoi_bi_kien || '',
+            dia_chi_nguoi_bi_kien: caseItem.dia_chi_nguoi_bi_kien || '',
+            don_khoi_kien_cua_co_quan_to_chuc: caseItem.don_khoi_kien_cua_co_quan_to_chuc || false, // Assuming boolean
+            ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
+            nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
+            dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan: caseItem.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan || '',
+            nguoi_bao_ve_quyen_loi: caseItem.nguoi_bao_ve_quyen_loi || '',
+            noi_dung_don: caseItem.noi_dung_don || '', // Map from HON_NHAN's noi_dung_don
+            ly_do_xin_ly_hon: caseItem.ly_do_xin_ly_hon || '',
+            so_con_chua_thanh_nien: caseItem.so_con_chua_thanh_nien || null,
+            tham_phan: caseItem.tham_phan || '', // Map from HON_NHAN's tham_phan
+            ghi_chu: caseItem.ghi_chu || '', // Map from HON_NHAN's ghi_chu
+            // Other TO_TUNG specific fields will be default/empty
+          };
+        } else {
+          toast.error('Loại sổ hiện tại không hỗ trợ chức năng sao chép từ tìm kiếm nâng cao.');
+          setIsCopyingCases(false);
+          return;
+        }
 
-        const response = await authenticatedFetch('http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/', accessToken, logout, {
+        const response = await authenticatedFetch(apiUrl, accessToken, logout, {
           method: 'POST',
           body: JSON.stringify(payload),
         });
@@ -238,7 +274,7 @@ export default function AdvancedSearchModal({
 
     setIsCopyingCases(false);
     if (successfulCopies > 0) {
-      toast.success(`Đã tạo thành công ${successfulCopies} vụ án mới trong sổ hoà giải.`);
+      toast.success(`${successMessage.replace('vụ án mới', `${successfulCopies} vụ án mới`)}`);
       onCasesCreated(); // Signal parent to refresh
     }
     if (failedCopies.length > 0) {

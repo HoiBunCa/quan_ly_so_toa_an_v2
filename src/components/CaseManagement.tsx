@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { CaseBook, CaseType } from '../types/caseTypes'; // Import CaseType
-import { caseTypes } from '../../data/caseTypesData';
+import { caseTypes } from '../data/caseTypesData';
 import toast from 'react-hot-toast';
 import AddCaseModal from '../AddCaseModal';
 import PlaintiffInfoModal from './PlaintiffInfoModal';
@@ -17,7 +17,7 @@ import { useCasesData } from '../../hooks/useCasesData';
 import { getHandsontableConfig } from '../../utils/handsontableConfig';
 import { parseNumberDateString, combineNumberAndDate } from '../../utils/dateUtils';
 import { authenticatedFetch } from '../../utils/api'; // Import authenticatedFetch
-import { useAuth } from '../../context/AuthContext'; // Import useAuth
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 interface CaseManagementProps {
   book: CaseBook;

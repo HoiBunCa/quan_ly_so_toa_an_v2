@@ -89,6 +89,22 @@ function multiLineTextRenderer(instance: any, td: HTMLElement, row: number, col:
       }
       td.innerHTML = formattedValue;
     }
+  } else if (prop === 'thong_tin_quyet_dinh_va_tom_tat_toa_an_cap_tren_truc_tiep') { // NEW: Formatting for combined number/date/summary text
+    if (typeof value === 'string') {
+      const lines = value.split('\n');
+      let formattedValue = '';
+      if (lines.length >= 1 && lines[0]) {
+        formattedValue += `${lines[0]}`; // "Số: [number]"
+      }
+      if (lines.length >= 2 && lines[1]) {
+        const datePart = lines[1].startsWith('Ngày: ') ? lines[1].substring('Ngày: '.length) : lines[1];
+        formattedValue += `\nNgày: ${formatDateForDisplay(datePart)}`;
+      }
+      if (lines.length >= 3 && lines[2]) {
+        formattedValue += `\n${lines[2]}`; // "Tóm tắt: [text]"
+      }
+      td.innerHTML = formattedValue;
+    }
   } else if (prop.startsWith('thong_tin_') && typeof value === 'string') {
     // For other combined number/date/text fields
     const lines = value.split('\n');

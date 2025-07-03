@@ -17,7 +17,7 @@ export const caseTypes: CaseType[] = [
 
       // Combined fields
       { id: 'thong_tin_chuyen_hoa_giai', name: '🔄 Chuyển hoà giải', type: 'textarea', required: false, width: 250 },
-      { id: 'ngay_chuyen_don_ve_giai_quyet_theo_thu_tuc_to_tung', type: 'date', required: false, width: 300 },
+      { id: 'ngay_chuyen_don_ve_giai_quyet_theo_thu_tuc_to_tung', name: '📅 Ngày chuyển đơn về giải quyết theo thủ tục tố tụng', type: 'date', required: false, width: 300 },
       { id: 'thong_tin_tra_lai_don', name: '↩️ Thông tin trả lại đơn', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_yeu_cau_sua_doi_bo_sung', name: '✏️ Thông tin yêu cầu sửa đổi bổ sung', type: 'textarea', required: false, width: 320 },
       { id: 'thong_tin_chuyen_don_khoi_kien', name: '📤 Thông tin chuyển đơn khởi kiện', type: 'textarea', required: false, width: 250 },
@@ -64,8 +64,7 @@ export const caseTypes: CaseType[] = [
       { id: 'thong_tin_nguoi_de_nghi_giai_quyet', name: '👤 Thông tin người đề nghị giải quyết', type: 'textarea', required: false, width: 280 }, // NEW combined field
       { id: 'thong_tin_vien_kiem_sat_kien_nghi', name: '⚖️ Số/Ngày Viện kiểm sát kiến nghị', type: 'textarea', required: false, width: 280 },
       { id: 'ngay_chuyen_ho_so_cho_toa_an_cap_tren_tru_tiep', name: '⬆️ Ngày chuyển hồ sơ cho toà án cấp trên trực tiếp', type: 'date', required: false, width: 300 },
-      { id: 'thong_tin_quyet_dinh_cua_toa_an_cap_tren_truc_tiep', name: '📜 Số/Ngày QĐ của toà án cấp trên trực tiếp', type: 'textarea', required: false, width: 320 },
-      { id: 'tom_tat_dinh_cua_toa_an_cap_tren_truc_tiep', name: '📝 Tóm tắt QĐ của toà án cấp trên trực tiếp', type: 'textarea', required: false, width: 350 },
+      { id: 'thong_tin_quyet_dinh_va_tom_tat_toa_an_cap_tren_truc_tiep', name: '📜 Thông tin QĐ của toà án cấp trên trực tiếp', type: 'textarea', required: false, width: 350 }, // NEW combined field
       { id: 'ghi_chu', name: '📝 Ghi chú', type: 'textarea', required: false, width: 300 }
     ]
   },
@@ -101,7 +100,7 @@ export const caseTypes: CaseType[] = [
       { id: 'thong_tin_giai_quyet_theo_thu_tuc_rut_gon', name: '⚡ Số/Ngày giải quyết theo thủ tục rút gọn', type: 'textarea', required: false, width: 320 },
       { id: 'co_uy_thac_tu_phap', name: '🤝 Có uỷ thác tư pháp', type: 'dropdown', options: ['Có', 'Không'], required: false, width: 180 },
       { id: 'khong_uy_thac_tu_phap', name: '🚫 Không uỷ thác tư pháp', type: 'dropdown', options: ['Có', 'Không'], required: false, width: 180 },
-      { id: 'viec_hon_nhan_va_gia_dinh', name: '👨‍👩‍👧‍👦 Việc hôn nhân và gia đình', type: 'dropdown', options: ['Có', 'Không'], required: false, width: 200 },
+      { id: 'viec_hon_nhan_va_gia_dinh', type: 'dropdown', options: ['Có', 'Không'], required: false, width: 200 },
       { id: 'thong_tin_khang_cao', name: '⬆️ Số/Ngày kháng cáo', type: 'textarea', required: false, width: 250 },
       { id: 'thong_tin_khang_nghi', name: '❗ Số/Ngày kháng nghị', type: 'textarea', required: false, width: 250 },
       { id: 'chuyen_ho_so_cho_toa_an_cap_phuc_tham', name: '➡️ Chuyển hồ sơ cho toà án cấp phúc thẩm', type: 'textarea', required: false, width: 300 },

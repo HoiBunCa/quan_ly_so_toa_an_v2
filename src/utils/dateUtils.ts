@@ -124,3 +124,39 @@ export const parseDateAndTextString = (combinedString: string) => {
   }
   return { date, text };
 };
+
+export const combineNumberDateSummaryAndText = (num: string | undefined, date: string | undefined, text: string | undefined): string => {
+  const parts = [];
+  if (num) parts.push(`Số: ${num}`);
+  if (date) parts.push(`Ngày: ${formatDateForDisplay(date)}`);
+  if (text) parts.push(`Tóm tắt: ${text}`);
+  return parts.filter(Boolean).join('\n');
+};
+
+export const parseNumberDateSummaryAndTextString = (combinedString: string) => {
+  const lines = String(combinedString || '').split('\n');
+  let number = '';
+  let date = '';
+  let text = '';
+
+  if (lines[0]?.startsWith('Số: ')) {
+    number = lines[0].substring('Số: '.length);
+  }
+  if (lines[1]?.startsWith('Ngày: ')) {
+    const extractedDateStr = lines[1].substring('Ngày: '.length);
+    const dateParts = extractedDateStr.split('-');
+    if (dateParts.length === 3) {
+      if (dateParts[0].length === 4) {
+        date = extractedDateStr;
+      } else {
+        date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+      }
+    } else {
+      date = extractedDateStr;
+    }
+  }
+  if (lines[2]?.startsWith('Tóm tắt: ')) {
+    text = lines[2].substring('Tóm tắt: '.length);
+  }
+  return { number, date, text };
+};

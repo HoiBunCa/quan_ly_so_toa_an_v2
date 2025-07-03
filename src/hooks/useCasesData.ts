@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CaseBook, Case } from '../types/caseTypes';
 import { mockCases } from '../data/mockCaseData'; // For non-HON_NHAN types
-import { combineNumberAndDate, formatDateForDisplay, combineNumberDateAndText, combineDateAndText, parseDateAndTextString } from '../utils/dateUtils'; // Import new utilities
+import { combineNumberAndDate, formatDateForDisplay, combineNumberDateAndText, combineDateAndText, parseDateAndTextString, combineNumberDateSummaryAndText, parseNumberDateSummaryAndTextString } from '../utils/dateUtils'; // Import new utilities
 import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
@@ -126,6 +126,11 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
             item.ho_ten_nguoi_de_nghi_giai_quyet,
             item.ngay_nguoi_de_nghi_giai_quyet
           ].filter(Boolean).join('\n');
+          newCase.thong_tin_quyet_dinh_va_tom_tat_toa_an_cap_tren_truc_tiep = combineNumberDateSummaryAndText(
+            item.so_quyet_dinh_cua_toa_an_cap_tren_truc_tiep,
+            item.ngay_quyet_dinh_cua_toa_an_cap_tren_truc_tiep,
+            item.tom_tat_dinh_cua_toa_an_cap_tren_truc_tiep
+          ); // NEW: Combined field
         }
 
         // Fields specific to TO_TUNG (newly added)

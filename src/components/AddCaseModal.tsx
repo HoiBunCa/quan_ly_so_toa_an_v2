@@ -98,7 +98,6 @@ export default function AddCaseModal({ onClose, onCaseAdded, bookId, bookYear, c
     const generatedNumber = onGenerateCaseNumber();
     setPrimaryNumber(generatedNumber);
     setHasUserEditedPrimaryNumber(false);
-    console.log('Generated Case Number:', generatedNumber);
     toast('Tự động lấy số.');
   };
 

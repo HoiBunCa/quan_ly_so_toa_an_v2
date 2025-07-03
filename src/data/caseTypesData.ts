@@ -76,7 +76,7 @@ export const caseTypes: CaseType[] = [
     ]
   },
   {
-    id: 'TO_TUNG',
+    id: 'THU_LY_TO_TUNG',
     name: 'Sổ thụ lý tố tụng',
     code: 'SO_THU_LY_TO_TUNG',
     attributes: [

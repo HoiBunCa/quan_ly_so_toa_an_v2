@@ -57,39 +57,3 @@ export const parseNumberDateString = (combinedString: string) => {
   }
   return { number, date };
 };
-
-export const combineNumberDateAndText = (num: string | undefined, date: string | undefined, text: string | undefined): string => {
-  const parts = [];
-  if (num) parts.push(`Số: ${num}`);
-  if (date) parts.push(`Ngày: ${formatDateForDisplay(date)}`);
-  if (text) parts.push(`Nơi nhận/Cơ quan: ${text}`); // Generic label for the text part
-  return parts.filter(Boolean).join('\n');
-};
-
-export const parseNumberDateAndTextString = (combinedString: string) => {
-  const lines = String(combinedString || '').split('\n');
-  let number = '';
-  let date = '';
-  let text = '';
-
-  if (lines[0]?.startsWith('Số: ')) {
-    number = lines[0].substring('Số: '.length);
-  }
-  if (lines[1]?.startsWith('Ngày: ')) {
-    const extractedDateStr = lines[1].substring('Ngày: '.length);
-    const dateParts = extractedDateStr.split('-');
-    if (dateParts.length === 3) {
-      if (dateParts[0].length === 4) {
-        date = extractedDateStr;
-      } else {
-        date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-      }
-    } else {
-      date = extractedDateStr;
-    }
-  }
-  if (lines[2]?.startsWith('Nơi nhận/Cơ quan: ')) {
-    text = lines[2].substring('Nơi nhận/Cơ quan: '.length);
-  }
-  return { number, date, text };
-};

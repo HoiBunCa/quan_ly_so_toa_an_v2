@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CaseBook, Case } from '../types/caseTypes';
 import { mockCases } from '../data/mockCaseData'; // For non-HON_NHAN types
-import { combineNumberAndDate, formatDateForDisplay, combineNumberDateAndText } from '../utils/dateUtils'; // Import new utilities
+import { combineNumberAndDate, formatDateForDisplay } from '../utils/dateUtils'; // Import new utilities
 import { authenticatedFetch } from '../utils/api'; // Import authenticatedFetch
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 
@@ -41,19 +41,13 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/`;
-      } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { // New case type
-        apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/`;
-      }
-      else {
+      } else {
         setCases(mockCases[book.id] || []);
         setIsLoading(false);
         return;
       }
 
-      const fullUrl = `${apiUrl}?${queryParams.toString()}`;
-      console.log(`Fetching cases for ${book.caseTypeName} (${book.year}): ${fullUrl}`); // Add this log
-
-      const response = await authenticatedFetch(fullUrl, accessToken, logout);
+      const response = await authenticatedFetch(`${apiUrl}?${queryParams.toString()}`, accessToken, logout);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
@@ -62,14 +56,14 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
       const fetchedCases: Case[] = data.results.map((item: any) => {
         const newCase: Case = {
           id: item.id.toString(),
-          caseNumber: item.so_thu_ly || item.so_chuyen_hoa_giai || item.so_thu_ly_chinh || '', // Use so_thu_ly_chinh for TO_TUNG
+          caseNumber: item.so_thu_ly || item.so_chuyen_hoa_giai || '', // Use so_chuyen_hoa_giai for this type
           bookId: book.id,
-          createdDate: item.ngay_thu_ly || item.ngay_nhan_don || item.ngay_thu_ly_chinh || '',
+          createdDate: item.ngay_thu_ly || item.ngay_nhan_don || '',
           lastModified: new Date().toISOString().split('T')[0],
           ...item
         };
 
-        // Common combined fields for all types
+        // Common combined fields for both HON_NHAN and GIAI_QUYET_TRANH_CHAP_HOA_GIAI
         newCase.thong_tin_nguoi_khoi_kien = [
           item.ho_ten_nguoi_khoi_kien,
           item.nam_sinh_nguoi_khoi_kien,
@@ -82,18 +76,17 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           item.dia_chi_nguoi_bi_kien
         ].filter(Boolean).join('\n');
 
+        // New combined field for related party
         newCase.thong_tin_nguoi_co_quyen_loi_va_nghia_vu_lien_quan = [
           item.ho_ten_nguoi_co_quyen_loi_va_nghia_vu_lien_quan,
           item.nam_sinh_nguoi_co_quyen_loi_va_nghia_vu_lien_quan,
           item.dia_chi_nguoi_co_quyen_loi_va_nghia_vu_lien_quan
         ].filter(Boolean).join('\n');
 
-        // Combined field for 'chuyen_hoa_giai' (used in HON_NHAN and GIA_QUYET_TRANH_CHAP_HOA_GIAI)
         newCase.thong_tin_chuyen_hoa_giai = combineNumberAndDate(item.so_chuyen_hoa_giai, item.ngay_chuyen_hoa_giai);
         
         // Fields specific to HON_NHAN (already existing)
         if (book.caseTypeId === 'HON_NHAN') {
-          newCase.thong_tin_so_ngay_thu_ly = combineNumberAndDate(item.so_thu_ly, item.ngay_thu_ly); // NEW: Combined field for HON_NHAN
           newCase.thong_tin_tra_lai_don = combineNumberAndDate(item.so_tra_lai_don, item.ngay_tra_lai_don);
           newCase.thong_tin_yeu_cau_sua_doi_bo_sung = combineNumberAndDate(item.so_yeu_cau_sua_doi_bo_sung_don_khoi_kien, item.ngay_yeu_cau_sua_doi_bo_sung_don_khoi_kien);
           newCase.thong_tin_chuyen_don_khoi_kien = combineNumberAndDate(item.so_chuyen_don_khoi_kien, item.ngay_chuyen_don_khoi_kien);
@@ -113,23 +106,6 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
           newCase.thong_tin_chuyen_don_giai_quyet_theo_thu_tuc_to_tung = combineNumberAndDate(item.so_chuyen_don_giai_quyet_theo_thu_tuc_to_tung, item.ngay_chuyen_don_giai_quyet_theo_thu_tuc_to_tung);
           newCase.thong_tin_vien_kiem_sat_kien_nghi = combineNumberAndDate(item.so_vien_kiem_sat_kien_nghi, item.ngay_vien_kiem_sat_kien_nghi);
           newCase.thong_tin_quyet_dinh_cua_toa_an_cap_tren_truc_tiep = combineNumberAndDate(item.so_quyet_dinh_cua_toa_an_cap_tren_truc_tiep, item.ngay_quyet_dinh_cua_toa_an_cap_tren_truc_tiep);
-        }
-
-        // Fields specific to TO_TUNG (newly added)
-        if (book.caseTypeId === 'THU_LY_TO_TUNG') {
-          newCase.thong_tin_so_ngay_don = combineNumberAndDate(item.so_thu_ly, item.ngay_thu_ly);
-          newCase.thong_tin_so_ngay_thu_ly_chinh = combineNumberAndDate(item.so_thu_ly_chinh, item.ngay_thu_ly_chinh);
-          newCase.thong_tin_dung_bien_phap_khan_cap_tam_thoi = combineNumberAndDate(item.so_dung_bien_phap_khan_cap_tam_thoi, item.ngay_dung_bien_phap_khan_cap_tam_thoi);
-          newCase.thong_tin_chuyen_ho_so_vu_viec_va_noi_nhan = combineNumberDateAndText(item.so_chuyen_ho_so_vu_viec, item.ngay_chuyen_ho_so_vu_viec, item.noi_nhan_chuyen_ho_so_vu_viec);
-          newCase.thong_tin_tam_dinh_chi = combineNumberAndDate(item.so_tam_dinh_chi, item.ngay_tam_dinh_chi);
-          newCase.thong_tin_dinh_chi = combineNumberAndDate(item.so_dinh_chi, item.ngay_dinh_chi);
-          newCase.thong_tin_cong_nhan_su_thoa_thuan_cua_duong_su = combineNumberAndDate(item.so_cong_nhan_su_thoa_thuan_cua_duong_su, item.ngay_cong_nhan_su_thoa_thuan_cua_duong_su);
-          newCase.thong_tin_ban_an_so_tham = combineNumberAndDate(item.so_ban_an_so_tham, item.ngay_ban_an_so_tham);
-          newCase.thong_tin_ket_qua_giai_quyet_huy_qd_ca_biet = combineNumberDateAndText(item.so_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet, item.ngay_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet, item.co_quan_ket_qua_giai_quyet_yeu_cau_huy_quyet_dinh_ca_biet);
-          newCase.thong_tin_giai_quyet_theo_thu_tuc_rut_gon = combineNumberAndDate(item.so_giai_quyet_theo_thu_tuc_rut_gon, item.ngay_giai_quyet_theo_thu_tuc_rut_gon);
-          newCase.thong_tin_khang_cao = combineNumberAndDate(item.so_khang_cao, item.ngay_khang_cao);
-          newCase.thong_tin_khang_nghi = combineNumberAndDate(item.so_khang_nghi, item.ngay_khang_nghi);
-          newCase.thong_tin_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham = combineNumberAndDate(item.so_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham, item.ngay_ban_an_quyet_dinh_cua_toa_an_cap_phuc_tham);
         }
 
         return newCase;
@@ -165,11 +141,9 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         if (book.caseTypeId === 'HON_NHAN') {
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/${caseId}/`;
         } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {
+          // Corrected API endpoint: removed underscore before 'hoa_giai'
           deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-giai-quyet-tranh-chap-duoc-hoa-giai-tai-toa-an/${caseId}/`; 
-        } else if (book.caseTypeId === 'THU_LY_TO_TUNG') { // New case type
-          deleteUrl = `http://localhost:8003/home/api/v1/so-thu-ly-to-tung/${caseId}/`;
-        }
-        else {
+        } else {
           // Fallback for other types if needed, though currently not handled by API
           console.warn(`Deletion not supported for case type: ${book.caseTypeId}`);
           failedDeletions.push(caseId);

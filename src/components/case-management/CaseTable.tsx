@@ -87,15 +87,7 @@ export default function CaseTable({
                 ? 'Hãy thử điều chỉnh bộ lọc của bạn để xem thêm kết quả.'
                 : 'Thêm vụ án mới để bắt đầu quản lý.'}
             </p>
-            {!searchTerm && (
-              <button
-                onClick={onAddCase}
-                className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Thêm vụ án mới</span>
-              </button>
-            )}
+            
           </div>
         ) : (
           <div className="handsontable-container h-full">

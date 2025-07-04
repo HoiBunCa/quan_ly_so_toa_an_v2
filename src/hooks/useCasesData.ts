@@ -50,8 +50,6 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
       }
 
       const fullUrl = `${apiUrl}?${queryParams.toString()}`;
-      
-      console.log(`Fetching cases for ${book.caseTypeName} (${book.year}): ${fullUrl}`); // Add this log
 
       const response = await authenticatedFetch(fullUrl, accessToken, logout);
       if (!response.ok) {

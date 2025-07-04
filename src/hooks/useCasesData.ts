@@ -60,9 +60,7 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log("============ data: ", data);
       const fetchedCases: Case[] = data.results.map((item: any) => {
-        console.log("============ so_thu_ly: ", item.so_thu_ly, item.ngay_thu_ly);
         const newCase: Case = {
           id: item.id.toString(),
           caseNumber: item.so_thu_ly || item.so_chuyen_hoa_giai || item.so_thu_ly_chinh || '', // Use so_thu_ly_chinh for TO_TUNG

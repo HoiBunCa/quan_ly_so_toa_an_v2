@@ -38,6 +38,9 @@ export default function CaseManagementHeader({
   totalCount,
   onAdvancedSearchClick, // Destructure new prop
 }: CaseManagementHeaderProps) {
+
+  console.log("============ book.caseTypeId: ", book.caseTypeId);
+
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
@@ -67,14 +70,24 @@ export default function CaseManagementHeader({
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
-
+          {(book.caseTypeId === 'HON_NHAN') && (
           <button
             onClick={onAddCase}
             className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Case</span>
-          </button>
+            <span>Thêm vụ án</span>
+          </button>)}
+
+          {(book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI' || book.caseTypeId === 'TO_TUNG') && (
+            <button
+              onClick={onAdvancedSearchClick}
+              className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm vụ án</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -90,13 +103,7 @@ export default function CaseManagementHeader({
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
             />
           </div>
-          <button
-            onClick={onAdvancedSearchClick}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Filter className="w-4 h-4" />
-            <span>Tìm kiếm nâng cao</span>
-          </button>
+          
         </div>
         <div className="flex items-center space-x-3">
           <button

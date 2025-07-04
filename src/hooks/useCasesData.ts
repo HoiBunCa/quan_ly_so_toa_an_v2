@@ -36,7 +36,6 @@ export function useCasesData(book: CaseBook): UseCasesDataResult {
       if (searchTerm) {
         queryParams.append('search', searchTerm);
       }
-      console.log(book.caseTypeId);
       if (book.caseTypeId === 'HON_NHAN') {
         apiUrl = `http://localhost:8003/home/api/v1/so-thu-ly-don-khoi-kien/`;
       } else if (book.caseTypeId === 'GIAI_QUYET_TRANH_CHAP_HOA_GIAI') {

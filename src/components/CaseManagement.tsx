@@ -153,7 +153,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     };
 
     ws.onmessage = (event) => {
-      console.log('WebSocket: Raw message received:', event.data);
       const message = JSON.parse(event.data);
       
       const rawMaxNumbers = message;
@@ -164,7 +163,6 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
         }
       }
       setMaxNumbersByField(formattedData); 
-      console.log('WebSocket: Received max numbers map and setting state:', formattedData);
       
       setIsMaxNumbersLoading(false);
       console.log('WebSocket: Setting isMaxNumbersLoading to false.');
@@ -187,7 +185,7 @@ export default function CaseManagement({ book, onBack }: CaseManagementProps) {
     return () => {
       ws.close();
     };
-  }, [book.year, requestMaxNumbersUpdate, fetchCases, accessToken]); // Depend on book.year, fetchCases, and accessToken
+  }, [book.year, requestMaxNumbersUpdate, accessToken]); // Removed fetchCases from dependencies
 
   const getNextNumberForField = useCallback((fieldKey: string) => {
     console.log(`getNextNumberForField called for: ${fieldKey}`);

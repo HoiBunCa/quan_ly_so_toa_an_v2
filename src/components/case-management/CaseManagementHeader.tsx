@@ -38,9 +38,6 @@ export default function CaseManagementHeader({
   totalCount,
   onAdvancedSearchClick, // Destructure new prop
 }: CaseManagementHeaderProps) {
-
-  console.log("============ book.caseTypeId: ", book.caseTypeId);
-
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
@@ -106,22 +103,6 @@ export default function CaseManagementHeader({
           
         </div>
         <div className="flex items-center space-x-3">
-          <button
-            onClick={onRefresh}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <span className="flex items-center">
-                <Loader2 className="w-4 h-4 animate-spin mr-2" /> Đang tải...
-              </span>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4" />
-                <span>Refresh Data</span>
-              </>
-            )}
-          </button>
           <div className="text-sm text-gray-600">
             Showing {filteredCount} of {totalCount} cases
           </div>
